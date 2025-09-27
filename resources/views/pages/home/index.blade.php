@@ -109,7 +109,9 @@
                     'seller' => (object)['name' => 'Nguyễn Văn A', 'avatar_url' => 'https://via.placeholder.com/40'],
                     'created_at' => now()->subDays(2),
                     'views_count' => 156,
-                    'favorites_count' => 23
+                    'favorites_count' => 23,
+                     'condition' => 'new',
+                        'location' =>'Thu Duc'
                 ],
                 [
                     'id' => 2,
@@ -122,7 +124,9 @@
                     'seller' => (object)['name' => 'Trần Thị B', 'avatar_url' => 'https://via.placeholder.com/40'],
                     'created_at' => now()->subDays(1),
                     'views_count' => 89,
-                    'favorites_count' => 12
+                    'favorites_count' => 12,
+                     'condition' => 'new',
+                        'location' =>'Thu Duc'
                 ],
                 [
                     'id' => 3,
@@ -135,7 +139,9 @@
                     'seller' => (object)['name' => 'Lê Văn C', 'avatar_url' => 'https://via.placeholder.com/40'],
                     'created_at' => now()->subHours(12),
                     'views_count' => 45,
-                    'favorites_count' => 8
+                    'favorites_count' => 8,
+                     'condition' => 'new',
+                        'location' =>'Thu Duc'
                 ],
                 [
                     'id' => 4,
@@ -148,7 +154,9 @@
                     'seller' => (object)['name' => 'Phạm Thị D', 'avatar_url' => 'https://via.placeholder.com/40'],
                     'created_at' => now()->subHours(6),
                     'views_count' => 67,
-                    'favorites_count' => 15
+                    'favorites_count' => 15,
+                     'condition' => 'new',
+                        'location' =>'Thu Duc'
                 ]
             ];
         @endphp
@@ -182,7 +190,9 @@
                     'seller' => (object)['name' => 'Hoàng Văn E', 'avatar_url' => 'https://via.placeholder.com/40'],
                     'created_at' => now()->subMinutes(30),
                     'views_count' => 12,
-                    'favorites_count' => 3
+                    'favorites_count' => 3,
+                     'condition' => 'new',
+                        'location' =>'Thu Duc'
                 ],
                 [
                     'id' => 6,
@@ -195,7 +205,9 @@
                     'seller' => (object)['name' => 'Vũ Thị F', 'avatar_url' => 'https://via.placeholder.com/40'],
                     'created_at' => now()->subHours(2),
                     'views_count' => 34,
-                    'favorites_count' => 7
+                    'favorites_count' => 7,
+                     'condition' => 'new',
+                        'location' =>'Thu Duc'
                 ],
                 [
                     'id' => 7,
@@ -208,7 +220,9 @@
                     'seller' => (object)['name' => 'Đỗ Văn G', 'avatar_url' => 'https://via.placeholder.com/40'],
                     'created_at' => now()->subHours(4),
                     'views_count' => 28,
-                    'favorites_count' => 5
+                    'favorites_count' => 5,
+                     'condition' => 'new',
+                        'location' =>'Thu Duc'
                 ],
                 [
                     'id' => 8,
@@ -221,7 +235,9 @@
                     'seller' => (object)['name' => 'Bùi Thị H', 'avatar_url' => 'https://via.placeholder.com/40'],
                     'created_at' => now()->subHours(8),
                     'views_count' => 56,
-                    'favorites_count' => 11
+                    'favorites_count' => 11,
+                     'condition' => 'new',
+                        'location' =>'Thu Duc'
                 ]
             ];
         @endphp

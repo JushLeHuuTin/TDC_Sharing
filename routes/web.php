@@ -333,10 +333,21 @@ use Illuminate\Support\Facades\Route;
 
     Route::prefix('products')->name('products.')->group(function () {
         Route::get('/', [ProductController::class, 'index'])->name('index');
+        Route::get('/search', [ProductController::class, 'search'])->name('search');
+        Route::get('/my', [ProductController::class, 'getProduct'])->name('my');
         Route::get('/{product}', [ProductController::class, 'show'])->name('show');
     });
     Route::prefix('auth')->name('auth.')->group(function () {
         // Login
         Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
         Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    });
+     // Category Management
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('/', [AdminController::class, 'categories'])->name('categories');
+        // Route::get('/create', [AdminController::class, 'createCategory'])->name('create');
+        // Route::post('/', [AdminController::class, 'storeCategory'])->name('store');
+        // Route::get('/{category}/edit', [AdminController::class, 'editCategory'])->name('edit');
+        // Route::put('/{category}', [AdminController::class, 'updateCategory'])->name('update');
+        // Route::delete('/{category}', [AdminController::class, 'deleteCategory'])->name('destroy');
     });

@@ -1,5 +1,5 @@
 {{-- resources/views/components/search-bar.blade.php --}}
-<form action="#" method="GET" class="relative">
+<form action="{{ route('products.search') }}" method="GET" class="relative">
     <div class="relative">
         <input 
             type="text" 

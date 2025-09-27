@@ -12,9 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            
-            $table->timestamps();
+            $table->id(); // BIGINT UNSIGNED AUTO_INCREMENT (primary key)
+            $table->string('name'); // tên người dùng
+            $table->string('email')->unique(); // email duy nhất
+            $table->timestamp('email_verified_at')->nullable(); // thời điểm xác thực email
+            $table->string('password'); // mật khẩu đã hash
+            $table->rememberToken(); // token để "ghi nhớ đăng nhập"
+            $table->timestamps(); // created_at và updated_at
         });
     }
 

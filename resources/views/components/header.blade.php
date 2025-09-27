@@ -19,7 +19,7 @@
 
             <!-- Navigation -->
             <nav class="flex items-center space-x-4">
-                @guest
+                @auth
                     <a href="{{ route('auth.login') }}" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
                         Đăng nhập
                     </a>
@@ -31,28 +31,30 @@
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" class="relative p-2 text-gray-600 hover:text-blue-600">
                             <i class="fas fa-bell text-lg"></i>
-                            @if(auth()->user()->unreadNotifications->count() > 0)
+                            {{-- @if(auth()->user()->unreadNotifications->count() > 0) --}}
+                            @if(1!=1)
                                 <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                                    {{ auth()->user()->unreadNotifications->count() }}
+                                    {{-- {{ auth()->user()->unreadNotifications->count() }} --}}
+                                    2
                                 </span>
                             @endif
                         </button>
                         
-                        <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg py-1 z-50">
+                        <div x-show="open" hidden @click.away="open = false" class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg py-1 z-50">
                             <div class="px-4 py-2 border-b">
                                 <h3 class="text-sm font-semibold text-gray-900">Thông báo</h3>
                             </div>
                             <div class="max-h-64 overflow-y-auto">
-                                @forelse(auth()->user()->notifications->take(5) as $notification)
-                                    <a href="#" class="block px-4 py-3 hover:bg-gray-50 {{ $notification->read_at ? '' : 'bg-blue-50' }}">
+                                {{-- @forelse(auth()->user()->notifications->take(5) as $notification) --}}
+                                    {{-- <a href="#" class="block px-4 py-3 hover:bg-gray-50 {{ $notification->read_at ? '' : 'bg-blue-50' }}">
                                         <p class="text-sm text-gray-900">{{ $notification->data['message'] ?? 'Thông báo mới' }}</p>
                                         <p class="text-xs text-gray-500 mt-1">{{ $notification->created_at->diffForHumans() }}</p>
                                     </a>
-                                @empty
+                                @empty --}}
                                     <div class="px-4 py-3 text-sm text-gray-500 text-center">
                                         Không có thông báo nào
                                     </div>
-                                @endforelse
+                                {{-- @endforelse --}}
                             </div>
                             <div class="border-t px-4 py-2">
                                 <a href="#" class="text-sm text-blue-600 hover:text-blue-800">
@@ -65,7 +67,8 @@
                     <!-- Messages -->
                     <a href="#" class="relative p-2 text-gray-600 hover:text-blue-600">
                         <i class="fas fa-comments text-lg"></i>
-                        @if(auth()->user()->unreadMessagesCount() > 0)
+                        {{-- @if(auth()->user()->unreadMessagesCount() > 0) --}}
+                        @if(1!=1)
                             <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                                 {{ auth()->user()->unreadMessagesCount() }}
                             </span>
@@ -80,12 +83,12 @@
                     <!-- User Menu -->
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600">
-                            <img src="{{ auth()->user()->avatar_url }}" alt="{{ auth()->user()->name }}" class="w-8 h-8 rounded-full">
-                            <span class="hidden md:block">{{ auth()->user()->name }}</span>
+                            <img src="" alt="" class="w-8 h-8 rounded-full">
+                            <span class="hidden md:block">tin</span>
                             <i class="fas fa-chevron-down text-xs"></i>
                         </button>
                         
-                        <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                        <div x-show="open" hidden @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 <i class="fas fa-user mr-2"></i>Hồ sơ
                             </a>
@@ -107,7 +110,7 @@
                             </form>
                         </div>
                     </div>
-                @endguest
+                @endauth
             </nav>
         </div>
     </div>

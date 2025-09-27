@@ -9,6 +9,26 @@ class ProductController extends Controller
     /**
      * Display a listing of the resource.
      */
+    public function search(Request $request)
+    {
+        $search = $request->query('s');
+        // $products = Product::searchByKeyword($search);
+
+        return view('pages.products.search', [
+            // 'products' => $products,
+            'search'   => $search
+        ]);
+    }
+    public function getProduct(Request $request)
+    {
+        // $search = $request->query('s');
+        // $products = Product::searchByKeyword($search);
+
+        return view('pages.products.productManage', [
+            // 'products' => $products,
+            // 'search'   => $search
+        ]);
+    }
     public function index()
     {
         //

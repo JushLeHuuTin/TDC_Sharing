@@ -1,12 +1,14 @@
-{{-- resources/views/products/index.blade.php --}}
+{{-- resources/views/products/show.blade.php --}}
+{{-- resources/views/products/show.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Tất cả sản phẩm - StudentMarket')
+@section('title', 'iPhone 13 Pro Max 256GB - StudentMarket')
 
 @section('content')
     <div class="flex flex-col lg:flex-row gap-6">
         <!-- Sidebar Filters -->
         <div class="lg:w-1/4">
+            <!-- Category Filter -->
             @include('pages.home.category-filter')
         </div>
 
@@ -14,10 +16,22 @@
         <div class="lg:w-3/4">
             <!-- Header -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900 mb-2">Tất cả sản phẩm</h1>
-                    <p class="text-gray-600">Tìm thấy 1,234 sản phẩm</p>
-                </div>
+                <!-- Breadcrumb -->
+                <nav class="flex mb-6" aria-label="Breadcrumb">
+                    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                        <li class="inline-flex items-center">
+                            <a href="#" class="text-gray-700 hover:text-blue-600">
+                                <i class="fas fa-home mr-2"></i>Trang chủ
+                            </a>
+                        </li>
+                        <li>
+                            <div class="flex items-center">
+                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                                <a href="#" class="text-gray-700 hover:text-blue-600">Dien Tu</a>
+                            </div>
+                        </li>
+                    </ol>
+                </nav>
 
                 <!-- Sort Options -->
                 <div class="flex items-center space-x-4 mt-4 sm:mt-0">
@@ -226,24 +240,6 @@
                             'condition' => 'new',
                             'location' => 'Thu Duc',
                         ],
-                        [
-                            'id' => 6,
-                            'title' => 'Máy tính bảng iPad Gen 9',
-                            'description' => 'WiFi 64GB, màu xám, còn mới',
-                            'price' => 8500000,
-                            'original_price' => null,
-                            'image_url' => 'https://via.placeholder.com/300x200/6366F1/FFFFFF?text=iPad',
-                            'status' => 'available',
-                            'seller' => (object) [
-                                'name' => 'Vũ Thị F',
-                                'avatar_url' => 'https://via.placeholder.com/40',
-                            ],
-                            'created_at' => now()->subHours(2),
-                            'views_count' => 34,
-                            'favorites_count' => 7,
-                            'condition' => 'new',
-                            'location' => 'Thu Duc',
-                        ],
                     ];
                 @endphp
 
@@ -251,6 +247,19 @@
                     @include('components.product-card', ['product' => (object) $product])
                 @endforeach
             </div>
+            <!-- Empty State -->
+            {{-- <div x-show="!loading && filteredProducts.length === 0" class="text-center py-12">
+                <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-search text-gray-400 text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Không tìm thấy sản phẩm</h3>
+                <p class="text-gray-600 mb-4">Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc</p>
+                <button @click="resetFilters"
+                    class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                    Đặt lại bộ lọc
+                </button>
+            </div> --}}
+
 
             <!-- Pagination -->
             @include('partials.pagination')

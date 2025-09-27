@@ -271,7 +271,9 @@
                         'seller' => (object)['name' => 'Trần Văn B', 'avatar_url' => 'https://via.placeholder.com/40'],
                         'created_at' => now()->subDays(1),
                         'views_count' => 89,
-                        'favorites_count' => 12
+                        'favorites_count' => 12,
+                        'location' => 'Thu Duc',
+                        'condition' => 'new'
                     ],
                     [
                         'id' => 11,
@@ -284,7 +286,9 @@
                         'seller' => (object)['name' => 'Lê Thị C', 'avatar_url' => 'https://via.placeholder.com/40'],
                         'created_at' => now()->subHours(12),
                         'views_count' => 45,
-                        'favorites_count' => 8
+                        'favorites_count' => 8,
+                        'location' => 'Thu Duc',
+                        'condition' => 'new'
                     ],
                     [
                         'id' => 12,
@@ -297,7 +301,9 @@
                         'seller' => (object)['name' => 'Phạm Văn D', 'avatar_url' => 'https://via.placeholder.com/40'],
                         'created_at' => now()->subHours(6),
                         'views_count' => 67,
-                        'favorites_count' => 15
+                        'favorites_count' => 15,
+                        'location' => 'Thu Duc',
+                        'condition' => 'new'
                     ],
                     [
                         'id' => 13,
@@ -310,7 +316,9 @@
                         'seller' => (object)['name' => 'Hoàng Thị E', 'avatar_url' => 'https://via.placeholder.com/40'],
                         'created_at' => now()->subMinutes(30),
                         'views_count' => 12,
-                        'favorites_count' => 3
+                        'favorites_count' => 3,
+                        'location' => 'Thu Duc',
+                        'condition' => 'new'
                     ]
                 ];
             @endphp
