@@ -383,8 +383,8 @@
                                             </div>
                                             <div class="col-md-6">
                                                 <select class="form-select form-select-sm" id="edit-negotiable-${product.id}">
-                                                    <option value="true" ${product.is_negotiable ? 'selected' : ''}>Có thể thương lượng</option>
-                                                    <option value="false" ${!product.is_negotiable ? 'selected' : ''}>Giá cố định</option>
+                                                    <option value="true" ${product.is_negotiable ? 'selected' : ''}>đã bán</option>
+                                                    <option value="false" ${!product.is_negotiable ? 'selected' : ''}>đang bán</option>
                                                 </select>
                                             </div>
                                         </div>
