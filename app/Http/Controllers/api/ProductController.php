@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
+use App\Models\Product;
 class ProductController extends Controller
 {
     /**
@@ -49,7 +49,21 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        // Validate dữ liệu từ API
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0',
+            'description' => 'nullable|string',
+        ]);
+
+        // Tạo sản phẩm
+        $product = Product::create($validated);
+
+        // Trả JSON response
+        return response()->json([
+            'message' => 'Thêm sản phẩm thành công!',
+            'product' => $product
+        ], 201);
     }
 
     /**
