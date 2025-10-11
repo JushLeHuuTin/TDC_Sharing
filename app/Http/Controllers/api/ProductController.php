@@ -1,7 +1,7 @@
 <?php
 
 // namespace App\Http\Controllers;
-namespace App\Http\Controllers\Api; 
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreProductRequest;
@@ -12,7 +12,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Exception;
-use Illuminate\Support\Facades\Log; 
+use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
 // use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
@@ -60,10 +63,8 @@ class ProductController extends Controller
      */
     public function store(StoreProductRequest $request)
     {
-        // die('alo');
-        // Validate dữ liệu từ API
         DB::beginTransaction();
-        
+
         try {
             // Tạo slug từ title
             $slug = $this->generateUniqueSlug($request->title);
@@ -71,7 +72,7 @@ class ProductController extends Controller
             // Tạo sản phẩm
             $product = Product::create([
                 // 'user_id' => auth()->id(),
-                'user_id' => 1,
+                'user_id' => Auth::id(),
                 'category_id' => $request->category_id,
                 'title' => $request->title,
                 'description' => $request->description,
@@ -107,7 +108,7 @@ class ProductController extends Controller
             // if ($request->filled('attributes')) {
             //     foreach ($request->attributes as $attribute) {
             //         $attrModel = \App\Models\Attribute::find($attribute['attribute_id']);
-                    
+
             //         $data = [
             //             'product_id' => $product->id,
             //             'attribute_id' => $attribute['attribute_id'],
@@ -138,7 +139,6 @@ class ProductController extends Controller
             // }
             if (!empty($request['attributes'])) {
                 $attributesData = collect($request['attributes'])->map(fn($attr) => [
-                    'product_id' => $product->user_id,
                     'attribute_id' => $attr['attribute_id'],
                     'value'        => $attr['value']
                 ]);
@@ -160,7 +160,6 @@ class ProductController extends Controller
                     'product' => $product
                 ]
             ], 201);
-
         } catch (Exception $e) {
             DB::rollBack();
 
@@ -178,7 +177,7 @@ class ProductController extends Controller
             ], 500);
         }
     }
-     /**
+    /**
      * Upload product images
      */
     private function uploadProductImages($images, $productId, $featuredIndex)
@@ -190,7 +189,7 @@ class ProductController extends Controller
                 // Tạo tên file unique
                 $extension = $image->getClientOriginalExtension();
                 $filename = 'product_' . $productId . '_' . time() . '_' . Str::random(10) . '.' . $extension;
-                
+
                 // Lưu vào storage/app/public/products
                 $path = $image->storeAs('products', $filename, 'public');
 
@@ -198,7 +197,6 @@ class ProductController extends Controller
                     'path' => $path,
                     'is_featured' => ($index == $featuredIndex)
                 ];
-
             } catch (Exception $e) {
                 // Log error nhưng tiếp tục với các ảnh khác
                 // \Log::error('Upload image error: ' . $e->getMessage());
@@ -240,7 +238,6 @@ class ProductController extends Controller
                     'attributes' => $category->attributes
                 ]
             ]);
-
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -255,7 +252,7 @@ class ProductController extends Controller
     public function show(string $id)
     {
         //
-        $product = ['name'=>'iphone 8'];
+        $product = ['name' => 'iphone 8'];
         return view('pages.products.show');
     }
 
@@ -278,8 +275,45 @@ class ProductController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Product $product)
     {
-        //
+        try{$this->authorize('delete', $product);}
+        catch (\Exception $e){
+            return response()->json([
+                'success' => false,
+                'message' =>  $e->getMessage()
+            ], 500);
+        }
+        try {
+            // 2. DÙNG TRANSACTION: Đảm bảo an toàn nếu cần xóa nhiều thứ liên quan (ví dụ: ảnh).
+            DB::beginTransaction();
+
+            // (Tùy chọn) Xóa các file ảnh liên quan trong storage
+            // foreach ($product->images as $image) {
+            //     Storage::disk('public')->delete($image->url);
+            // }
+            // $product->images()->delete(); // Xóa record ảnh trong DB
+
+            // 3. XÓA SẢN PHẨM: Eloquent tự động chống SQL Injection.
+            // Nếu dùng SoftDeletes, nó sẽ chỉ cập nhật `deleted_at`.
+            $product->delete();
+
+            // 4. COMMIT TRANSACTION: Xác nhận xóa thành công.
+            DB::commit();
+
+            // 5. TRẢ VỀ THÔNG BÁO THÀNH CÔNG
+            return response()->json([
+                'success' => true,
+                'message' => 'Sản phẩm đã được xóa thành công.'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi khi xóa sản phẩm: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Đã có lỗi xảy ra, không thể xóa sản phẩm.'
+            ], 500);
+        }
     }
 }
