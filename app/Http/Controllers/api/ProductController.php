@@ -138,6 +138,7 @@ class ProductController extends Controller
             // }
             if (!empty($request['attributes'])) {
                 $attributesData = collect($request['attributes'])->map(fn($attr) => [
+                    'product_id' => $product->user_id,
                     'attribute_id' => $attr['attribute_id'],
                     'value'        => $attr['value']
                 ]);
