@@ -2,7 +2,6 @@
 // routes/web.php
 
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\ProductController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ChatController;
@@ -13,6 +12,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Api\ProductController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -332,7 +332,7 @@ use Illuminate\Support\Facades\Route;
     });
 
     Route::prefix('products')->name('products.')->group(function () {
-        Route::get('/', [ProductController::class, 'index'])->name('index');
+        // Route::get('/', [ProductController::class, 'index'])->name('index');
         Route::get('/search', [ProductController::class, 'search'])->name('search');
         Route::get('/my', [ProductController::class, 'getProduct'])->name('my');
         Route::get('/{product}', [ProductController::class, 'show'])->name('show');
