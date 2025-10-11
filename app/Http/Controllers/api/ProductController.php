@@ -281,7 +281,7 @@ class ProductController extends Controller
         catch (\Exception $e){
             return response()->json([
                 'success' => false,
-                'message' =>  $e->getMessage()
+                'message' =>  "Không có quyền xoá sản phẩm"
             ], 500);
         }
         try {
