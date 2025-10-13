@@ -2,6 +2,8 @@
 use Illuminate\Support\Facades\Route;
 // use App\Http\Controllers\api\CategoryController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ReviewController;
+
 // use App\Http\Controllers\api\PaymentController;
 // Route::prefix('admin')->group(function () {
 //     Route::prefix('products')->group(function () {
@@ -38,3 +40,4 @@ use App\Http\Controllers\Api\ProductController;
 //     // Tạo sản phẩm mới
 // });
 Route::post('/products', [ProductController::class, 'store']);
+Route::post('/reviews', [ReviewController::class, 'store']);

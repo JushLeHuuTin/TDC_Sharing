@@ -146,7 +146,7 @@ class ProductController extends Controller
                 // DIE($attributesData);
             }
             DB::commit();
-            die('DEBUG: Đã commit transaction thành công!');
+            // die('DEBUG: Đã commit transaction thành công!');
             // Load relationships để trả về
             // $product->load(['images', 'attributes.attribute', 'category']);
             // return response()->json([
