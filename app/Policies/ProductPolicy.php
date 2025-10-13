@@ -40,7 +40,8 @@ class ProductPolicy
      */
     public function update(User $user, Product $product): bool
     {
-        return false;
+        // Cho phép nếu user là admin HOẶC user là người tạo ra sản phẩm
+        return $user->id === $product->user_id;
     }
 
     /**

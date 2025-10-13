@@ -6,4 +6,6 @@ Route::post('/products', [ProductController::class, 'store']);
 Route::middleware('auth:sanctum')->group(function () {
     
     Route::delete('/products/{product}', [ProductController::class, 'destroy']);
+    
+    Route::put('/products/{product}', [ProductController::class, 'update']);
 });

@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductAttribute;
+use App\Models\Category;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -229,7 +231,7 @@ class ProductController extends Controller
     public function getCategoryAttributes($categoryId)
     {
         try {
-            $category = \App\Models\Category::with('attributes')->findOrFail($categoryId);
+            $category = Category::with('attributes')->findOrFail($categoryId);
 
             return response()->json([
                 'success' => true,
@@ -267,9 +269,53 @@ class ProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(StoreProductRequest $request, string $id)
+    public function update(UpdateProductRequest $request, Product $product)
     {
-        //
+        // 1. PHÂN QUYỀN: Tự động gọi ProductPolicy@update
+        try{
+            $this->authorize('update', $product);
+
+        }catch(Exception $e){
+            return response()->json([
+                'success' => false,
+                'message' => 'Không có quyền .',
+            ], 404);
+        }
+
+        // 2. LẤY DỮ LIỆU ĐÃ VALIDATE:
+        // Dữ liệu ở đây đã được làm sạch, trim, và kiểm tra bởi UpdateProductRequest.
+        $validatedData = $request->validated();
+        
+        try {
+
+            // 3. XỬ LÝ TRANSACTION:
+            // Đảm bảo tất cả các thao tác DB hoặc thành công, hoặc thất bại cùng nhau.
+            DB::beginTransaction();
+
+            $product->update($validatedData);
+            
+            // Nếu có các thao tác khác (VD: cập nhật kho, log...), hãy làm ở đây.
+
+            DB::commit();
+
+            // 4. TRẢ VỀ KẾT QUẢ THÀNH CÔNG
+            return response()->json([
+                'success' => true,
+                'message' => 'Cập nhật sản phẩm thành công.',
+                'data' => $product,
+            ], 200);
+
+        } catch (\Exception $e) {
+            // 5. ROLLBACK NẾU CÓ LỖI:
+            DB::rollBack();
+            Log::error('Lỗi khi cập nhật sản phẩm: ' . $e->getMessage());
+
+            // 6. TRẢ VỀ THÔNG BÁO LỖI
+            return response()->json([
+                'success' => false,
+                'message' => 'Cập nhật sản phẩm thất bại, vui lòng thử lại.'
+            ], 500);
+        }
     }
 
     /**
@@ -278,7 +324,7 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         try{$this->authorize('delete', $product);}
-        catch (\Exception $e){
+        catch (exception $e){
             return response()->json([
                 'success' => false,
                 'message' =>  "Không có quyền xoá sản phẩm"
