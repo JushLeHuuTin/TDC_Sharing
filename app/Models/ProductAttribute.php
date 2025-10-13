@@ -4,28 +4,52 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
-class ProductAttribute extends Model
+use Illuminate\Database\Eloquent\Relations\Pivot;
+class ProductAttribute extends Pivot
 {
-    use HasFactory;
+    /**
+     * Tên bảng trong cơ sở dữ liệu.
+     * @var string
+     */
+    protected $table = 'product_attributes';
 
+    /**
+     * Bảng này có primary key tự tăng ('id').
+     * @var bool
+     */
+    public $incrementing = true;
+    
+    /**
+     * Bảng này không có timestamps (created_at, updated_at).
+     * @var bool
+     */
+    public $timestamps = false;
+
+    /**
+     * Các thuộc tính có thể được gán hàng loạt.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
-        'product_id', 'attribute_id', 'value',
-        'value_int', 'value_boolean', 'value_date'
+        'product_id',
+        'attribute_id',
+        'value',
+        // Thêm các cột khác của bảng trung gian nếu có
     ];
 
-    protected $casts = [
-        'value_boolean' => 'boolean',
-        'value_date' => 'date',
-    ];
-
-    public function product()
-    {
-        return $this->belongsTo(Product::class);
-    }
-
+    /**
+     * Mối quan hệ: Một record ProductAttribute thuộc về một Attribute.
+     */
     public function attribute()
     {
-        return $this->belongsTo(Attribute::class);
+        return $this->belongsTo(Attribute::class, 'attribute_id');
+    }
+
+    /**
+     * Mối quan hệ: Một record ProductAttribute thuộc về một Product.
+     */
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id');
     }
 }
