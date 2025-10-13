@@ -48,21 +48,21 @@ class UpdateProductRequest extends FormRequest
         ];
     }
 
-    // protected function prepareForValidation()
-    // {
-    //     // Trim whitespace và clean input
-    //     if ($this->has('title')) {
-    //         $this->merge([
-    //             'title' => trim($this->title)
-    //         ]);
-    //     }
+    protected function prepareForValidation()
+    {
+        // Trim whitespace và clean input
+        if ($this->has('title')) {
+            $this->merge([
+                'title' => trim($this->title)
+            ]);
+        }
 
-    //     if ($this->has('description')) {
-    //         $this->merge([
-    //             'description' => trim(strip_tags($this->description))
-    //         ]);
-    //     }
-    // }
+        if ($this->has('description')) {
+            $this->merge([
+                'description' => trim(strip_tags($this->description))
+            ]);
+        }
+    }
 
     // public function withValidator($validator)
     // {
