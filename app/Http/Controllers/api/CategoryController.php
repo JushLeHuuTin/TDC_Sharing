@@ -17,10 +17,10 @@ class CategoryController extends Controller
     //
     public function Store(StoreCategoryRequest $request)
     {
-        die('lo store');
+        // die('lo store');
         // 1. PHÂN QUYỀN: Kiểm tra user có quyền 'create' không qua CategoryPolicy
         try {
-            die('lo try');
+            // die('lo try');
             $this->authorize('create', Category::class);
         } catch (Exception $e) {
             return response()->json([

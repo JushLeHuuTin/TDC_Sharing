@@ -39,14 +39,12 @@ class StoreCategoryRequest extends FormRequest
             'name.unique' => 'Tên danh mục đã tồn tại.',
             'name.max' => 'Tên danh mục không vượt quá 100 ký tự.',
             'description.max' => 'Mô tả không vượt quá 255 ký tự.',
-            die('lo'),
             'icon.regex' => 'Icon không hợp lệ, vui lòng nhập lại.',
-            'color.hex_color' => 'Vui lòng chọn màu hợp lệ.',
+            'color.hex_color' => 'Vui lòng chọn màu hợp lệ.'
         ];
     }
     protected function prepareForValidation()
     {
-        // Trim whitespace và clean input
         if ($this->has('title')) {
             $this->merge([
                 'title' => trim($this->title)
@@ -58,11 +56,12 @@ class StoreCategoryRequest extends FormRequest
             // Nếu không gửi 'display_order', mặc định là 0
             'display_order' => $this->input('display_order', 0),
         ]);
-
+        
         if ($this->has('description')) {
             $this->merge([
                 'description' => trim(strip_tags($this->description))
             ]);
         }
+        die('hi');
     }
 }
