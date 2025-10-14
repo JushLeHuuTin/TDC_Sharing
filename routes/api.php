@@ -8,12 +8,9 @@ Route::get('/products', [ProductController::class, 'index']);
 // Các route yêu cầu phải đăng nhập thì cho vào group này
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/products', [ProductController::class, 'store']);
-    
     Route::delete('/products/{product}', [ProductController::class, 'destroy']);
     Route::put('/products/{product}', [ProductController::class, 'update']);
-    Route::prefix('products')->name('reviews.')->group(function () {
-
-    });
+    
     Route::post('/categories', [CategoryController::class, 'store']);
     
 });

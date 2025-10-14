@@ -1,13 +1,16 @@
 <?php
 
 namespace App\Models;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
 
 class Product extends Model
 {
@@ -51,7 +54,7 @@ class Product extends Model
     /**
      * Mối quan hệ: Một sản phẩm thuộc về một người bán (User).
      */
-    public function user(): BelongsTo
+    public function seller(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
@@ -71,7 +74,11 @@ class Product extends Model
     {
         return $this->hasMany(ProductImage::class, 'product_id');
     }
-
+    // Hàm này PHẢI trả về đối tượng HasOne
+    public function featuredImage(): HasOne
+    {
+        return $this->hasOne(ProductImage::class)->where('is_featured', true);
+    }
     /**
      * Mối quan hệ: Một sản phẩm có nhiều đánh giá (Review).
      */
@@ -87,8 +94,8 @@ class Product extends Model
     public function attributes(): BelongsToMany
     {
         return $this->belongsToMany(Attribute::class, 'product_attributes', 'product_id', 'attribute_id')
-                    ->withPivot('value', 'id') // Lấy thêm cột 'value' và 'id' từ bảng trung gian
-                    ->withTimestamps();
+            ->withPivot('value', 'id') // Lấy thêm cột 'value' và 'id' từ bảng trung gian
+            ->withTimestamps();
     }
     public function productAttributes(): HasMany
     {
@@ -101,7 +108,7 @@ class Product extends Model
     public function wishlistedByUsers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'wishlist', 'product_id', 'user_id')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     //======================================================================
@@ -142,5 +149,11 @@ class Product extends Model
     public function scopeActive($query)
     {
         return $query->where('status', 'published');
+    }
+    public function scopeActiveAndReady(Builder $query): Builder
+    {
+        return $query->where('status', 'active')
+            ->with(['seller', 'featuredImage'])
+            ->latest();
     }
 }

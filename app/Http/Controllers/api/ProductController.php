@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
+use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductAttribute;
@@ -45,10 +46,12 @@ class ProductController extends Controller
             // 'search'   => $search
         ]);
     }
-    public function index()
+    public function index(Request $request)
     {
-        //
-        return view('pages.products.index');
+        // Gọi scope đã định nghĩa và phân trang
+        $products = Product::activeAndReady()->paginate(8);
+        // Trả về dữ liệu qua API Resource như cũ
+        return ProductResource::collection($products);
     }
 
     /**
