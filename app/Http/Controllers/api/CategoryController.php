@@ -11,8 +11,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-
-
 class CategoryController extends Controller
 {
     //
@@ -33,6 +31,7 @@ class CategoryController extends Controller
         // 2. LẤY DỮ LIỆU ĐÃ VALIDATE:
         $validatedData = $request->validated();
 
+        
         try {
             // 3. XỬ LÝ TRANSACTION (để đảm bảo an toàn, dù chỉ có 1 câu lệnh)
             $slug = $this->generateUniqueSlug($request->name);
