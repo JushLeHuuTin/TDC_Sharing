@@ -23,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
     {
         if (app()->isLocal()) {
             // Tìm một user để đăng nhập, ví dụ user có id = 1
-            $user = User::find(1); 
+            $user = User::find(2); 
             // Hoặc $user = User::where('email', 'admin@example.com')->first();
 
             // Nếu user tồn tại, thực hiện đăng nhập

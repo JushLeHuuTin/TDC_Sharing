@@ -10,6 +10,7 @@ use App\Models\Category;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 
 class CategoryController extends Controller
@@ -31,13 +32,15 @@ class CategoryController extends Controller
 
         // 2. LẤY DỮ LIỆU ĐÃ VALIDATE:
         $validatedData = $request->validated();
-        die('lo data');
 
         try {
             // 3. XỬ LÝ TRANSACTION (để đảm bảo an toàn, dù chỉ có 1 câu lệnh)
-            die('lo try2');
-            $category = DB::transaction(function () use ($validatedData) {
-                return Category::create($validatedData);
+            $slug = $this->generateUniqueSlug($request->name);
+            $category = DB::transaction(function () use ($validatedData,$slug) {
+                $dataToCreate = $validatedData;
+                $dataToCreate['slug'] = $slug; // <-- Gán slug vào mảng data
+                
+                return Category::create($dataToCreate);
             });
 
             // 4. TRẢ VỀ KẾT QUẢ THÀNH CÔNG
@@ -56,5 +59,18 @@ class CategoryController extends Controller
                 'message' => 'Thêm danh mục thất bại, vui lòng thử lại.' . $e->getMessage()
             ], 500);
         }
+    }
+    private function generateUniqueSlug($title)
+    {
+        $slug = Str::slug($title);
+        $originalSlug = $slug;
+        $count = 1;
+
+        while (Category::where('slug', $slug)->exists()) {
+            $slug = $originalSlug . '-' . $count;
+            $count++;
+        }
+
+        return $slug;
     }
 }

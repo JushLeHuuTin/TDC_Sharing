@@ -4,6 +4,9 @@ namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
+
 
 class StoreCategoryRequest extends FormRequest
 {
@@ -62,6 +65,13 @@ class StoreCategoryRequest extends FormRequest
                 'description' => trim(strip_tags($this->description))
             ]);
         }
-        die('hi');
+    }
+    protected function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(response()->json([
+            'success' => false,
+            'message' => 'Dữ liệu không hợp lệ',
+            'errors' => $validator->errors()
+        ], 422));
     }
 }
