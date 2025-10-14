@@ -71,8 +71,30 @@ class ReviewController extends Controller
         }
     }
     //xoa
-    public function destroy(){
+    public function destroy(Review $review): JsonResponse
+    {
+        // 1. Kiểm tra quyền hạn: Dòng này sẽ gọi đến 'delete' method trong ReviewPolicy
+        // Nó sẽ kiểm tra xem người dùng hiện tại có phải chủ đánh giá hoặc admin không.
+        $this->authorize('delete', $review);
 
+        try {
+            // 2. Thực hiện xóa
+            $review->delete();
+
+            // 3. Trả về thông báo thành công
+            return response()->json([
+                'success' => true,
+                'message' => 'Xóa đánh giá thành công.'
+            ]); // Mặc định trả về status 200 OK
+
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi xóa đánh giá: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Xóa đánh giá thất bại, vui lòng thử lại.'
+            ], 500); // 500 Internal Server Error
+        }
     }
     //sua
 

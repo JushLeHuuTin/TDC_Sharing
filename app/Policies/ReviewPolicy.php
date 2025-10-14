@@ -26,4 +26,13 @@ class ReviewPolicy
         // Đây là phương án đơn giản hơn để bắt đầu.
         return true;
     }
+    public function delete(User $user, Review $review): bool
+    {
+        // Cho phép xóa nếu:
+        // 1. Người dùng là người đã viết đánh giá đó.
+        // HOẶC
+        // 2. Người dùng có vai trò là 'admin'.
+        // (Giả sử model User của bạn có một thuộc tính `role`)
+        return $user->id === $review->user_id || $user->role === 'admin';
+    }
 }
