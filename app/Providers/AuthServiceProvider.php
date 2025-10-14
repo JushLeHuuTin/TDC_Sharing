@@ -9,6 +9,7 @@ class AuthServiceProvider extends ServiceProvider
 {
     protected $policies = [
         Product::class => ProductPolicy::class,
+        \App\Models\Voucher::class => \App\Policies\VoucherPolicy::class,
     ];
     /**
      * Register services.
