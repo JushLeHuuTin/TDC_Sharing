@@ -9,9 +9,12 @@ use App\Models\Product; // Import model Product
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\JsonResponse;
+<<<<<<< HEAD
 use App\Http\Resources\ReviewResource; // Import API Resource
 
 use Illuminate\Http\Request;
+=======
+>>>>>>> hanh/f1/add-reviews
 
 class ReviewController extends Controller
 {
@@ -70,6 +73,7 @@ class ReviewController extends Controller
             ], 500);
         }
     }
+<<<<<<< HEAD
     //xoa
     public function destroy(){
 
@@ -126,4 +130,7 @@ class ReviewController extends Controller
             ]
         ]);
     }
+=======
+    
+>>>>>>> hanh/f1/add-reviews
 }

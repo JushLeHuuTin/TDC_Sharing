@@ -48,9 +48,17 @@ class ProductPolicy
      */
     public function delete(User $user, Product $product): bool
     {
-        return false;
+        return $user->id === $product->user_id ;
     }
-
+    public function before(User $user, string $ability): bool|null
+    {
+        // Nếu user có vai trò là "admin", cho phép tất cả các quyền
+        if ($user->role === 'admin') {
+            return true;
+        }
+ 
+        return null; // Nếu không phải admin, trả về null để tiếp tục kiểm tra các quyền khác
+    }
     /**
      * Determine whether the user can restore the model.
      */
