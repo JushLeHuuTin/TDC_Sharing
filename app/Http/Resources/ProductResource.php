@@ -12,7 +12,7 @@ class ProductResource extends JsonResource
         return [
             'id' => $this->id,
             'slug' => $this->slug,
-            'product_image' => optional($this->featuredImage)->image_path ?? 'https://placehold.co/600x400/EEE/31343C?text=No+Image', // Lấy ảnh đại diện, nếu không có thì dùng ảnh placeholder
+            'product_image' => optional($this->image)->image_path ?? 'https://placehold.co/600x400/EEE/31343C?text=No+Image', // Lấy ảnh đại diện, nếu không có thì dùng ảnh placeholder
             'title' => $this->title, // Frontend sẽ tự xử lý việc cắt ngắn "..."
             'price' => $this->price ? number_format($this->price, 0, ',', '.') . 'đ' : 'Liên hệ', // Format giá
             'seller_name' => optional($this->seller)->full_name ?? 'Người bán không khả dụng', // Lấy tên người bán, nếu bị xóa thì báo

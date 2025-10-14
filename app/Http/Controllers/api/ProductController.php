@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
+use App\Http\Resources\FeaturedProductResource;
 use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use App\Models\ProductImage;
@@ -52,6 +53,14 @@ class ProductController extends Controller
         $products = Product::activeAndReady()->paginate(8);
         // Trả về dữ liệu qua API Resource như cũ
         return ProductResource::collection($products);
+    }
+    public function featured()
+    {
+        // Gọi scope 'featured' đã được định nghĩa trong Model
+        $featuredProducts = Product::featured()->get();
+
+        // Trả về dữ liệu đã được transform
+        return FeaturedProductResource::collection($featuredProducts);
     }
 
     /**
