@@ -24,7 +24,7 @@ return new class extends Migration
             $table->boolean('is_featured')->default(false);
             $table->string('slug', 130)->unique();
             $table->timestamps();
-            $table->softDeletes();
+            // $table->softDeletes();
             
             $table->index('user_id');
             $table->index('category_id');
