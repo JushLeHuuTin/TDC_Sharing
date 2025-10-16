@@ -4,8 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Str; // <-- Import Str helper
-
+use Illuminate\Support\Str; 
 class FeaturedProductResource extends JsonResource
 {
     public function toArray(Request $request): array
