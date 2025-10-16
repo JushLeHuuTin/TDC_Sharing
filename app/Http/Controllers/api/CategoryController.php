@@ -5,8 +5,11 @@ namespace App\Http\Controllers\api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\StoreProductRequest;
+use App\Http\Resources\BreadcrumbResource;
+use App\Http\Resources\ProductResource;
 use Exception;
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -71,5 +74,28 @@ class CategoryController extends Controller
         }
 
         return $slug;
+    }
+    public function showProducts(Category $category, Request $request)
+    {
+        // 1. Tạo Breadcrumb
+        $breadcrumb = BreadcrumbResource::collection($category->getBreadcrumb());
+
+        // 2. Lấy sản phẩm trong danh mục (và các danh mục con) rồi phân trang
+        $products = Product::inCategory($category)->paginate(8);
+
+        // 3. Kiểm tra nếu không có sản phẩm nào
+        if ($products->isEmpty() && $request->query('page', 1) == 1) {
+            return response()->json([
+                'breadcrumb' => $breadcrumb,
+                'message' => 'Hiện chưa có sản phẩm nào trong danh mục này.',
+                'products' => $products, // Trả về cấu trúc phân trang rỗng
+            ]);
+        }
+
+        // 4. Trả về response hoàn chỉnh
+        return response()->json([
+            'breadcrumb' => $breadcrumb,
+            'products' => ProductResource::collection($products),
+        ]);
     }
 }

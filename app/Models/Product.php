@@ -178,4 +178,11 @@ class Product extends Model
                      ->latest()
                      ->limit(4); // Giới hạn chỉ lấy 4 sản phẩm nổi bật
     }
+    public function scopeInCategory(Builder $query, Category $category): Builder
+    {
+        $categoryIds = $category->getAllChildIds();
+
+        return $query->whereIn('category_id', $categoryIds)
+                     ->activeAndReady(); // Tái sử dụng scope đã có để lấy sản phẩm active và eager load
+    }
 }

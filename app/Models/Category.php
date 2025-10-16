@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Collection;
 
 class Category extends Model
 {
@@ -36,5 +37,23 @@ class Category extends Model
     public function attributes()
     {
         return $this->hasMany(Attribute::class);
+    }
+    public function getAllChildIds(): array
+    {
+        $ids = [$this->id];
+        foreach ($this->children as $child) {
+            $ids = array_merge($ids, $child->getAllChildIds());
+        }
+        return $ids;
+    }
+    public function getBreadcrumb(): Collection
+    {
+        $breadcrumb = collect();
+        $current = $this;
+        while ($current) {
+            $breadcrumb->prepend($current); // Thêm vào đầu collection
+            $current = $current->parent;
+        }
+        return $breadcrumb;
     }
 }

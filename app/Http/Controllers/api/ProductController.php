@@ -33,7 +33,7 @@ class ProductController extends Controller
         // 1. Tự động validate 'q' qua SearchProductRequest
 
         // 2. Lấy từ khóa đã được validate
-        $keyword = $request->validated()['q'];
+        $keyword = $request->validated()['q'];  
         // 3. Gọi scope 'search' và phân trang
         $products = Product::search($keyword)->paginate(8);
 
