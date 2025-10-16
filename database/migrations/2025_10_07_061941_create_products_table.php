@@ -23,6 +23,7 @@ return new class extends Migration
             $table->boolean('is_visible')->default(true);
             $table->boolean('is_featured')->default(false);
             $table->string('slug', 130)->unique();
+            $table->bigInteger('views_count')->default(0);
             $table->timestamps();
             // $table->softDeletes();
             

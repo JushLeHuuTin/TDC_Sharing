@@ -8,6 +8,7 @@ use App\Http\Requests\SearchProductRequest;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Http\Resources\FeaturedProductResource;
+use App\Http\Resources\ProductDetailResource;
 use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use App\Models\ProductImage;
@@ -266,11 +267,16 @@ class ProductController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Product $product)
     {
-        //
-        $product = ['name' => 'iphone 8'];
-        return view('pages.products.show');
+        // 1. Tăng lượt xem mỗi khi có người gọi API này
+        $product->increment('views_count');
+
+        // 2. Eager load các mối quan hệ cần thiết để tối ưu truy vấn
+        $product->load(['images', 'seller']);
+
+        // 3. Trả về dữ liệu đã được định dạng qua ProductDetailResource
+        return new ProductDetailResource($product);
     }
 
     /**

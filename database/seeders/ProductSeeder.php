@@ -21,6 +21,7 @@ class ProductSeeder extends Seeder
                 'stocks' => 50,
                 'is_visible' => true,
                 'is_featured' => true,
+                'views_count' => 0,
                 'slug' => 'iphone-15-pro-max-256gb'
             ],
             [
@@ -33,6 +34,7 @@ class ProductSeeder extends Seeder
                 'stocks' => 30,
                 'is_visible' => true,
                 'is_featured' => true,
+                'views_count' => 0,
                 'slug' => 'iphone-14-pro-128gb'
             ],
             [
@@ -45,6 +47,7 @@ class ProductSeeder extends Seeder
                 'stocks' => 40,
                 'is_visible' => true,
                 'is_featured' => true,
+                'views_count' => 0,
                 'slug' => 'samsung-galaxy-s24-ultra-512gb'
             ],
             [
@@ -57,6 +60,7 @@ class ProductSeeder extends Seeder
                 'stocks' => 15,
                 'is_visible' => true,
                 'is_featured' => false,
+                'views_count' => 0,
                 'slug' => 'samsung-galaxy-z-fold-5-256gb'
             ],
             [
@@ -69,6 +73,7 @@ class ProductSeeder extends Seeder
                 'stocks' => 25,
                 'is_visible' => true,
                 'is_featured' => true,
+                'views_count' => 0,
                 'slug' => 'macbook-pro-14-m3-pro'
             ],
             [
@@ -81,6 +86,7 @@ class ProductSeeder extends Seeder
                 'stocks' => 20,
                 'is_visible' => true,
                 'is_featured' => false,
+                'views_count' => 0,
                 'slug' => 'dell-xps-15-9530'
             ],
             [
@@ -93,6 +99,7 @@ class ProductSeeder extends Seeder
                 'stocks' => 35,
                 'is_visible' => true,
                 'is_featured' => true,
+                'views_count' => 0,
                 'slug' => 'ipad-pro-129-m2-256gb'
             ],
             [
@@ -105,6 +112,7 @@ class ProductSeeder extends Seeder
                 'stocks' => 18,
                 'is_visible' => true,
                 'is_featured' => false,
+                'views_count' => 0,
                 'slug' => 'samsung-galaxy-tab-s9-ultra'
             ],
             [
@@ -117,6 +125,7 @@ class ProductSeeder extends Seeder
                 'stocks' => 100,
                 'is_visible' => true,
                 'is_featured' => true,
+                'views_count' => 0,
                 'slug' => 'airpods-pro-2-usb-c'
             ],
             [
@@ -129,6 +138,7 @@ class ProductSeeder extends Seeder
                 'stocks' => 60,
                 'is_visible' => true,
                 'is_featured' => false,
+                'views_count' => 0,
                 'slug' => 'sony-wh-1000xm5'
             ],
             [
@@ -141,6 +151,7 @@ class ProductSeeder extends Seeder
                 'stocks' => 200,
                 'is_visible' => true,
                 'is_featured' => false,
+                'views_count' => 0,
                 'slug' => 'anker-powercore-20000mah'
             ],
             [
@@ -153,6 +164,7 @@ class ProductSeeder extends Seeder
                 'stocks' => 300,
                 'is_visible' => true,
                 'is_featured' => false,
+                'views_count' => 0,
                 'slug' => 'xiaomi-power-bank-3-10000mah'
             ],
         ];
