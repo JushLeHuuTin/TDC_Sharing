@@ -150,6 +150,20 @@ class Product extends Model
     {
         return $query->where('status', 'published');
     }
+    public function scopeSearch(Builder $query, string $keyword): Builder
+    {
+        return $query->where('status', 'active') // Chỉ tìm trong các sản phẩm đang hoạt động
+                     ->with(['seller', 'featuredImage']) // Tải sẵn các quan hệ cần thiết
+                     ->where(function (Builder $q) use ($keyword) {
+                         // Tìm kiếm trong tên sản phẩm
+                         $q->where('title', 'like', "%{$keyword}%")
+                           // HOẶC tìm kiếm trong tên của người bán (qua quan hệ)
+                           ->orWhereHas('seller', function (Builder $sellerQuery) use ($keyword) {
+                               $sellerQuery->where('full_name', 'like', "%{$keyword}%"); 
+                           });
+                     })
+                     ->latest(); // Sắp xếp kết quả mới nhất lên đầu
+    }
     public function scopeActiveAndReady(Builder $query): Builder
     {
         return $query->where('status', 'active')

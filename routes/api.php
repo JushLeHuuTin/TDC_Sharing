@@ -6,6 +6,7 @@ use App\Models\Category;
 
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/featured-products', [ProductController::class, 'featured']); 
+Route::get('/products/search', [ProductController::class, 'search']);
 // Các route yêu cầu phải đăng nhập thì cho vào group này
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/products', [ProductController::class, 'store']);

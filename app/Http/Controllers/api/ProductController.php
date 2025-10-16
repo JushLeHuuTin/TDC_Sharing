@@ -4,6 +4,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SearchProductRequest;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Http\Resources\FeaturedProductResource;
@@ -27,15 +28,17 @@ class ProductController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function search(StoreProductRequest $request)
+    public function search(SearchProductRequest $request)
     {
-        $search = $request->query('s');
-        // $products = Product::searchByKeyword($search);
+        // 1. Tự động validate 'q' qua SearchProductRequest
 
-        return view('pages.products.search', [
-            // 'products' => $products,
-            'search'   => $search
-        ]);
+        // 2. Lấy từ khóa đã được validate
+        $keyword = $request->validated()['q'];
+        // 3. Gọi scope 'search' và phân trang
+        $products = Product::search($keyword)->paginate(8);
+
+        // 4. Trả về dữ liệu đã được transform
+        return ProductResource::collection($products);
     }
     public function getProduct(StoreProductRequest $request)
     {
