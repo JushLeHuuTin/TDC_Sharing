@@ -18,7 +18,8 @@ class ProductDetailResource extends JsonResource
         $phoneNumber = $this->seller?->phone;
         $formattedPhone = 'Người bán chưa cung cấp số điện thoại.';
         if ($phoneNumber && strlen($phoneNumber) >= 10) {
-            $formattedPhone = substr($phoneNumber, 0, 4) . '******' . substr($phoneNumber, -2);
+            // $formattedPhone = substr($phoneNumber, 0, 4) . '******' . substr($phoneNumber, -2);
+            $formattedPhone = $phoneNumber;
         }
 
         return [
