@@ -14,4 +14,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/products/{product}', [ProductController::class, 'destroy']);
     Route::post('/reviews', [ReviewController::class, 'store']);
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy']);
+    Route::put('/reviews/{review}', [ReviewController::class, 'update']);
 });

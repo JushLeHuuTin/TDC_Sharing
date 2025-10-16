@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\JsonResponse;
 use App\Http\Resources\ReviewResource; // Import API Resource
+use App\Http\Requests\UpdateReviewRequest;
 
 use Illuminate\Http\Request;
 
@@ -97,6 +98,34 @@ class ReviewController extends Controller
         }
     }
     //sua
+     public function update(UpdateReviewRequest $request, Review $review): JsonResponse
+    {
+        // 1. Kiểm tra quyền hạn: Gọi đến 'update' method trong ReviewPolicy
+        $this->authorize('update', $review);
+
+        try {
+            // 2. Lấy dữ liệu đã được validate từ UpdateReviewRequest
+            $validatedData = $request->validated();
+
+            // 3. Cập nhật đánh giá
+            $review->update($validatedData);
+
+            // 4. Trả về response thành công với dữ liệu đã được cập nhật
+            return response()->json([
+                'success' => true,
+                'message' => 'Cập nhật đánh giá thành công.',
+                'data' => new ReviewResource($review) // Dùng Resource để định dạng data
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi cập nhật đánh giá: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Cập nhật đánh giá thất bại, vui lòng thử lại.'
+            ], 500);
+        }
+    }
 
     //hien thi
     public function index(Request $request, Product $product): JsonResponse

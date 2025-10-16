@@ -35,4 +35,12 @@ class ReviewPolicy
         // (Giả sử model User của bạn có một thuộc tính `role`)
         return $user->id === $review->user_id || $user->role === 'admin';
     }
+    public function update(User $user, Review $review): bool
+    {
+        // Cho phép cập nhật nếu:
+        // 1. Người dùng là người đã viết đánh giá đó.
+        // HOẶC
+        // 2. Người dùng có vai trò là 'admin'.
+        return $user->id === $review->user_id || $user->role === 'admin';
+    }
 }
