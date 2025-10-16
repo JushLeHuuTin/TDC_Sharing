@@ -18,4 +18,10 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // API xem chi tiết đơn hàng (có kiểm tra bảo mật)
     Route::get('/orders/{id}', [OrderController::class, 'show']); 
+
+    // API Lấy thông tin voucher (trước khi sửa)
+    Route::get('/vouchers/{id}', [VoucherController::class, 'show']); 
+    
+    // API CẬP NHẬT voucher (sử dụng phương thức PUT/PATCH theo chuẩn RESTful)
+    Route::put('/vouchers/{id}', [VoucherController::class, 'update']);
 });
