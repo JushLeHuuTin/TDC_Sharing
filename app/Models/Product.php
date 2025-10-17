@@ -185,4 +185,8 @@ class Product extends Model
         return $query->whereIn('category_id', $categoryIds)
                      ->activeAndReady(); // Tái sử dụng scope đã có để lấy sản phẩm active và eager load
     }
+    public function favoredByUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'wishlist', 'product_id', 'user_id');
+    }
 }
