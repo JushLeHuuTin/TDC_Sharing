@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Requests\Admin\UpdateNotificationRequest;
+use App\Http\Resources\Admin\NotificationResource;
 
 class NotificationController extends Controller
 {
@@ -19,68 +20,58 @@ class NotificationController extends Controller
      */
     public function store(StoreNotificationRequest $request): JsonResponse
     {
-        // 1. Kiểm tra quyền hạn: Đã được xử lý trong StoreNotificationRequest
-        
-        // 2. Lấy dữ liệu đã được validate
         $validatedData = $request->validated();
         
-        $userIds = $validatedData['user_ids'];
-        $notificationData = [
-            'object' => $validatedData['object'],
-            'content' => $validatedData['content'],
-            'is_read' => false, // Mặc định là chưa đọc
-            'created_at' => now(),
-            'updated_at' => now(),
-        ];
-
-        // 3. Chuẩn bị dữ liệu để insert hàng loạt
-        $notificationsToInsert = [];
-        foreach ($userIds as $userId) {
-            $notificationsToInsert[] = array_merge($notificationData, ['user_id' => $userId]);
-        }
-        
-        // 4. Sử dụng DB Transaction để đảm bảo toàn vẹn dữ liệu
         DB::beginTransaction();
         try {
-            // Insert hàng loạt để tối ưu hiệu năng
-            Notification::insert($notificationsToInsert);
+            $notifications = [];
+            foreach ($validatedData['user_ids'] as $userId) {
+                $notifications[] = [
+                    'user_id' => $userId,
+                    'type'    => $validatedData['type'],
+                    'content' => $validatedData['content'],
+                    'is_read' => false, // Mặc định là chưa đọc
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+
+            // Dùng insert() để tăng hiệu năng khi thêm nhiều bản ghi
+            Notification::insert($notifications);
 
             DB::commit();
 
-            // Logic gửi thông báo realtime (Pusher, Socket.IO) hoặc email có thể được trigger ở đây
-            // event(new NotificationCreated($notificationsToInsert));
-
             return response()->json([
                 'success' => true,
-                'message' => 'Đã tạo thành công ' . count($notificationsToInsert) . ' thông báo.'
+                'message' => 'Đã tạo thông báo thành công.'
             ], 201);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Lỗi khi tạo thông báo hàng loạt: ' . $e->getMessage());
+            Log::error('Lỗi khi tạo thông báo: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'message' => 'Lưu thông báo thất bại, vui lòng thử lại.'
+                'message' => 'Tạo thông báo thất bại, vui lòng thử lại.'
             ], 500);
         }
     }
+
+    /**
+     * Update the specified resource in storage.
+     * API để Admin cập nhật một thông báo.
+     */
     public function update(UpdateNotificationRequest $request, Notification $notification): JsonResponse
     {
-        // 1. Quyền hạn đã được kiểm tra trong UpdateNotificationRequest
-
-        // 2. Lấy dữ liệu đã được validate
         $validatedData = $request->validated();
 
         try {
-            // 3. Cập nhật thông báo
             $notification->update($validatedData);
 
-            // 4. Trả về response thành công
             return response()->json([
                 'success' => true,
                 'message' => 'Cập nhật thông báo thành công.',
-                'data'    => $notification // Trả về dữ liệu mới của thông báo
+                'data'    => new NotificationResource($notification)
             ]);
 
         } catch (\Exception $e) {
@@ -92,4 +83,5 @@ class NotificationController extends Controller
             ], 500);
         }
     }
+
 }

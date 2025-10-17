@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\Admin;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Str;
 
-class ReviewResource extends JsonResource
+class NotificationResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -14,6 +15,16 @@ class ReviewResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'id' => $this->id,
+            'recipient_name' => $this->whenLoaded('user', $this->user->name ?? 'Người nhận không xác định'),
+            'content' => $this->content,
+            'content_short' => Str::limit($this->content, 80, '...'),
+            // Sửa 'object' thành 'type'
+            'type' => $this->type,
+            'is_read' => (bool) $this->is_read,
+            'created_at' => $this->created_at ? $this->created_at->format('d/m/Y H:i') : '--',
+        ];
     }
 }
+

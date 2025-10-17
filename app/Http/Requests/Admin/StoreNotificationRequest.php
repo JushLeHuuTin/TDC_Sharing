@@ -11,11 +11,11 @@ class StoreNotificationRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
-     * Kiểm tra quyền Admin ngay tại đây.
+     * Kiểm tra quyền Admin.
      */
     public function authorize(): bool
     {
-        // Chỉ cho phép user có role là 'admin' thực hiện request này
+        // Kiểm tra xem người dùng đã đăng nhập và có vai trò là 'admin' hay không
         return $this->user() && $this->user()->role === 'admin';
     }
 
@@ -27,9 +27,12 @@ class StoreNotificationRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // user_ids phải là một mảng và có ít nhất 1 phần tử
             'user_ids'   => 'required|array|min:1',
-            'user_ids.*' => 'required|integer|exists:users,id', // Đảm bảo mỗi user_id đều tồn tại
-            'object'     => ['required', 'string', Rule::in(['Thông tin', 'Khuyến mãi', 'Cảnh báo'])],
+            // Mỗi user_id trong mảng phải tồn tại trong bảng 'users'
+            'user_ids.*' => 'required|integer|exists:users,id',
+            // Sửa 'object' thành 'type'
+            'type'       => ['required', 'string', Rule::in(['Thông tin', 'Khuyến mãi', 'Cảnh báo'])],
             'content'    => 'required|string|max:255',
         ];
     }
@@ -41,17 +44,19 @@ class StoreNotificationRequest extends FormRequest
     {
         return [
             'user_ids.required' => 'Vui lòng chọn ít nhất một người nhận.',
-            'user_ids.array' => 'Định dạng người nhận không hợp lệ.',
-            'user_ids.*.exists' => 'Một trong số người nhận không tồn tại trong hệ thống.',
-            'object.required' => 'Vui lòng chọn loại thông báo.',
-            'object.in' => 'Loại thông báo không hợp lệ.',
-            'content.required' => 'Vui lòng nhập nội dung thông báo.',
-            'content.max' => 'Nội dung thông báo không được vượt quá 255 ký tự.',
+            'user_ids.array'    => 'Định dạng người nhận không hợp lệ.',
+            'user_ids.*.exists' => 'Một hoặc nhiều người nhận không tồn tại trong hệ thống.',
+            // Sửa 'object' thành 'type'
+            'type.required'     => 'Vui lòng chọn loại thông báo.',
+            'type.in'           => 'Loại thông báo không hợp lệ.',
+            'content.required'  => 'Vui lòng nhập nội dung thông báo.',
+            'content.max'       => 'Nội dung thông báo không được vượt quá 255 ký tự.',
         ];
     }
     
     /**
      * Handle a failed validation attempt.
+     * Tùy chỉnh response lỗi trả về dạng JSON.
      */
     protected function failedValidation(Validator $validator)
     {
@@ -62,3 +67,4 @@ class StoreNotificationRequest extends FormRequest
         ], 422));
     }
 }
+
