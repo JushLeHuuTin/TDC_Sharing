@@ -1,17 +1,16 @@
 <?php
-
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreNotificationRequest;
-use App\Models\Notification;
-use App\Models\User;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use App\Http\Requests\Admin\UpdateNotificationRequest;
 use App\Http\Resources\Admin\NotificationResource;
+use App\Models\Notification;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
 
 class NotificationController extends Controller
 {
@@ -119,5 +118,34 @@ class NotificationController extends Controller
             'success' => true,
             'data' => NotificationResource::collection($notifications)
         ]);
+    }
+     public function destroy(Notification $notification): JsonResponse
+    {
+        // 1. Kiểm tra quyền Admin
+        if (auth()->user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn không có quyền thực hiện hành động này.'
+            ], 403);
+        }
+        
+        try {
+            // 2. Thực hiện xóa
+            $notification->delete();
+
+            // 3. Trả về response thành công
+            return response()->json([
+                'success' => true,
+                'message' => 'Xóa thông báo thành công.'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi xóa thông báo: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Xóa thông báo thất bại, vui lòng thử lại.'
+            ], 500);
+        }
     }
 }
