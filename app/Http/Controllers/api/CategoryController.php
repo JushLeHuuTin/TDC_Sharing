@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\api;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateCategoryRequest;
 use App\Http\Resources\BreadcrumbResource;
 use App\Http\Resources\ProductResource;
 use Exception;
@@ -97,5 +98,40 @@ class CategoryController extends Controller
             'breadcrumb' => $breadcrumb,
             'products' => ProductResource::collection($products),
         ]);
+    }
+    public function update(UpdateCategoryRequest $request, Category $category)
+    {
+        
+        // 1. PHÂN QUYỀN: Tự động gọi CategoryPolicy@update
+        // Nếu không có quyền, sẽ tự động trả về lỗi 403 Forbidden.
+        $this->authorize('update', $category);
+
+        // 2. LẤY DỮ LIỆU ĐÃ VALIDATE:
+        $validatedData = $request->validated();
+
+        try {
+            // 3. XỬ LÝ TRANSACTION (để đảm bảo an toàn)
+            DB::transaction(function () use ($category, $validatedData) {
+                $category->update($validatedData);
+            });
+            
+            // Model sẽ tự động tạo lại slug nếu 'name' thay đổi (nhờ code trong hàm booted())
+
+            // 4. TRẢ VỀ KẾT QUẢ THÀNH CÔNG
+            return response()->json([
+                'success' => true,
+                'message' => 'Cập nhật danh mục thành công.',
+                'data' => $category->fresh(), // Lấy lại dữ liệu mới nhất từ DB
+            ], 200);
+
+        } catch (\Exception $e) {
+            // 5. BẮT LỖI VÀ THÔNG BÁO
+            Log::error('Lỗi khi cập nhật danh mục: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Cập nhật danh mục thất bại, vui lòng thử lại.'
+            ], 500);
+        }
     }
 }
