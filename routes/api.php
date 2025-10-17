@@ -26,5 +26,6 @@ Route::middleware('auth:sanctum')->group(function () {
   Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('/notifications', [AdminNotificationController::class, 'store'])->name('notifications.store');
     Route::put('/notifications/{notification}', [AdminNotificationController::class, 'update'])->name('notifications.update');
+    Route::get('/notifications', [AdminNotificationController::class, 'index'])->name('notifications.index');
   });
 });
