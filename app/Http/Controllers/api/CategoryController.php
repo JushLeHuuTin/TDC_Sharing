@@ -7,6 +7,7 @@ use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateCategoryRequest;
 use App\Http\Resources\BreadcrumbResource;
+use App\Http\Resources\CategoryTreeResource;
 use App\Http\Resources\ProductResource;
 use Exception;
 use App\Models\Category;
@@ -134,7 +135,6 @@ class CategoryController extends Controller
             ], 500);
         }
     }
-
     public function destroy(Category $category)
     {
         try{$this->authorize('delete', $category);}
@@ -179,5 +179,18 @@ class CategoryController extends Controller
                 'message' => 'Đã có lỗi xảy ra, không thể xóa danh muc.'
             ], 500);
         }
+    }
+  
+    public function index()
+    {
+        // 1. PHÂN QUYỀN: Kiểm tra xem user có quyền xem danh sách không
+        $this->authorize('viewAny', Category::class);
+
+        // 2. GỌI PHƯƠNG THỨC TĨNH TỪ MODEL:
+        // Toàn bộ logic phức tạp đã được xử lý trong getAdminTree()
+        $categoriesTree = Category::getAdminTree();
+
+        // 3. TRẢ VỀ DỮ LIỆU ĐÃ ĐƯỢC TRANSFORM
+        return CategoryTreeResource::collection($categoriesTree);
     }
 }

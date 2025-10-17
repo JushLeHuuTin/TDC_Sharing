@@ -56,4 +56,39 @@ class Category extends Model
         }
         return $breadcrumb;
     }
+    public static function getAdminTree(): Collection
+    {
+        // 1. Lấy tất cả danh mục cùng với số lượng sản phẩm của mỗi danh mục
+        // withCount sẽ tạo ra một thuộc tính 'products_count' cho mỗi category
+        $allCategories = self::withCount('products')->get();
+
+        // 2. Nhóm các danh mục theo parent_id để dễ dàng xây dựng cây
+        $grouped = $allCategories->groupBy('parent_id');
+
+        // 3. Lấy các danh mục gốc (có parent_id = null)
+        $root = $grouped->get(null, collect());
+
+        // 4. Xây dựng cây đệ quy
+        self::buildTree($root, $grouped);
+
+        return $root;
+    }
+
+    /**
+     * Hàm đệ quy để gán các danh mục con vào danh mục cha.
+     * @param \Illuminate\Support\Collection $categories
+     * @param \Illuminate\Support\Collection $allGrouped
+     */
+    private static function buildTree(Collection $categories, Collection $allGrouped)
+    {
+        foreach ($categories as $category) {
+            $children = $allGrouped->get($category->id, collect());
+            $category->children = $children; // Gán collection con vào thuộc tính 'children'
+            
+            // Nếu có danh mục con, tiếp tục xây dựng cây cho chúng
+            if ($children->isNotEmpty()) {
+                self::buildTree($children, $allGrouped);
+            }
+        }
+    }
 }
