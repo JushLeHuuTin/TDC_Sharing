@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Builder;
+
 
 class Category extends Model
 {
@@ -90,5 +92,12 @@ class Category extends Model
                 self::buildTree($children, $allGrouped);
             }
         }
+    }
+    public function scopeTopFive(Builder $query): Builder
+    {
+        return $query->where('is_visible', true) // Chỉ lấy các danh mục đang được kích hoạt
+                     ->orderBy('display_order', 'asc') // Sắp xếp theo thứ tự hiển thị
+                     ->orderBy('id', 'asc') // Thêm sắp xếp phụ để đảm bảo thứ tự nhất quán khi display_order trùng nhau
+                     ->take(5); // Giới hạn chỉ lấy 5 danh mục
     }
 }

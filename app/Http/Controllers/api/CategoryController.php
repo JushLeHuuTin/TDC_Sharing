@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateCategoryRequest;
 use App\Http\Resources\BreadcrumbResource;
 use App\Http\Resources\CategoryTreeResource;
 use App\Http\Resources\ProductResource;
+use App\Http\Resources\TopCategoryResource;
 use Exception;
 use App\Models\Category;
 use App\Models\Product;
@@ -192,5 +193,13 @@ class CategoryController extends Controller
 
         // 3. TRẢ VỀ DỮ LIỆU ĐÃ ĐƯỢC TRANSFORM
         return CategoryTreeResource::collection($categoriesTree);
+    }
+    public function topFive()
+    {
+        // 1. Gọi scope 'topFive' đã được định nghĩa trong Model
+        $topCategories = Category::topFive()->get();
+
+        // 2. Trả về dữ liệu đã được transform
+        return TopCategoryResource::collection($topCategories);
     }
 }
