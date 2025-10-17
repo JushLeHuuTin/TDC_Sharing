@@ -16,51 +16,41 @@ class NotificationController extends Controller
      * Store a newly created notification in storage for multiple users.
      * API để Admin tạo và gửi thông báo cho một hoặc nhiều người dùng.
      */
-    public function store(StoreNotificationRequest $request): JsonResponse
+     public function store(StoreNotificationRequest $request): JsonResponse
     {
-        // 1. Kiểm tra quyền hạn: Đã được xử lý trong StoreNotificationRequest
-        
-        // 2. Lấy dữ liệu đã được validate
         $validatedData = $request->validated();
         
-        $userIds = $validatedData['user_ids'];
-        $notificationData = [
-            'object' => $validatedData['object'],
-            'content' => $validatedData['content'],
-            'is_read' => false, // Mặc định là chưa đọc
-            'created_at' => now(),
-            'updated_at' => now(),
-        ];
-
-        // 3. Chuẩn bị dữ liệu để insert hàng loạt
-        $notificationsToInsert = [];
-        foreach ($userIds as $userId) {
-            $notificationsToInsert[] = array_merge($notificationData, ['user_id' => $userId]);
-        }
-        
-        // 4. Sử dụng DB Transaction để đảm bảo toàn vẹn dữ liệu
         DB::beginTransaction();
         try {
-            // Insert hàng loạt để tối ưu hiệu năng
-            Notification::insert($notificationsToInsert);
+            $notifications = [];
+            foreach ($validatedData['user_ids'] as $userId) {
+                $notifications[] = [
+                    'user_id' => $userId,
+                    'type'    => $validatedData['type'],
+                    'content' => $validatedData['content'],
+                    'is_read' => false, // Mặc định là chưa đọc
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+
+            // Dùng insert() để tăng hiệu năng khi thêm nhiều bản ghi
+            Notification::insert($notifications);
 
             DB::commit();
 
-            // Logic gửi thông báo realtime (Pusher, Socket.IO) hoặc email có thể được trigger ở đây
-            // event(new NotificationCreated($notificationsToInsert));
-
             return response()->json([
                 'success' => true,
-                'message' => 'Đã tạo thành công ' . count($notificationsToInsert) . ' thông báo.'
+                'message' => 'Đã tạo thông báo thành công.'
             ], 201);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Lỗi khi tạo thông báo hàng loạt: ' . $e->getMessage());
+            Log::error('Lỗi khi tạo thông báo: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'message' => 'Lưu thông báo thất bại, vui lòng thử lại.'
+                'message' => 'Tạo thông báo thất bại, vui lòng thử lại.'
             ], 500);
         }
     }
