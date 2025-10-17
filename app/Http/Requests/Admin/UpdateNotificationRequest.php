@@ -25,10 +25,9 @@ class UpdateNotificationRequest extends FormRequest
      */
     public function rules(): array
     {
-        // Lưu ý: Không cho phép thay đổi người nhận (user_id) khi chỉnh sửa.
-        // Chỉnh sửa chỉ áp dụng cho nội dung của thông báo.
         return [
-            'object'  => ['required', 'string', Rule::in(['Thông tin', 'Khuyến mãi', 'Cảnh báo'])],
+            // Sửa 'object' thành 'type'
+            'type'    => ['required', 'string', Rule::in(['Thông tin', 'Khuyến mãi', 'Cảnh báo'])],
             'content' => 'required|string|max:255',
             'is_read' => 'required|boolean',
         ];
@@ -40,8 +39,9 @@ class UpdateNotificationRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'object.required'  => 'Vui lòng chọn loại thông báo.',
-            'object.in'        => 'Loại thông báo không hợp lệ.',
+            // Sửa 'object' thành 'type'
+            'type.required'    => 'Vui lòng chọn loại thông báo.',
+            'type.in'          => 'Loại thông báo không hợp lệ.',
             'content.required' => 'Vui lòng nhập nội dung thông báo.',
             'content.max'      => 'Nội dung thông báo không được vượt quá 255 ký tự.',
             'is_read.required' => 'Vui lòng chọn trạng thái đọc.',
@@ -61,3 +61,4 @@ class UpdateNotificationRequest extends FormRequest
         ], 422));
     }
 }
+
