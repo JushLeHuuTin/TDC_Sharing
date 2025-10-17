@@ -134,4 +134,50 @@ class CategoryController extends Controller
             ], 500);
         }
     }
+
+    public function destroy(Category $category)
+    {
+        try{$this->authorize('delete', $category);}
+        catch (exception $e){
+            return response()->json([
+                'success' => false,
+                'message' =>  "Không có quyền xoá danh muc"
+            ], 403);
+        }
+        if ($category->products()->exists()) {
+            // Nếu có, trả về lỗi 409 Conflict.
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể xóa, danh mục đang có sản phẩm.',
+            ], 409); // 409 Conflict là mã lỗi phù hợp cho trường hợp này
+        }
+        if ($category->children()->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể xóa, vui lòng xóa các danh mục con trước.',
+            ], 409);
+        }
+        try {
+            // 2. DÙNG TRANSACTION: Đảm bảo an toàn nếu cần xóa nhiều thứ liên quan (ví dụ: ảnh).
+            DB::beginTransaction();
+            $category->delete();
+
+            // 4. COMMIT TRANSACTION: Xác nhận xóa thành công.
+            DB::commit();
+
+            // 5. TRẢ VỀ THÔNG BÁO THÀNH CÔNG
+            return response()->json([
+                'success' => true,
+                'message' => 'danh muc đã được xóa thành công.'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi khi xóa danh muc: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Đã có lỗi xảy ra, không thể xóa danh muc.'
+            ], 500);
+        }
+    }
 }
