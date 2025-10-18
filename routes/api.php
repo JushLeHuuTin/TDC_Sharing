@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\VoucherController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\Api\CheckoutController;
 
 Route::post('/products', [ProductController::class, 'store']);
 // Các route yêu cầu phải đăng nhập thì cho vào group này
@@ -27,4 +28,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // API xem giỏ hàng
     Route::get('/cart', [CartController::class, 'index']);
+    // API Lấy dữ liệu trang Checkout
+    Route::get('/checkout', [CheckoutController::class, 'index']);
+    
+    // Ràng buộc 7: Nút Hoàn tất đặt hàng (Gọi lại API tạo đơn đã xây dựng)
+    Route::post('/orders', [OrderController::class, 'store']);
 });
