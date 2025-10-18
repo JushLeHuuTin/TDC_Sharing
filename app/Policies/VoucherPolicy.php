@@ -21,6 +21,26 @@ class VoucherPolicy
         // Hoặc kiểm tra quyền cụ thể nếu bạn dùng package phân quyền (như Spatie)
         // return $user->hasPermissionTo('create vouchers');
     }
+    public function viewAny(User $user): bool
+    {
+        return $user->hasRole('admin');
+    }
+
+    /**
+     * Kiểm tra quyền sửa/cập nhật voucher.
+     */
+    public function update(User $user, Voucher $voucher): bool
+    {
+        return $user->hasRole('admin');
+    }
+
+    /**
+     * Kiểm tra quyền xóa voucher.
+     */
+    public function delete(User $user, Voucher $voucher): bool
+    {
+        return $user->hasRole('admin');
+    }
 
     // Các hàm khác như update, delete, view sẽ được định nghĩa ở đây
 }

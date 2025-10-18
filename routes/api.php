@@ -33,4 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Ràng buộc 7: Nút Hoàn tất đặt hàng (Gọi lại API tạo đơn đã xây dựng)
     Route::post('/orders', [OrderController::class, 'store']);
+
+    // API Lấy danh sách voucher
+    Route::get('/vouchers', [VoucherController::class, 'index']);
 });
