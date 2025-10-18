@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Admin;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Validation\Rule;
 
@@ -11,44 +11,39 @@ class UpdateNotificationRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
-     * Kiểm tra quyền Admin.
      */
     public function authorize(): bool
     {
-        return $this->user() && $this->user()->role === 'admin';
+        // Logic phân quyền chính sẽ được xử lý bởi Policy.
+        return true;
     }
 
     /**
      * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            // Sửa 'object' thành 'type'
-            'type'    => ['required', 'string', Rule::in(['Thông tin', 'Khuyến mãi', 'Cảnh báo'])],
-            'content' => 'required|string|max:255',
-            'is_read' => 'required|boolean',
+            // Lưu ý: Không cho phép sửa người nhận (user_id) của một thông báo đã có.
+            'type'       => ['sometimes', 'required', 'string', Rule::in(['Thông tin', 'Khuyến mãi', 'Cảnh báo'])],
+            'content'    => ['sometimes', 'required', 'string', 'max:255'],
+            'is_read'    => ['sometimes', 'required', 'boolean'],
         ];
     }
 
     /**
-     * Get the custom validation messages.
+     * Get custom messages for validator errors.
      */
     public function messages(): array
     {
         return [
-            // Sửa 'object' thành 'type'
-            'type.required'    => 'Vui lòng chọn loại thông báo.',
-            'type.in'          => 'Loại thông báo không hợp lệ.',
+            'type.required' => 'Vui lòng chọn loại thông báo.',
             'content.required' => 'Vui lòng nhập nội dung thông báo.',
-            'content.max'      => 'Nội dung thông báo không được vượt quá 255 ký tự.',
-            'is_read.required' => 'Vui lòng chọn trạng thái đọc.',
-            'is_read.boolean'  => 'Trạng thái đọc không hợp lệ.',
+            'content.max' => 'Nội dung thông báo không vượt quá 255 ký tự.',
+            'is_read.boolean' => 'Trạng thái đọc phải là true hoặc false.',
         ];
     }
-    
+
     /**
      * Handle a failed validation attempt.
      */

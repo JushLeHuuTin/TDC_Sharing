@@ -8,6 +8,7 @@ use App\Models\Notification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Http\Requests\Admin\UpdateNotificationRequest;
 
 class NotificationController extends Controller
 {
@@ -61,4 +62,36 @@ class NotificationController extends Controller
             ], 500); // Internal Server Error
         }
     }
+        /**
+     * Update the specified notification in storage.
+     * API để Admin cập nhật một thông báo.
+     */
+    public function update(UpdateNotificationRequest $request, Notification $notification): JsonResponse
+    {
+        // 1. Kiểm tra quyền hạn thông qua Policy
+        $this->authorize('update', $notification);
+
+        // 2. Lấy dữ liệu đã được validate
+        $validatedData = $request->validated();
+
+        // 3. Thực hiện cập nhật
+        try {
+            $notification->update($validatedData);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cập nhật thông báo thành công.',
+                'data'    => $notification // Trả về thông tin thông báo đã được cập nhật
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi cập nhật thông báo: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Cập nhật thông báo thất bại, vui lòng thử lại.'
+            ], 500);
+        }
+    }
+
 }
