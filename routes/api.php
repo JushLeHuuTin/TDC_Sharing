@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\VoucherController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\Api\CheckoutController;
 
 Route::post('/products', [ProductController::class, 'store']);
@@ -41,4 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Ràng buộc 6: Policy kiểm tra quyền xóa
     Route::delete('/vouchers/{voucher}', [VoucherController::class, 'destroy'])
          ->middleware('can:delete,voucher'); // 'voucher' là tham số model binding
+
+    // API Thêm chương trình khuyến mãi
+    Route::post('/promotions', [PromotionController::class, 'store']);
 });
