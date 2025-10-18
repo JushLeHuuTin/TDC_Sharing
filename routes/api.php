@@ -36,4 +36,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // API Lấy danh sách voucher
     Route::get('/vouchers', [VoucherController::class, 'index']);
+
+    // API Xóa voucher
+    // Ràng buộc 6: Policy kiểm tra quyền xóa
+    Route::delete('/vouchers/{voucher}', [VoucherController::class, 'destroy'])
+         ->middleware('can:delete,voucher'); // 'voucher' là tham số model binding
 });

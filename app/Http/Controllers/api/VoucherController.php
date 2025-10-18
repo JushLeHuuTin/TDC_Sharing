@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\UpdateVoucherRequest;
 use App\Http\Requests\VoucherIndexRequest;
 use Carbon\Carbon;
+use Illuminate\Auth\Access\AuthorizationException;
 
 
 class VoucherController extends Controller
@@ -241,5 +242,51 @@ public function index(VoucherIndexRequest $request): JsonResponse
             return 'Hết lượt sử dụng';
         }
         return 'Đang hoạt động';
+    }
+    public function destroy(Voucher $voucher): JsonResponse
+    {
+        try {
+            // Ràng buộc 6: Kiểm tra Policy (Auth::user() có quyền xóa voucher này không)
+            $this->authorize('delete', $voucher);
+            
+            // Ràng buộc 3: Bắt đầu Transaction để đảm bảo tính toàn vẹn
+            DB::beginTransaction();
+
+            // Kiểm tra ràng buộc ngoại lệ: Voucher đã được sử dụng trong Order chưa
+            // Giả định bạn có mối quan hệ voucherUsages (hoặc orderItems)
+            if ($voucher->usage_count > 0) {
+                 // Nếu voucher đã được sử dụng (Ràng buộc 3: Lỗi do ràng buộc FK)
+                DB::rollBack();
+                return response()->json([
+                    'message' => 'Không thể xóa voucher đang áp dụng cho các đơn hàng đã tạo.',
+                    'code' => 'VOUCHER_IN_USE'
+                ], 400);
+            }
+
+            // Thực hiện xóa mềm (soft delete) hoặc xóa cứng (force delete)
+            // Nếu Model Voucher có SoftDeletes, hãy dùng $voucher->delete() để xóa mềm.
+            $voucher->delete(); 
+            
+            DB::commit();
+
+            // Ràng buộc 4: Thông báo thành công
+            return response()->json([
+                'message' => "Xóa voucher {$voucher->code} thành công.",
+            ], 200);
+
+        } catch (AuthorizationException $e) {
+            // Lỗi Policy (Ràng buộc 6: Không có quyền)
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Bạn không có quyền thực hiện thao tác này.',
+            ], 403);
+        } catch (\Exception $e) {
+            // Lỗi chung (Ràng buộc 3: Lỗi DB)
+            DB::rollBack();
+            // Ghi log lỗi tại đây
+            return response()->json([
+                'message' => 'Xóa voucher thất bại, vui lòng thử lại.',
+            ], 500);
+        }
     }
 }
