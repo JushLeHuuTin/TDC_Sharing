@@ -24,4 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // API CẬP NHẬT voucher (sử dụng phương thức PUT/PATCH theo chuẩn RESTful)
     Route::put('/vouchers/{id}', [VoucherController::class, 'update']);
+
+    // API xem giỏ hàng
+    Route::get('/cart', [CartController::class, 'index']);
 });
