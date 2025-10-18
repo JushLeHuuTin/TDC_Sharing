@@ -23,6 +23,22 @@ class PromotionPolicy
     {
         return $user->hasRole('admin');
     }
+    public function before(User $user, string $ability): ?bool
+    {
+        if ($user->hasRole('admin')) { 
+            return true;
+        }
+        return null;
+    }
+
+    /**
+     * Kiểm tra quyền xem danh sách (View Any)
+     */
+    public function viewAny(User $user): bool
+    {
+        // Quyền đã được xử lý bởi hàm before
+        return false; 
+    }
 
     // ... (Thêm viewAny, delete, v.v. nếu cần)
 }

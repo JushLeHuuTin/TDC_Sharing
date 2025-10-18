@@ -6,6 +6,8 @@ use App\Http\Requests\StorePromotionRequest;
 use App\Models\Promotion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use App\Http\Requests\PromotionIndexRequest;
 
 class PromotionController extends Controller
 {
@@ -55,5 +57,113 @@ class PromotionController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+    public function index(PromotionIndexRequest $request): JsonResponse
+    {
+        // Dữ liệu đã được làm sạch và xác thực
+        $validatedData = $request->validated();
+        $perPage = $validatedData['per_page'] ?? 15;
+        $now = Carbon::now();
+
+        // Bắt đầu Query Builder
+        $query = Promotion::query();
+        
+        // Ràng buộc 1: Thanh tìm kiếm (theo tên)
+        if (!empty($validatedData['search'])) {
+            $keyword = '%' . $validatedData['search'] . '%';
+            $query->where(DB::raw('LOWER(name)'), 'like', $keyword);
+        }
+
+        // Ràng buộc 3: Bộ lọc loại giảm giá
+        if (!empty($validatedData['type'])) {
+            $query->where('discount_type', $validatedData['type']);
+        }
+        
+        // Ràng buộc 2: Bộ lọc trạng thái (Logic phức tạp)
+        if (!empty($validatedData['status'])) {
+            switch ($validatedData['status']) {
+                case 'active':
+                    $query->where('start_date', '<=', $now)
+                          ->where('end_date', '>=', $now);
+                    break;
+                case 'expired':
+                    $query->where('end_date', '<', $now);
+                    break;
+                case 'upcoming':
+                    $query->where('start_date', '>', $now);
+                    break;
+            }
+        }
+        
+        // Phân trang
+        $promotions = $query->latest()->paginate($perPage);
+
+        // Ràng buộc 4, 6, 7, 8, 9: Định dạng dữ liệu đầu ra
+        return response()->json([
+            'message' => 'Lấy danh sách chương trình khuyến mãi thành công.',
+            'data' => $promotions->through(function ($promotion) use ($now) {
+                return [
+                    'id' => $promotion->id,
+                    
+                    // Ràng buộc 5: Tên chương trình
+                    'name' => $promotion->name,
+                    'description_short' => substr($promotion->description ?? '', 0, 50) . '...', 
+                    
+                    // Ràng buộc 6: Loại & Giá trị
+                    'type' => $promotion->discount_type,
+                    'value_display' => $this->formatDiscountValue($promotion),
+                    
+                    // Ràng buộc 7: Thời gian (dd/MM/yyyy)
+                    'time_start' => Carbon::parse($promotion->start_date)->format('d/m/Y H:i:s'),
+                    'time_end' => Carbon::parse($promotion->end_date)->format('d/m/Y H:i:s'),
+                    
+                    // Ràng buộc 8: Sử dụng (Giả định có cột total_uses)
+                    'usage_count' => $promotion->total_uses ?? 0,
+                    'usage_limit' => $promotion->max_uses_per_user,
+                    'usage_display' => ($promotion->total_uses ?? 0) . '/' . $promotion->max_uses_per_user,
+
+                    // Ràng buộc 9: Trạng thái
+                    'status' => $this->getPromotionStatus($promotion, $now),
+
+                    // Ràng buộc 10: Thao tác (Sửa, Xóa)
+                    'actions' => ['edit', 'delete'], 
+                ];
+            }),
+        ]);
+    }
+    
+    /**
+     * Logic định dạng giá trị giảm (Ràng buộc 6)
+     */
+    private function formatDiscountValue(Promotion $promotion): string
+    {
+        if ($promotion->discount_type === 'percentage') {
+            return $promotion->discount_value . '%';
+        }
+        if ($promotion->discount_type === 'fixed') {
+            return number_format($promotion->discount_value) . ' VNĐ';
+        }
+        if ($promotion->discount_type === 'freeship') {
+            return 'Miễn phí vận chuyển';
+        }
+        return 'Không xác định';
+    }
+
+    /**
+     * Logic xác định trạng thái (Ràng buộc 9)
+     */
+    private function getPromotionStatus(Promotion $promotion, Carbon $now): string
+    {
+        if (Carbon::parse($promotion->end_date)->isBefore($now)) {
+            return 'Đã hết hạn';
+        }
+        if (Carbon::parse($promotion->start_date)->isAfter($now)) {
+            return 'Sắp diễn ra';
+        }
+        // Kiểm tra số lượng sử dụng nếu cần (total_uses >= max_uses)
+        // if (($promotion->total_uses ?? 0) >= $promotion->max_uses_per_user) {
+        //     return 'Đã hết lượt';
+        // }
+        return 'Đang hoạt động';
     }
 }
