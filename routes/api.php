@@ -29,8 +29,10 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     // Group route cho các chức năng của Admin
     Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('/notifications', [AdminNotificationController::class, 'index'])->name('notifications.index');
+        
         Route::post('/notifications', [AdminNotificationController::class, 'store'])->name('notifications.store');
-                // <-- THÊM DÒNG NÀY VÀO
+          
         Route::put('/notifications/{notification}', [AdminNotificationController::class, 'update'])->name('notifications.update');
     });
     

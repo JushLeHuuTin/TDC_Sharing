@@ -9,9 +9,27 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Requests\Admin\UpdateNotificationRequest;
+use App\Http\Resources\Admin\NotificationResource;
+use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+     /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', Notification::class);
+
+        $notificationsQuery = Notification::with('user')->latest();
+
+        $notifications = $notificationsQuery->paginate(15);
+
+        return response()->json([
+            'success' => true,
+            'data'    => NotificationResource::collection($notifications)
+        ]);
+    }
     /**
      * Store a newly created notification in storage.
      * API để Admin tạo thông báo mới cho nhiều người dùng.
