@@ -34,7 +34,7 @@ class StoreReviewRequest extends FormRequest
             'comment'    => 'nullable|string|max:300',
         ];
     }
-
+ 
     /**
      * Get the custom error messages for validator failures.
      */
