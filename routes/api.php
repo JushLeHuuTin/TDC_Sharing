@@ -7,7 +7,7 @@ use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\Seller\OrderController as SellerOrderController;
 use App\Http\Controllers\Api\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Api\AuthController;
-
+use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use Illuminate\Http\Request;
 
 
@@ -16,7 +16,7 @@ Route::post('/products', [ProductController::class, 'store']);
 // Các route yêu cầu phải đăng nhập thì cho vào group này
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/categories', [CategoryController::class, 'store']);
-    
+
     Route::delete('/products/{product}', [ProductController::class, 'destroy']);
 
     Route::post('/reviews', [ReviewController::class, 'store']);
@@ -30,12 +30,13 @@ Route::middleware('auth:sanctum')->group(function () {
     // Group route cho các chức năng của Admin
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/notifications', [AdminNotificationController::class, 'index'])->name('notifications.index');
-        
+
         Route::post('/notifications', [AdminNotificationController::class, 'store'])->name('notifications.store');
-          
+
         Route::put('/notifications/{notification}', [AdminNotificationController::class, 'update'])->name('notifications.update');
 
-         Route::delete('/notifications/{notification}', [AdminNotificationController::class, 'destroy'])->name('notifications.destroy');
+        Route::delete('/notifications/{notification}', [AdminNotificationController::class, 'destroy'])->name('notifications.destroy');
+
+        Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
     });
-    
 });

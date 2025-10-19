@@ -57,6 +57,15 @@ class Product extends Model
     }
 
     /**
+     * SỬA LỖI: Thêm mối quan hệ `seller()` để tương thích với logic hiện tại.
+     * Đây thực chất là một tên gọi khác cho mối quan hệ `user()`.
+     */
+    public function seller(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
      * Mối quan hệ: Một sản phẩm thuộc về một danh mục (Category).
      */
     public function category(): BelongsTo

@@ -11,6 +11,8 @@ use App\Policies\CategoryPolicy;
 use App\Policies\ReviewPolicy;
 use App\Models\Notification;
 use App\Policies\NotificationPolicy;
+use App\Models\Order; // Thêm dòng này
+use App\Policies\OrderPolicy; // Thêm dòng này
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -19,6 +21,7 @@ class AuthServiceProvider extends ServiceProvider
         Category::class => CategoryPolicy::class, // Đăng ký CategoryPolicy
         Review::class => ReviewPolicy::class, // Đăng ký CategoryPolicy
         Notification::class => NotificationPolicy::class,
+        Order::class => OrderPolicy::class,
     ];
     /**
      * Register services.
