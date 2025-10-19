@@ -77,7 +77,7 @@ class ReviewController extends Controller
     //sua
 
     //hien thi
-    public function index(Request $request, Product $product): JsonResponse
+     public function index(Request $request, Product $product): JsonResponse
     {
         // Validate dữ liệu đầu vào từ query string (để lọc)
         $request->validate([
@@ -91,10 +91,11 @@ class ReviewController extends Controller
         $averageRating = $totalReviews > 0 ? round($statsQuery->avg('rating'), 1) : 0;
 
         // Đếm số lượng đánh giá cho mỗi loại sao (5 sao, 4 sao, ...)
-        $ratingCounts = $statsQuery
+        $ratingCounts = $product->reviews()
             ->select('rating', DB::raw('count(*) as count'))
             ->groupBy('rating')
             ->pluck('count', 'rating')->all();
+
         // Gán 0 cho các loại sao không có lượt đánh giá
         for ($i = 5; $i >= 1; $i--) {
             $ratingCounts[$i] = $ratingCounts[$i] ?? 0;
@@ -121,7 +122,6 @@ class ReviewController extends Controller
                     'average_rating' => $averageRating,
                     'rating_counts' => $ratingCounts,
                 ],
-                // Sử dụng API Resource để định dạng dữ liệu trả về
                 'reviews' => ReviewResource::collection($reviews),
             ]
         ]);
