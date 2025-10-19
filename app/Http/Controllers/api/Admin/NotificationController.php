@@ -111,5 +111,32 @@ class NotificationController extends Controller
             ], 500);
         }
     }
+     /**
+     * Remove the specified notification from storage.
+     * API để Admin xóa một thông báo.
+     */
+    public function destroy(Notification $notification): JsonResponse
+    {
+        // 1. Kiểm tra quyền hạn thông qua Policy
+        $this->authorize('delete', $notification);
+
+        // 2. Thực hiện xóa
+        try {
+            $notification->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Xóa thông báo thành công.'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi xóa thông báo: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Xóa thông báo thất bại, vui lòng thử lại.'
+            ], 500);
+        }
+    }
 
 }

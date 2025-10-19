@@ -30,5 +30,13 @@ class NotificationPolicy
         // Chỉ cho phép user có vai trò 'admin' cập nhật thông báo.
         return $user->role === 'admin';
     }
+     /**
+     * Determine whether the user can delete the model.
+     */
+    public function delete(User $user, Notification $notification): bool
+    {
+        // Chỉ cho phép user có vai trò 'admin' xóa thông báo.
+        return $user->role === 'admin';
+    }
 }
 
