@@ -1,13 +1,12 @@
 <?php
-
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ReviewController;
+use Illuminate\Http\Request;
 
 Route::post('/products', [ProductController::class, 'store']);
-
-use Illuminate\Http\Request;
+Route::get('products/{product}/reviews', [ReviewController::class, 'index']);
 // Các route yêu cầu phải đăng nhập thì cho vào group này
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/categories', [CategoryController::class, 'store']);
@@ -16,3 +15,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy']);
     Route::put('/reviews/{review}', [ReviewController::class, 'update']);
 });
+   
