@@ -25,6 +25,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Thêm group route cho các chức năng của Seller
     Route::prefix('seller')->name('seller.')->group(function () {
         Route::get('/orders', [SellerOrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/{order}', [SellerOrderController::class, 'show'])->name('orders.show');
         // Các route khác của seller sẽ được thêm vào đây sau
     });
     // Group route cho các chức năng của Admin

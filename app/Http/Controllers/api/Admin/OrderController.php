@@ -8,6 +8,7 @@ use App\Models\Order;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+
 class OrderController extends Controller
 {
     /**
@@ -31,4 +32,5 @@ class OrderController extends Controller
             'data'    => OrderResource::collection($orders),
         ]);
     }
+   
 }
