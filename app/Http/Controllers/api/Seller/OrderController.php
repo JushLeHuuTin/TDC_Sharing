@@ -7,41 +7,35 @@ use App\Http\Resources\Seller\OrderResource;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class OrderController extends Controller
 {
     /**
-     * Display a listing of orders for the authenticated seller.
-     * API để lấy danh sách đơn hàng cho người bán đã đăng nhập.
+     * Display a listing of the resource for the authenticated seller.
      */
     public function index(Request $request): JsonResponse
     {
-        // 1. Validate dữ liệu filter từ query string
-        $request->validate([
-            'status' => 'nullable|string|in:pending,confirmed,delivering,completed,rejected,cancelled',
-        ]);
+        // 1. Kiểm tra quyền hạn: Người dùng có được xem danh sách đơn hàng của seller không?
+        $this->authorize('viewAnySeller', Order::class);
 
-        $seller = $request->user();
+        $sellerId = Auth::id();
 
-        // 2. Xây dựng câu truy vấn chính
-        // Lấy các đơn hàng mà CÓ CHỨA (whereHas) ít nhất một sản phẩm (items.product)
-        // thuộc về người bán này (where user_id = $seller->id)
-        $ordersQuery = Order::whereHas('items.product', function ($query) use ($seller) {
-            $query->where('user_id', $seller->id);
-        })->with('buyer'); // Eager load thông tin người mua để tối ưu
+        // 2. Xây dựng câu truy vấn
+        $ordersQuery = Order::with(['buyer', 'items.product'])
+            // Chỉ lấy những đơn hàng có chứa ít nhất một sản phẩm của người bán này
+            ->whereHas('items.product', function ($query) use ($sellerId) {
+                $query->where('user_id', $sellerId);
+            })
+            ->latest(); // Sắp xếp theo mới nhất
 
-        // 3. Áp dụng bộ lọc trạng thái nếu có
-        if ($request->filled('status')) {
-            $ordersQuery->where('status', $request->query('status'));
-        }
+        // 3. Phân trang kết quả
+        $orders = $ordersQuery->paginate(15);
 
-        // 4. Sắp xếp theo mới nhất và phân trang
-        $orders = $ordersQuery->latest()->paginate(10);
-
-        // 5. Trả về dữ liệu đã được định dạng qua API Resource
+        // 4. Trả về response đã được định dạng
         return response()->json([
             'success' => true,
-            'data' => OrderResource::collection($orders),
+            'data'    => OrderResource::collection($orders)
         ]);
     }
 }

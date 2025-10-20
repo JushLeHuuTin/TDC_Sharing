@@ -15,12 +15,12 @@ class OrderResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'order_code'     => $this->id,
-            'customer_name'  => $this->whenLoaded('buyer', $this->buyer->name ?? 'Người dùng ẩn danh'),
-            'customer_phone' => $this->whenLoaded('buyer', $this->buyer->phone ?? 'Không có'),
-            'created_date'   => $this->created_at ? $this->created_at->format('d/m/Y H:i') : '--',
-            'total_amount'   => number_format($this->total ?? 0, 0, ',', '.') . ' đ',
-            'status'         => $this->status ?? 'Không xác định',
+            'order_code'    => $this->order_id, // Lấy từ cột order_id
+            'customer_name' => optional($this->buyer)->full_name ?? 'Người dùng ẩn danh',
+            'customer_phone'=> optional($this->buyer)->phone ?? 'Không có',
+            'order_date'    => $this->created_at ? $this->created_at->format('d/m/Y H:i') : '--',
+            'total_price'   => number_format($this->final_amount, 0, ',', '.') . ' đ',
+            'status'        => $this->status,
         ];
     }
 }
