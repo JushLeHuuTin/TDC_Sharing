@@ -8,16 +8,28 @@ use Illuminate\Auth\Access\Response;
 
 class OrderPolicy
 {
+
     /**
-     * Determine whether the user can view any models.
+     * Determine whether the user can view any models. (FOR ADMIN)
      */
     public function viewAny(User $user): bool
     {
-        // Chỉ cho phép user có vai trò 'admin' xem danh sách.
+        // Chỉ cho phép user có vai trò 'admin' xem danh sách tất cả đơn hàng.
         return $user->role === 'admin';
     }
-      /**
-     * Determine whether the user can view the model.
+
+    /**
+     * SỬA LỖI: Bổ sung lại phương thức còn thiếu này.
+     * Determine whether the user can view any models. (FOR SELLER)
+     */
+    public function viewAnySeller(User $user): bool
+    {
+        // Logic cho C2C: "Người bán" là người dùng đã đăng ít nhất một sản phẩm.
+        return $user->products()->exists();
+    }
+
+    /**
+     * Determine whether the user can view the model. (FOR DETAILS)
      */
     public function view(User $user, Order $order): bool
     {
@@ -32,3 +44,4 @@ class OrderPolicy
         })->exists();
     }
 }
+

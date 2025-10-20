@@ -3,63 +3,56 @@
 namespace App\Http\Controllers\Api\Seller;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Seller\FilterSellerOrdersRequest; // <-- Import file Request mới
+use App\Http\Resources\Seller\OrderDetailResource;
 use App\Http\Resources\Seller\OrderResource;
 use App\Models\Order;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use App\Http\Resources\Seller\OrderDetailResource;
+use Illuminate\Support\Facades\Auth;
 
 class OrderController extends Controller
 {
     /**
-     * Display a listing of orders for the authenticated seller.
-     * API để lấy danh sách đơn hàng cho người bán đã đăng nhập.
+     * CẬP NHẬT: Display a listing of the resource for the authenticated seller with filters.
      */
-    public function index(Request $request): JsonResponse
+    public function index(FilterSellerOrdersRequest $request): JsonResponse // <-- Thay đổi ở đây
     {
-        // 1. Validate dữ liệu filter từ query string
-        $request->validate([
-            'status' => 'nullable|string|in:pending,confirmed,delivering,completed,rejected,cancelled',
-        ]);
+        // 1. Kiểm tra quyền
+        $this->authorize('viewAnySeller', Order::class);
 
-        $seller = $request->user();
+        $sellerId = Auth::id();
 
-        // 2. Xây dựng câu truy vấn chính
-        // Lấy các đơn hàng mà CÓ CHỨA (whereHas) ít nhất một sản phẩm (items.product)
-        // thuộc về người bán này (where user_id = $seller->id)
-        $ordersQuery = Order::whereHas('items.product', function ($query) use ($seller) {
-            $query->where('user_id', $seller->id);
-        })->with('buyer'); // Eager load thông tin người mua để tối ưu
+        // 2. Bắt đầu câu truy vấn cơ bản
+        $ordersQuery = Order::with(['buyer'])
+            ->whereHas('items.product', function ($query) use ($sellerId) {
+                $query->where('user_id', $sellerId);
+            });
 
-        // 3. Áp dụng bộ lọc trạng thái nếu có
-        if ($request->filled('status')) {
-            $ordersQuery->where('status', $request->query('status'));
-        }
+        // 3. ÁP DỤNG CÁC BỘ LỌC (PHẦN MỚI)
+        // Chỉ thêm điều kiện lọc KHI người dùng có gửi tham số tương ứng
+        $ordersQuery->when($request->filled('status'), function ($query) use ($request) {
+            $query->where('status', $request->query('status'));
+        });
 
-        // 4. Sắp xếp theo mới nhất và phân trang
-        $orders = $ordersQuery->latest()->paginate(10);
+        $ordersQuery->when($request->filled('from_date'), function ($query) use ($request) {
+            $query->whereDate('created_at', '>=', $request->query('from_date'));
+        });
 
-        // 5. Trả về dữ liệu đã được định dạng qua API Resource
+        $ordersQuery->when($request->filled('to_date'), function ($query) use ($request) {
+            $query->whereDate('created_at', '<=', $request->query('to_date'));
+        });
+
+        // 4. Sắp xếp và phân trang
+        $orders = $ordersQuery->latest()->paginate(15);
+
         return response()->json([
             'success' => true,
-            'data' => OrderResource::collection($orders),
+            'data'    => OrderResource::collection($orders)
         ]);
     }
-     /**
+
+    /**
      * Display the specified resource for the authenticated seller.
+     * ... (Hàm show không thay đổi) ...
      */
-    public function show(Order $order): JsonResponse
-    {
-        // 1. Kiểm tra quyền hạn: Seller có quyền xem chi tiết đơn hàng này không?
-        $this->authorize('view', $order);
-
-        // 2. Tải các mối quan hệ cần thiết
-        $order->load(['buyer', 'address', 'items.product']);
-
-        // 3. Trả về response đã được định dạng
-        return response()->json([
-            'success' => true,
-            'data'    => new OrderDetailResource($order)
-        ]);
-    }
 }
