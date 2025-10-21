@@ -18,7 +18,6 @@ return new class extends Migration
             $table->string('full_name', 100);
             $table->string('phone', 15);
             $table->string('province', 100);
-            $table->string('district', 100);
             $table->string('ward', 100);
             $table->text('detail');
             $table->timestamps();

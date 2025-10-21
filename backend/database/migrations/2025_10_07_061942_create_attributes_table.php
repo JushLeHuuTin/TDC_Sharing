@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('category_id')->constrained()->onDelete('cascade');
             $table->string('name', 100);
-            $table->enum('data_type', ['text', 'number', 'boolean', 'date'])->default('text');
+            $table->enum('data_type', ['text', 'number', 'boolean', 'date','select'])->default('text');
             $table->timestamps();
             
             $table->index('category_id');
