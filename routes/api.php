@@ -26,7 +26,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('seller')->name('seller.')->group(function () {
         Route::get('/orders', [SellerOrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [SellerOrderController::class, 'show'])->name('orders.show');
-         Route::put('/orders/{order}/approve', [SellerOrderController::class, 'approve'])->name('orders.approve');
+           // Endpoint để duyệt (approve) đơn hàng
+        Route::put('/orders/{order}/approve', [SellerOrderController::class, 'approve'])->name('orders.approve');
+        
+        // Endpoint để từ chối (reject) đơn hàng
+        Route::put('/orders/{order}/reject', [SellerOrderController::class, 'reject'])->name('orders.reject');
     
         // Các route khác của seller sẽ được thêm vào đây sau
     });

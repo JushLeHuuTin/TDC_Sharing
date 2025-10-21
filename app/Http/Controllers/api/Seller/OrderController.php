@@ -43,7 +43,7 @@ class OrderController extends Controller
             $query->whereDate('created_at', '<=', $request->query('to_date'));
         });
 
-        // 4. Sắp xếp và phân trang
+        // 4. Sắp xếp và phân trang 
         $orders = $ordersQuery->latest()->paginate(15);
 
         return response()->json([
@@ -52,25 +52,21 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * PHẦN MỚI: Approve an order.
-     * API để người bán xác nhận một đơn hàng.
+  /**
+     * Approve an order.
      */
     public function approve(Order $order): JsonResponse
     {
-        // 1. Kiểm tra quyền hạn thông qua Policy
         $this->authorize('approve', $order);
 
         try {
-            // 2. Cập nhật trạng thái đơn hàng
-            $order->status = 'delivering'; // Hoặc 'confirmed' tùy theo quy trình của bạn
+            $order->status = 'shipped'; // Giá trị hợp lệ trong DB của bạn
             $order->save();
 
-            // 3. Trả về response thành công
             return response()->json([
                 'success' => true,
                 'message' => 'Đã xác nhận đơn hàng thành công.',
-                'data'    => new OrderDetailResource($order->fresh()) // Trả về chi tiết đơn hàng đã cập nhật
+                'data'    => new OrderDetailResource($order->fresh())
             ]);
 
         } catch (\Exception $e) {
@@ -78,6 +74,32 @@ class OrderController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Duyệt đơn hàng thất bại, vui lòng thử lại.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Reject an order.
+     */
+    public function reject(Order $order): JsonResponse
+    {
+        $this->authorize('reject', $order);
+
+        try {
+            $order->status = 'cancelled';
+            $order->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã từ chối đơn hàng thành công.',
+                'data'    => new OrderDetailResource($order->fresh())
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi từ chối đơn hàng: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Từ chối đơn hàng thất bại, vui lòng thử lại.'
             ], 500);
         }
     }
