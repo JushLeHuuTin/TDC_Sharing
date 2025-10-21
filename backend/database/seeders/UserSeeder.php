@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+
 class UserSeeder extends Seeder
 {
     public function run()
@@ -58,8 +58,14 @@ class UserSeeder extends Seeder
             ],
         ];
 
-        foreach ($users as $user) {
-            User::create($user);
+        foreach ($users as $data) {
+            // 🔹 Kiểm tra theo email, nếu tồn tại thì cập nhật lại thông tin
+            User::updateOrCreate(
+                ['email' => $data['email']], // điều kiện duy nhất
+                $data // dữ liệu để cập nhật hoặc tạo mới
+            );
         }
+
+        $this->command->info('✅ UserSeeder đã chạy xong mà không tạo bản ghi trùng lặp.');
     }
 }

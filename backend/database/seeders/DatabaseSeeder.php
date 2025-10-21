@@ -33,7 +33,7 @@ class DatabaseSeeder extends Seeder
             ReviewSeeder::class,            // 14. Reviews (phụ thuộc Users, Products)
             PromotionSeeder::class,         // 15. Promotions (không phụ thuộc)
             TransactionSeeder::class,       // 16. Transactions (phụ thuộc Orders)
-            MessageSeeder::class,           // 17. Messages (phụ thuộc Users)
+            AttributeOptionsSeeder::class,           
             NotificationSeeder::class,      // 18. Notifications (phụ thuộc Users)
         ]);
         

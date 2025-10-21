@@ -93,8 +93,12 @@ class CategorySeeder extends Seeder
             ],
         ];
 
-        foreach ($categories as $category) {
-            Category::create($category);
+        foreach ($categories as $data) {
+            // 🔹 Kiểm tra theo email, nếu tồn tại thì cập nhật lại thông tin
+            Category::updateOrCreate(
+                ['name' => $data['name']], // điều kiện duy nhất
+                $data // dữ liệu để cập nhật hoặc tạo mới
+            );
         }
     }
 }

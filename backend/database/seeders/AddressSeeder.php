@@ -17,7 +17,6 @@ class AddressSeeder extends Seeder
                 'full_name' => 'Trần Thị Hương',
                 'phone' => '0912345678',
                 'province' => 'TP. Hồ Chí Minh',
-                'district' => 'Quận 1',
                 'ward' => 'Phường Bến Nghé',
                 'detail' => '123 Nguyễn Huệ'
             ],
@@ -27,7 +26,6 @@ class AddressSeeder extends Seeder
                 'full_name' => 'Trần Thị Hương',
                 'phone' => '0912345678',
                 'province' => 'TP. Hồ Chí Minh',
-                'district' => 'Quận 3',
                 'ward' => 'Phường Võ Thị Sáu',
                 'detail' => '456 Lê Văn Sỹ'
             ],
@@ -37,7 +35,6 @@ class AddressSeeder extends Seeder
                 'full_name' => 'Lê Văn Nam',
                 'phone' => '0923456789',
                 'province' => 'Hà Nội',
-                'district' => 'Quận Đống Đa',
                 'ward' => 'Phường Láng Thượng',
                 'detail' => '789 Láng Hạ'
             ],
@@ -47,7 +44,6 @@ class AddressSeeder extends Seeder
                 'full_name' => 'Phạm Thị Mai',
                 'phone' => '0934567890',
                 'province' => 'Đà Nẵng',
-                'district' => 'Quận Hải Châu',
                 'ward' => 'Phường Thạch Thang',
                 'detail' => '321 Trần Phú'
             ],
