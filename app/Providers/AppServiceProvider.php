@@ -5,7 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Auth; // <-- Import Auth facade
 use App\Models\User;    
-
+use Illuminate\Support\Facades\App;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -21,6 +21,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (App::runningInConsole()) {
+            return;
+        }
         if (app()->isLocal()) {
             // Tìm một user để đăng nhập, ví dụ user có id = 1
             $user = User::find(2); 
