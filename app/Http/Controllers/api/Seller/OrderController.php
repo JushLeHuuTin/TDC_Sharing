@@ -9,6 +9,7 @@ use App\Http\Resources\Seller\OrderResource;
 use App\Models\Order;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -52,7 +53,32 @@ class OrderController extends Controller
     }
 
     /**
-     * Display the specified resource for the authenticated seller.
-     * ... (Hàm show không thay đổi) ...
+     * PHẦN MỚI: Approve an order.
+     * API để người bán xác nhận một đơn hàng.
      */
+    public function approve(Order $order): JsonResponse
+    {
+        // 1. Kiểm tra quyền hạn thông qua Policy
+        $this->authorize('approve', $order);
+
+        try {
+            // 2. Cập nhật trạng thái đơn hàng
+            $order->status = 'delivering'; // Hoặc 'confirmed' tùy theo quy trình của bạn
+            $order->save();
+
+            // 3. Trả về response thành công
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã xác nhận đơn hàng thành công.',
+                'data'    => new OrderDetailResource($order->fresh()) // Trả về chi tiết đơn hàng đã cập nhật
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi duyệt đơn hàng: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Duyệt đơn hàng thất bại, vui lòng thử lại.'
+            ], 500);
+        }
+    }
 }

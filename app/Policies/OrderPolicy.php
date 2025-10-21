@@ -43,5 +43,21 @@ class OrderPolicy
             $query->where('user_id', $user->id);
         })->exists();
     }
+    /**
+     * PHẦN MỚI: Determine whether the user can approve the model.
+     */
+    public function approve(User $user, Order $order): bool
+    {
+        // Điều kiện để duyệt đơn:
+        // 1. Trạng thái hiện tại của đơn hàng phải là 'processing'.
+        // 2. Người dùng phải là người bán của ít nhất một sản phẩm trong đơn hàng đó.
+        $isOrderProcessing = $order->status === 'processing';
+
+        $isSellerOfOrder = $order->items()->whereHas('product', function ($query) use ($user) {
+            $query->where('user_id', $user->id);
+        })->exists();
+
+        return $isOrderProcessing && $isSellerOfOrder;
+    }
 }
 
