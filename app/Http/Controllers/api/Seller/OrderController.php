@@ -63,10 +63,13 @@ class OrderController extends Controller
             $order->status = 'shipped'; // Giá trị hợp lệ trong DB của bạn
             $order->save();
 
+            // SỬA LỖI: Tải lại các mối quan hệ cần thiết cho OrderDetailResource
+            $freshOrder = $order->fresh()->load(['buyer', 'address', 'items.product']);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Đã xác nhận đơn hàng thành công.',
-                'data'    => new OrderDetailResource($order->fresh())
+                'data'    => new OrderDetailResource($freshOrder)
             ]);
 
         } catch (\Exception $e) {
