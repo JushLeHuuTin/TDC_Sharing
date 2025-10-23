@@ -13,7 +13,8 @@ use App\Models\Notification;
 use App\Policies\NotificationPolicy;
 use App\Models\Order; // Thêm dòng này
 use App\Policies\OrderPolicy; // Thêm dòng này
-
+use App\Policies\DashboardPolicy; // <-- Import DashboardPolicy
+use Illuminate\Support\Facades\Gate; // <-- Import Gate
 class AuthServiceProvider extends ServiceProvider
 {
     protected $policies = [
@@ -36,6 +37,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // ĐỊNH NGHĨA MỘT QUYỀN MỚI TÊN LÀ 'viewAdminDashboard'
+       Gate::define('viewAdminDashboard', [DashboardPolicy::class, 'viewAdminDashboard']);
     }
 }

@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\Admin\NotificationController as AdminNotificationCo
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController; // <-- Import DashboardController
+
 
 
 Route::post('/products', [ProductController::class, 'store']);
@@ -45,5 +47,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/notifications/{notification}', [AdminNotificationController::class, 'destroy'])->name('notifications.destroy');
 
         Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+
+        // Endpoint để lấy dữ liệu thống kê dashboard
+        Route::get('/dashboard/stats', [AdminDashboardController::class, 'stats'])->name('dashboard.stats');
     });
 });
