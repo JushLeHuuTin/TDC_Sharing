@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 
 class Voucher extends Model
 {
@@ -32,5 +33,15 @@ class Voucher extends Model
         return $this->start_date <= $now 
             && $this->end_date >= $now 
             && ($this->usage_limit === null || $this->used_count < $this->usage_limit);
+    }
+    public function scopeIdFromCode(Builder $query, ?string $code): Builder
+    {
+        if (empty($code)) {
+            // Nếu code rỗng, trả về query không giới hạn
+            return $query;
+        }
+        
+        // Tìm voucher bằng code, chỉ lấy cột id
+        return $query->where('code', $code)->select('id');
     }
 }

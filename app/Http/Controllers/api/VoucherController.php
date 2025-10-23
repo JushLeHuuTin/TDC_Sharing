@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\UpdateVoucherRequest;
 
 
 class VoucherController extends Controller
@@ -64,4 +65,64 @@ class VoucherController extends Controller
             ], 500); // 500 Internal Server Error
         }
     }
+    public function show(int $id): JsonResponse
+    {
+        // Giả sử đã check role 'admin' trong middleware/policy
+        
+        $voucher = Voucher::find($id);
+
+        if (!$voucher) {
+            return response()->json([
+                'message' => 'Mã voucher không tồn tại.',
+            ], 404);
+        }
+
+        return response()->json([
+            'data' => $voucher
+        ], 200);
+    }
+
+    /**
+     * API cập nhật thông tin mã voucher
+     * Ràng buộc 1-15
+     */
+    public function update(UpdateVoucherRequest $request, int $id): JsonResponse
+    {
+        // Dữ liệu đã được xác thực và làm sạch bởi UpdateVoucherRequest
+        $data = $request->validated();
+        
+        // Ràng buộc 1: Tìm voucher
+        $voucher = Voucher::find($id);
+
+        if (!$voucher) {
+            return response()->json([
+                'message' => 'Không tìm thấy mã voucher cần cập nhật.',
+            ], 404);
+        }
+
+        // Ràng buộc 15: Bắt đầu Transaction và xử lý lỗi DB
+        DB::beginTransaction();
+        try {
+            // Ràng buộc 1-13: Cập nhật dữ liệu
+            $voucher->update($data);
+
+            DB::commit();
+
+            // Ràng buộc 15: Thông báo thành công
+            return response()->json([
+                'message' => 'Cập nhật voucher thành công. 🎉',
+                'data' => $voucher,
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            // Ràng buộc 15: Xử lý lỗi server
+            // Log::error("Update Voucher Error: " . $e->getMessage()); // Nên log lỗi
+            return response()->json([
+                'message' => 'Lưu voucher thất bại, vui lòng thử lại. Lỗi hệ thống.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+}
 }

@@ -4,7 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\VoucherController;
-use App\Http\Controllers\OrderController;
+use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\CheckoutController;
 
 Route::post('/products', [ProductController::class, 'store']);
 // Các route yêu cầu phải đăng nhập thì cho vào group này
@@ -18,4 +19,18 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // API xem chi tiết đơn hàng (có kiểm tra bảo mật)
     Route::get('/orders/{id}', [OrderController::class, 'show']); 
+
+    // API Lấy thông tin voucher (trước khi sửa)
+    Route::get('/vouchers/{id}', [VoucherController::class, 'show']); 
+    
+    // API CẬP NHẬT voucher (sử dụng phương thức PUT/PATCH theo chuẩn RESTful)
+    Route::put('/vouchers/{id}', [VoucherController::class, 'update']);
+
+    // API xem giỏ hàng
+    Route::get('/cart', [CartController::class, 'index']);
+    // API Lấy dữ liệu trang Checkout
+    Route::get('/checkout', [CheckoutController::class, 'index']);
+    
+    // Ràng buộc 7: Nút Hoàn tất đặt hàng (Gọi lại API tạo đơn đã xây dựng)
+    // Route::post('/orders', [OrderController::class, 'store']);
 });

@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
 class Order extends Model
 {
     use HasFactory;
@@ -12,7 +11,7 @@ class Order extends Model
     protected $fillable = [
         'order_id', 'user_id', 'buyer_id', 'payment_method',
         'address_id', 'voucher_id'
-    ];
+    ];  
 
     public function user()
     {
@@ -47,5 +46,10 @@ class Order extends Model
     public function getTotalPrice()
     {
         return $this->items->sum('subtotal');
+    }
+    public function getSellerAttribute()
+    {
+        // Load item đầu tiên và thông tin Seller của nó
+        return $this->items()->with('product.user')->first()?->product->user;
     }
 }

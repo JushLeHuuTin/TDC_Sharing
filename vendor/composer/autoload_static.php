@@ -41,6 +41,7 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
         'ce9671a430e4846b44e1c68c7611f9f5' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery.php',
         'a1cfe24d14977df6878b9bf804af2d1c' => __DIR__ . '/..' . '/nunomaduro/collision/src/Adapters/Phpunit/Autoload.php',
         'ec07570ca5a812141189b1fa81503674' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/Assert/Functions.php',
+        '377b22b161c09ed6e5152de788ca020a' => __DIR__ . '/..' . '/spatie/laravel-permission/src/helpers.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -91,6 +92,7 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
             'Symfony\\Component\\CssSelector\\' => 30,
             'Symfony\\Component\\Console\\' => 26,
             'Symfony\\Component\\Clock\\' => 24,
+            'Spatie\\Permission\\' => 18,
         ),
         'R' => 
         array (
@@ -171,12 +173,15 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
         'C' => 
         array (
             'Cron\\' => 5,
+            'Composer\\Pcre\\' => 14,
+            'Composer\\ClassMapGenerator\\' => 27,
             'Carbon\\Doctrine\\' => 16,
             'Carbon\\' => 7,
         ),
         'B' => 
         array (
             'Brick\\Math\\' => 11,
+            'Barryvdh\\LaravelIdeHelper\\' => 26,
         ),
         'A' => 
         array (
@@ -328,6 +333,10 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
         'Symfony\\Component\\Clock\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/clock',
+        ),
+        'Spatie\\Permission\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/spatie/laravel-permission/src',
         ),
         'Ramsey\\Uuid\\' => 
         array (
@@ -523,6 +532,14 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
         array (
             0 => __DIR__ . '/..' . '/dragonmantank/cron-expression/src/Cron',
         ),
+        'Composer\\Pcre\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/composer/pcre/src',
+        ),
+        'Composer\\ClassMapGenerator\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/composer/class-map-generator/src',
+        ),
         'Carbon\\Doctrine\\' => 
         array (
             0 => __DIR__ . '/..' . '/carbonphp/carbon-doctrine-types/src/Carbon/Doctrine',
@@ -535,6 +552,10 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
         array (
             0 => __DIR__ . '/..' . '/brick/math/src',
         ),
+        'Barryvdh\\LaravelIdeHelper\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/barryvdh/laravel-ide-helper/src',
+        ),
         'App\\' => 
         array (
             0 => __DIR__ . '/../..' . '/app',
@@ -542,9 +563,18 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
         ),
     );
 
+    public static $prefixesPsr0 = array (
+        'B' => 
+        array (
+            'Barryvdh' => 
+            array (
+                0 => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src',
+            ),
+        ),
+    );
+
     public static $classMap = array (
         'App\\Http\\Controllers\\AdminController' => __DIR__ . '/../..' . '/app/Http/Controllers/AdminController.php',
-        'App\\Http\\Controllers\\Api\\ProductController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/ProductController.php',
         'App\\Http\\Controllers\\AuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/AuthController.php',
         'App\\Http\\Controllers\\CategoryController' => __DIR__ . '/../..' . '/app/Http/Controllers/CategoryController.php',
         'App\\Http\\Controllers\\ChatController' => __DIR__ . '/../..' . '/app/Http/Controllers/ChatController.php',
@@ -558,7 +588,11 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
         'App\\Http\\Controllers\\ReviewController' => __DIR__ . '/../..' . '/app/Http/Controllers/ReviewController.php',
         'App\\Http\\Controllers\\SearchController' => __DIR__ . '/../..' . '/app/Http/Controllers/SearchController.php',
         'App\\Http\\Controllers\\TransactionController' => __DIR__ . '/../..' . '/app/Http/Controllers/TransactionController.php',
+        'App\\Http\\Requests\\ProcessOrderRequest' => __DIR__ . '/../..' . '/app/Http/Requests/ProcessOrderRequest.php',
+        'App\\Http\\Requests\\StoreOrderRequest' => __DIR__ . '/../..' . '/app/Http/Requests/StoreOrderRequest.php',
         'App\\Http\\Requests\\StoreProductRequest' => __DIR__ . '/../..' . '/app/Http/Requests/StoreProductRequest.php',
+        'App\\Http\\Requests\\StoreVoucherRequest' => __DIR__ . '/../..' . '/app/Http/Requests/StoreVoucherRequest.php',
+        'App\\Http\\Requests\\UpdateVoucherRequest' => __DIR__ . '/../..' . '/app/Http/Requests/UpdateVoucherRequest.php',
         'App\\Models\\Address' => __DIR__ . '/../..' . '/app/Models/Address.php',
         'App\\Models\\Attribute' => __DIR__ . '/../..' . '/app/Models/Attribute.php',
         'App\\Models\\Cart' => __DIR__ . '/../..' . '/app/Models/Cart.php',
@@ -568,6 +602,7 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
         'App\\Models\\Notification' => __DIR__ . '/../..' . '/app/Models/Notification.php',
         'App\\Models\\Order' => __DIR__ . '/../..' . '/app/Models/Order.php',
         'App\\Models\\OrderItem' => __DIR__ . '/../..' . '/app/Models/OrderItem.php',
+        'App\\Models\\PaymentMethod' => __DIR__ . '/../..' . '/app/Models/PaymentMethod.php',
         'App\\Models\\Product' => __DIR__ . '/../..' . '/app/Models/Product.php',
         'App\\Models\\ProductAttribute' => __DIR__ . '/../..' . '/app/Models/ProductAttribute.php',
         'App\\Models\\ProductImage' => __DIR__ . '/../..' . '/app/Models/ProductImage.php',
@@ -577,10 +612,54 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
         'App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
         'App\\Models\\Voucher' => __DIR__ . '/../..' . '/app/Models/Voucher.php',
         'App\\Models\\Wishlist' => __DIR__ . '/../..' . '/app/Models/Wishlist.php',
+        'App\\Policies\\OrderPolicy' => __DIR__ . '/../..' . '/app/Policies/OrderPolicy.php',
         'App\\Policies\\ProductPolicy' => __DIR__ . '/../..' . '/app/Policies/ProductPolicy.php',
+        'App\\Policies\\VoucherPolicy' => __DIR__ . '/../..' . '/app/Policies/VoucherPolicy.php',
         'App\\Providers\\AppServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AppServiceProvider.php',
         'App\\Providers\\AuthServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AuthServiceProvider.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
+        'Barryvdh\\LaravelIdeHelper\\Alias' => __DIR__ . '/..' . '/barryvdh/laravel-ide-helper/src/Alias.php',
+        'Barryvdh\\LaravelIdeHelper\\Console\\EloquentCommand' => __DIR__ . '/..' . '/barryvdh/laravel-ide-helper/src/Console/EloquentCommand.php',
+        'Barryvdh\\LaravelIdeHelper\\Console\\GeneratorCommand' => __DIR__ . '/..' . '/barryvdh/laravel-ide-helper/src/Console/GeneratorCommand.php',
+        'Barryvdh\\LaravelIdeHelper\\Console\\MetaCommand' => __DIR__ . '/..' . '/barryvdh/laravel-ide-helper/src/Console/MetaCommand.php',
+        'Barryvdh\\LaravelIdeHelper\\Console\\ModelsCommand' => __DIR__ . '/..' . '/barryvdh/laravel-ide-helper/src/Console/ModelsCommand.php',
+        'Barryvdh\\LaravelIdeHelper\\Contracts\\ModelHookInterface' => __DIR__ . '/..' . '/barryvdh/laravel-ide-helper/src/Contracts/ModelHookInterface.php',
+        'Barryvdh\\LaravelIdeHelper\\Eloquent' => __DIR__ . '/..' . '/barryvdh/laravel-ide-helper/src/Eloquent.php',
+        'Barryvdh\\LaravelIdeHelper\\Factories' => __DIR__ . '/..' . '/barryvdh/laravel-ide-helper/src/Factories.php',
+        'Barryvdh\\LaravelIdeHelper\\Generator' => __DIR__ . '/..' . '/barryvdh/laravel-ide-helper/src/Generator.php',
+        'Barryvdh\\LaravelIdeHelper\\IdeHelperServiceProvider' => __DIR__ . '/..' . '/barryvdh/laravel-ide-helper/src/IdeHelperServiceProvider.php',
+        'Barryvdh\\LaravelIdeHelper\\Listeners\\GenerateModelHelper' => __DIR__ . '/..' . '/barryvdh/laravel-ide-helper/src/Listeners/GenerateModelHelper.php',
+        'Barryvdh\\LaravelIdeHelper\\Macro' => __DIR__ . '/..' . '/barryvdh/laravel-ide-helper/src/Macro.php',
+        'Barryvdh\\LaravelIdeHelper\\Method' => __DIR__ . '/..' . '/barryvdh/laravel-ide-helper/src/Method.php',
+        'Barryvdh\\LaravelIdeHelper\\Parsers\\PhpDocReturnTypeParser' => __DIR__ . '/..' . '/barryvdh/laravel-ide-helper/src/Parsers/PhpDocReturnTypeParser.php',
+        'Barryvdh\\Reflection\\DocBlock' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock.php',
+        'Barryvdh\\Reflection\\DocBlock\\Context' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Context.php',
+        'Barryvdh\\Reflection\\DocBlock\\ContextFactory' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/ContextFactory.php',
+        'Barryvdh\\Reflection\\DocBlock\\Description' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Description.php',
+        'Barryvdh\\Reflection\\DocBlock\\Location' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Location.php',
+        'Barryvdh\\Reflection\\DocBlock\\Serializer' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Serializer.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag\\AuthorTag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag/AuthorTag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag\\CoversTag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag/CoversTag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag\\DeprecatedTag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag/DeprecatedTag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag\\ExampleTag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag/ExampleTag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag\\LinkTag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag/LinkTag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag\\MethodTag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag/MethodTag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag\\ParamTag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag/ParamTag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag\\PropertyReadTag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag/PropertyReadTag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag\\PropertyTag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag/PropertyTag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag\\PropertyWriteTag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag/PropertyWriteTag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag\\ReturnTag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag/ReturnTag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag\\SeeTag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag/SeeTag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag\\SinceTag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag/SinceTag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag\\SourceTag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag/SourceTag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag\\SuppressWarningsTag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag/SuppressWarningsTag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag\\TemplateTag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag/TemplateTag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag\\ThrowsTag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag/ThrowsTag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag\\UsesTag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag/UsesTag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag\\VarTag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag/VarTag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Tag\\VersionTag' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Tag/VersionTag.php',
+        'Barryvdh\\Reflection\\DocBlock\\Type\\Collection' => __DIR__ . '/..' . '/barryvdh/reflection-docblock/src/Barryvdh/Reflection/DocBlock/Type/Collection.php',
         'Brick\\Math\\BigDecimal' => __DIR__ . '/..' . '/brick/math/src/BigDecimal.php',
         'Brick\\Math\\BigInteger' => __DIR__ . '/..' . '/brick/math/src/BigInteger.php',
         'Brick\\Math\\BigNumber' => __DIR__ . '/..' . '/brick/math/src/BigNumber.php',
@@ -687,7 +766,29 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
         'Carbon\\Unit' => __DIR__ . '/..' . '/nesbot/carbon/src/Carbon/Unit.php',
         'Carbon\\WeekDay' => __DIR__ . '/..' . '/nesbot/carbon/src/Carbon/WeekDay.php',
         'Carbon\\WrapperClock' => __DIR__ . '/..' . '/nesbot/carbon/src/Carbon/WrapperClock.php',
+        'Composer\\ClassMapGenerator\\ClassMap' => __DIR__ . '/..' . '/composer/class-map-generator/src/ClassMap.php',
+        'Composer\\ClassMapGenerator\\ClassMapGenerator' => __DIR__ . '/..' . '/composer/class-map-generator/src/ClassMapGenerator.php',
+        'Composer\\ClassMapGenerator\\FileList' => __DIR__ . '/..' . '/composer/class-map-generator/src/FileList.php',
+        'Composer\\ClassMapGenerator\\PhpFileCleaner' => __DIR__ . '/..' . '/composer/class-map-generator/src/PhpFileCleaner.php',
+        'Composer\\ClassMapGenerator\\PhpFileParser' => __DIR__ . '/..' . '/composer/class-map-generator/src/PhpFileParser.php',
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
+        'Composer\\Pcre\\MatchAllResult' => __DIR__ . '/..' . '/composer/pcre/src/MatchAllResult.php',
+        'Composer\\Pcre\\MatchAllStrictGroupsResult' => __DIR__ . '/..' . '/composer/pcre/src/MatchAllStrictGroupsResult.php',
+        'Composer\\Pcre\\MatchAllWithOffsetsResult' => __DIR__ . '/..' . '/composer/pcre/src/MatchAllWithOffsetsResult.php',
+        'Composer\\Pcre\\MatchResult' => __DIR__ . '/..' . '/composer/pcre/src/MatchResult.php',
+        'Composer\\Pcre\\MatchStrictGroupsResult' => __DIR__ . '/..' . '/composer/pcre/src/MatchStrictGroupsResult.php',
+        'Composer\\Pcre\\MatchWithOffsetsResult' => __DIR__ . '/..' . '/composer/pcre/src/MatchWithOffsetsResult.php',
+        'Composer\\Pcre\\PHPStan\\InvalidRegexPatternRule' => __DIR__ . '/..' . '/composer/pcre/src/PHPStan/InvalidRegexPatternRule.php',
+        'Composer\\Pcre\\PHPStan\\PregMatchFlags' => __DIR__ . '/..' . '/composer/pcre/src/PHPStan/PregMatchFlags.php',
+        'Composer\\Pcre\\PHPStan\\PregMatchParameterOutTypeExtension' => __DIR__ . '/..' . '/composer/pcre/src/PHPStan/PregMatchParameterOutTypeExtension.php',
+        'Composer\\Pcre\\PHPStan\\PregMatchTypeSpecifyingExtension' => __DIR__ . '/..' . '/composer/pcre/src/PHPStan/PregMatchTypeSpecifyingExtension.php',
+        'Composer\\Pcre\\PHPStan\\PregReplaceCallbackClosureTypeExtension' => __DIR__ . '/..' . '/composer/pcre/src/PHPStan/PregReplaceCallbackClosureTypeExtension.php',
+        'Composer\\Pcre\\PHPStan\\UnsafeStrictGroupsCallRule' => __DIR__ . '/..' . '/composer/pcre/src/PHPStan/UnsafeStrictGroupsCallRule.php',
+        'Composer\\Pcre\\PcreException' => __DIR__ . '/..' . '/composer/pcre/src/PcreException.php',
+        'Composer\\Pcre\\Preg' => __DIR__ . '/..' . '/composer/pcre/src/Preg.php',
+        'Composer\\Pcre\\Regex' => __DIR__ . '/..' . '/composer/pcre/src/Regex.php',
+        'Composer\\Pcre\\ReplaceResult' => __DIR__ . '/..' . '/composer/pcre/src/ReplaceResult.php',
+        'Composer\\Pcre\\UnexpectedNullMatchException' => __DIR__ . '/..' . '/composer/pcre/src/UnexpectedNullMatchException.php',
         'Cron\\AbstractField' => __DIR__ . '/..' . '/dragonmantank/cron-expression/src/Cron/AbstractField.php',
         'Cron\\CronExpression' => __DIR__ . '/..' . '/dragonmantank/cron-expression/src/Cron/CronExpression.php',
         'Cron\\DayOfMonthField' => __DIR__ . '/..' . '/dragonmantank/cron-expression/src/Cron/DayOfMonthField.php',
@@ -5813,6 +5914,41 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
         'SebastianBergmann\\Type\\UnknownType' => __DIR__ . '/..' . '/sebastian/type/src/type/UnknownType.php',
         'SebastianBergmann\\Type\\VoidType' => __DIR__ . '/..' . '/sebastian/type/src/type/VoidType.php',
         'SebastianBergmann\\Version' => __DIR__ . '/..' . '/sebastian/version/src/Version.php',
+        'Spatie\\Permission\\Commands\\CacheReset' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Commands/CacheReset.php',
+        'Spatie\\Permission\\Commands\\CreatePermission' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Commands/CreatePermission.php',
+        'Spatie\\Permission\\Commands\\CreateRole' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Commands/CreateRole.php',
+        'Spatie\\Permission\\Commands\\Show' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Commands/Show.php',
+        'Spatie\\Permission\\Commands\\UpgradeForTeams' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Commands/UpgradeForTeams.php',
+        'Spatie\\Permission\\Contracts\\Permission' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Contracts/Permission.php',
+        'Spatie\\Permission\\Contracts\\PermissionsTeamResolver' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Contracts/PermissionsTeamResolver.php',
+        'Spatie\\Permission\\Contracts\\Role' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Contracts/Role.php',
+        'Spatie\\Permission\\Contracts\\Wildcard' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Contracts/Wildcard.php',
+        'Spatie\\Permission\\DefaultTeamResolver' => __DIR__ . '/..' . '/spatie/laravel-permission/src/DefaultTeamResolver.php',
+        'Spatie\\Permission\\Events\\PermissionAttached' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Events/PermissionAttached.php',
+        'Spatie\\Permission\\Events\\PermissionDetached' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Events/PermissionDetached.php',
+        'Spatie\\Permission\\Events\\RoleAttached' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Events/RoleAttached.php',
+        'Spatie\\Permission\\Events\\RoleDetached' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Events/RoleDetached.php',
+        'Spatie\\Permission\\Exceptions\\GuardDoesNotMatch' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Exceptions/GuardDoesNotMatch.php',
+        'Spatie\\Permission\\Exceptions\\PermissionAlreadyExists' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Exceptions/PermissionAlreadyExists.php',
+        'Spatie\\Permission\\Exceptions\\PermissionDoesNotExist' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Exceptions/PermissionDoesNotExist.php',
+        'Spatie\\Permission\\Exceptions\\RoleAlreadyExists' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Exceptions/RoleAlreadyExists.php',
+        'Spatie\\Permission\\Exceptions\\RoleDoesNotExist' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Exceptions/RoleDoesNotExist.php',
+        'Spatie\\Permission\\Exceptions\\UnauthorizedException' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Exceptions/UnauthorizedException.php',
+        'Spatie\\Permission\\Exceptions\\WildcardPermissionInvalidArgument' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Exceptions/WildcardPermissionInvalidArgument.php',
+        'Spatie\\Permission\\Exceptions\\WildcardPermissionNotImplementsContract' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Exceptions/WildcardPermissionNotImplementsContract.php',
+        'Spatie\\Permission\\Exceptions\\WildcardPermissionNotProperlyFormatted' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Exceptions/WildcardPermissionNotProperlyFormatted.php',
+        'Spatie\\Permission\\Guard' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Guard.php',
+        'Spatie\\Permission\\Middleware\\PermissionMiddleware' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Middleware/PermissionMiddleware.php',
+        'Spatie\\Permission\\Middleware\\RoleMiddleware' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Middleware/RoleMiddleware.php',
+        'Spatie\\Permission\\Middleware\\RoleOrPermissionMiddleware' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Middleware/RoleOrPermissionMiddleware.php',
+        'Spatie\\Permission\\Models\\Permission' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Models/Permission.php',
+        'Spatie\\Permission\\Models\\Role' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Models/Role.php',
+        'Spatie\\Permission\\PermissionRegistrar' => __DIR__ . '/..' . '/spatie/laravel-permission/src/PermissionRegistrar.php',
+        'Spatie\\Permission\\PermissionServiceProvider' => __DIR__ . '/..' . '/spatie/laravel-permission/src/PermissionServiceProvider.php',
+        'Spatie\\Permission\\Traits\\HasPermissions' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Traits/HasPermissions.php',
+        'Spatie\\Permission\\Traits\\HasRoles' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Traits/HasRoles.php',
+        'Spatie\\Permission\\Traits\\RefreshesPermissionCache' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Traits/RefreshesPermissionCache.php',
+        'Spatie\\Permission\\WildcardPermission' => __DIR__ . '/..' . '/spatie/laravel-permission/src/WildcardPermission.php',
         'Stringable' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Stringable.php',
         'Symfony\\Component\\Clock\\Clock' => __DIR__ . '/..' . '/symfony/clock/Clock.php',
         'Symfony\\Component\\Clock\\ClockAwareTrait' => __DIR__ . '/..' . '/symfony/clock/ClockAwareTrait.php',
@@ -6905,6 +7041,7 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584::$prefixesPsr0;
             $loader->classMap = ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584::$classMap;
 
         }, null, ClassLoader::class);
