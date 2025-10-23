@@ -47,4 +47,9 @@ class Order extends Model
     {
         return $this->items->sum('subtotal');
     }
+    public function getSellerAttribute()
+    {
+        // Load item đầu tiên và thông tin Seller của nó
+        return $this->items()->with('product.user')->first()?->product->user;
+    }
 }
