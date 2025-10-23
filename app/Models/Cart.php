@@ -35,7 +35,7 @@ class Cart extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function items()
+    public function cartItems()
     {
         return $this->hasMany(CartItem::class);
     }
@@ -49,10 +49,15 @@ class Cart extends Model
     public function scopeForUserWithDetails(Builder $query, int $userId): void
     {
         $query->where('user_id', $userId)
-              ->with('cartItems.product');
+            ->with('cartItems.product');
     }
-    public function cartItems()
+    public function scopeActiveUserWithDetails(Builder $query, int $userId): Builder
     {
-        return $this->hasMany(CartItem::class);
+        return $query->where('user_id', $userId)
+            ->with('cartItems.product');
+    }
+    public function isAvailableForCheckout(): bool
+    {
+        return $this->exists && $this->cartItems()->exists();
     }
 }

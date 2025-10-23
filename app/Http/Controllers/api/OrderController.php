@@ -9,11 +9,12 @@ use App\Models\OrderItem;
 use App\Models\Cart;
 use App\Models\Product;
 use App\Models\Transaction;
+use App\Models\Voucher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
-
+use Str;
 
 class OrderController extends Controller
 {
@@ -26,90 +27,86 @@ class OrderController extends Controller
     public function store(ProcessOrderRequest $request): JsonResponse
     {
         $buyerId = Auth::id();
-        $cart = Cart::forUserWithDetails($buyerId)->first();
-        $voucherId = 112;
-        // die("ti");
-
-        if (!$cart || $cart->cartItems->isEmpty()) {
+        $voucherCode = $request->voucher_code;
+        
+        // 1. Lấy Cart: Sử dụng Local Scope của Model Cart
+        $cart = Cart::activeUserWithDetails($buyerId)->first();
+        if (!$cart || !$cart->isAvailableForCheckout()) {
             return response()->json(['message' => 'Giỏ hàng của bạn đang trống.'], 400);
         }
+        
+        // 2. Lấy Voucher ID: Sử dụng Local Scope của Model Voucher
+        $voucherId = Voucher::IdFromCode($voucherCode)->value('id');
+        // Lưu ý: Validation Form Request đã kiểm tra existence, nhưng không tìm ra ID.
+        
+        // 3. Tính toán các giá trị tài chính (Giả định hàm này nằm trong service hoặc trait)
+        $calculation = $this->calculateOrderTotals($cart, $voucherId);
+        // 4. Chuẩn bị dữ liệu Order
+        $orderData = [
+            'user_id'           => $buyerId, 
+            'address_id'        => $request->address_id,
+            'payment_method'    => $request->payment_method,
+            'voucher_id'        => $voucherId, // Đã có ID
+            'status'            => 'pending', 
+            'total_amount'      => $calculation['total_amount'],
+        ];
 
-        // Bắt đầu giao dịch DB để đảm bảo tính toàn vẹn
         DB::beginTransaction();
-
         try {
+            // A. TẠO ĐƠN HÀNG (Order)
+            $order = Order::create($orderData);
+            
+            // B. TẠO CHI TIẾT ĐƠN HÀNG (Order_Items) & CẬP NHẬT KHO
+            $this->createOrderItemsAndUpdateStock($order, $cart, $request->address_id);
+            // die();
 
-            // 1. Kiểm tra tồn kho và lấy dữ liệu chi tiết đơn hàng
-            $cartItemsData = $this->processCartItems($cart);
-            $totalAmount = $this->calculateTotal($cartItemsData);
-
-            // TODO: Áp dụng Voucher tại đây nếu 'voucher_code' có trong request
-            $finalTotal = $totalAmount;
-            // 2. Tạo Đơn hàng chính
-            // die("$finalTotal");
-            // die("$request->payment_method");
-            $order = Order::create([
-            // [KHẮC PHỤC LỖI THIẾU CỘT] user_id là BẮT BUỘC theo Schema
-    'user_id'         => $buyerId, 
-    'buyer_id'        => $buyerId,
-    // [KHẮC PHỤC LỖI THIẾU CỘT] order_id là BẮT BUỘC và UNIQUE
-    "order_id"        => "ORD-" . strtoupper(substr(uniqid(), -10)), // Tạo ID ngẫu nhiên, DUY NHẤT
-    
-    // [KHẮC PHỤC LỖI ÁNH XẠ] delivery_address_id trong Request -> address_id trong DB
-    'address_id'      => $request->delivery_address_id,
-    
-    // [KHẮC PHỤC LỖI ÁNH XẠ] voucher_code trong Request -> voucher_id trong DB
-    'voucher_id'      => $voucherId, 
-    
-    'total_amount'    => $finalTotal, 
-    // Giả định discount_amount là 50000 (nếu có voucher)
-    'discount_amount' => $voucherId ? 50000.00 : 0.00,
-    // Final amount = Total - Discount (ví dụ: 100000.00)
-    'final_amount'    => $finalTotal - ($voucherId ? 50000.00 : 0.00), 
-    
-    'status'          => 'pending',
-    'payment_method'  => $request->payment_method,
-            ]);
-
-            // 3. Tạo Chi tiết Đơn hàng và Cập nhật tồn kho
-            $this->createOrderItemsAndUpdateStock($order->id, $cartItemsData);
-
-            // 4. Tạo bản ghi Giao dịch
-            Transaction::create([
-                'order_id' => $order->id,
-                'payment_method' => $request->payment_method,
-                'transaction_code' => $request->transaction_id,
-                'amount' => $finalTotal,
-                'status' => 'completed',
-            ]);
-
-            // 5. Xóa Giỏ hàng
+            // C. XÓA GIỎ HÀNG
             $cart->delete();
             
-            // 6. Trả về Response thành công
             DB::commit();
 
-            $order = Order::with(['buyer', 'items.seller'])->find($order->id);
             return response()->json([
-                'message' => 'Tạo đơn hàng thành công!',
-                'order_id' => $order->id,
-                'order_details' => $order,
-            ], 200);
+                'success' => true,
+                'message' => 'Đặt hàng thành công! Đang chờ thanh toán.',
+                'order' => $order->load('items.product', 'address', 'user')
+            ], 201);
+
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("Lỗi tạo đơn hàng cho User {$buyerId}: " . $e->getMessage());
 
             return response()->json([
-                'message' => 'Tạo đơn hàng thất bại, vui lòng thử lại.',
+                'success' => false,
+                'message' => 'Đặt hàng thất bại, vui lòng thử lại.',
             ], 500);
         }
+    }
+    private function calculateOrderTotals(Cart $cart, ?int $voucherId): array
+    {
+        $totalAmount = 0;
+        foreach ($cart->cartItems as $item) {
+            // Giả định product đã được load sẵn nhờ scope ActiveUserWithDetails
+            $totalAmount += $item->product->price * $item->quantity;
+        }
+
+        $discountAmount = 0.00;
+        
+        if ($voucherId) {
+             $discountAmount = $totalAmount * 0.10;
+        }
+        
+        $finalAmount = $totalAmount - $discountAmount;
+        
+        // $shippingFee = $this->calculateShippingFee();
+        // $finalAmount += $shippingFee;
+        return [
+            'total_amount'      => $finalAmount,
+            'voucher_id'        => $voucherId,
+        ];
     }
 
     /**
      * API Hiển thị chi tiết đơn hàng (Bảo mật).
-     *
-     * @param int $id ID đơn hàng
-     * @return JsonResponse
      */
     public function show(int $id): JsonResponse
     {
@@ -124,70 +121,40 @@ class OrderController extends Controller
     }
 
     /**
-     * Rút gọn: Kiểm tra tồn kho và tạo mảng dữ liệu chi tiết đơn hàng.
-     *
-     * @param Cart $cart
-     * @return array
-     */
-    private function processCartItems(Cart $cart): array
-    {
-        $orderItemsData = [];
-
-        foreach ($cart->cartItems as $cartItem) {
-            $product = $cartItem->product;
-
-            // Kiểm tra stock
-            if ($product->stocks < $cartItem->quantity) {
-                // Ném ra exception để tự động rollBack transaction và thông báo lỗi
-                throw new \Exception("Sản phẩm '{$product->title}' chỉ còn {$product->stocks} đơn vị. Vui lòng cập nhật giỏ hàng.");
-            }
-
-            $itemPrice = $product->price * $cartItem->quantity;
-
-            $orderItemsData[] = [
-                'product_id' => $product->id,
-                'seller_id' => $product->user_id,
-                'quantity' => $cartItem->quantity,
-                'price' => $product->price,
-                'sub_total' => $itemPrice,
-            ];
-        }
-
-        return $orderItemsData;
-    }
-
-    /**
-     * Rút gọn: Tính tổng tiền.
-     *
-     * @param array $items
-     * @return float
-     */
-    private function calculateTotal(array $items): float
-    {
-        return array_sum(array_column($items, 'sub_total'));
-    }
-
-    /**
      * Rút gọn: Lưu Order Items và cập nhật tồn kho.
      *
      * @param int $orderId
      * @param array $orderItemsData
      * @return void
      */
-    private function createOrderItemsAndUpdateStock(int $orderId, array $orderItemsData): void
+  private function createOrderItemsAndUpdateStock(Order $order, Cart $cart, int $addressId): void
     {
-        // Thêm order_id vào tất cả các mục
-        $itemsToInsert = array_map(function ($item) use ($orderId) {
-            $item['order_id'] = $orderId;
-            return $item;
-        }, $orderItemsData);
+        $orderItems = [];
+        
+        foreach ($cart->cartItems as $cartItem) {
+            $product = $cartItem->product;
+            
+            if ($product->stocks < $cartItem->quantity) {
+                // Đảm bảo rollback transaction ở tầng cao hơn (hàm store)
+                throw new \Exception("Sản phẩm '{$product->title}' chỉ còn {$product->stocks} sản phẩm.");
+            }
 
-        // Chèn hàng loạt vào order_items
-        OrderItem::insert($itemsToInsert);
-
-        // Cập nhật tồn kho (từng mục)
-        foreach ($orderItemsData as $item) {
-            Product::where('id', $item['product_id'])->decrement('stocks', $item['quantity']);
+            // Tạo mảng dữ liệu cho OrderItem (sử dụng insert mass insert để tối ưu)
+            $orderItems[] = [
+                'order_id'      => $order->id, 
+                'product_id'    => $product->id,
+                'price'         => $product->price,
+                'quantity'      => $cartItem->quantity,
+                'subtotal'         => $product->price * $cartItem->quantity,
+                'created_at'    => now(),
+                'updated_at'    => now(),
+            ];
+            // Cập nhật tồn kho (Sử dụng Model để tương tác với DB)
+            // $product->decrement('stocks', $cartItem->quantity);
         }
+        // die("");
+        // die("$product->id");
+        // Thực hiện mass insert (tạo nhiều OrderItem cùng lúc)
+        OrderItem::insert($orderItems);
     }
 }
