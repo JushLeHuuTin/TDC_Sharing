@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use App\Models\User;
+use App\Models\Product;
 
 class DashboardController extends Controller
 {
@@ -26,6 +27,7 @@ class DashboardController extends Controller
 
             // (Bạn có thể thêm các thống kê khác ở đây trong tương lai)
             $totalUsers = User::count();
+            $totalProducts = Product::count();
             // $totalRevenue = Order::where('status', 'delivered')->sum('final_amount');
 
             // 3. Trả về response thành công
@@ -34,6 +36,7 @@ class DashboardController extends Controller
                 'data' => [
                     'total_orders' => $totalOrders,
                     'total_users' => $totalUsers,
+                    'total_products' => $totalProducts,
                 ]
             ]);
         } catch (\Exception $e) {
