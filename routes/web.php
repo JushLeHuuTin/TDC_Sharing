@@ -317,34 +317,34 @@ use Illuminate\Support\Facades\Route;
     
 //     // ===== PRODUCT MANAGEMENT =====
     Route::prefix('products')->name('products.')->group(function () {
-        Route::get('/create', [ProductController::class, 'create'])->name('create');
+        // Route::get('/create', [ProductController::class, 'create'])->name('create');
 //         Route::post('/', [ProductController::class, 'store'])->name('store');
 //         Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('edit')->middleware('can:update,product');
 //         Route::put('/{product}', [ProductController::class, 'update'])->name('update')->middleware('can:update,product');
 //         Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy')->middleware('can:delete,product');
     });
     Route::get('/', function () {
-        return view('pages.home.index');
+        // return view('pages.home.index');
     })->name('home.index');
 
     Route::get('/index', function () {
-        return redirect()->route('home.index');
+        // return redirect()->route('home.index');
     });
 
     Route::prefix('products')->name('products.')->group(function () {
         // Route::get('/', [ProductController::class, 'index'])->name('index');
-        Route::get('/search', [ProductController::class, 'search'])->name('search');
-        Route::get('/my', [ProductController::class, 'getProduct'])->name('my');
-        Route::get('/{product}', [ProductController::class, 'show'])->name('show');
+        // Route::get('/search', [ProductController::class, 'search'])->name('search');
+        // Route::get('/my', [ProductController::class, 'getProduct'])->name('my');
+        // Route::get('/{product}', [ProductController::class, 'show'])->name('show');
     });
     Route::prefix('auth')->name('auth.')->group(function () {
         // Login
-        Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-        Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+        // Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+        // Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     });
      // Category Management
     Route::prefix('admin')->name('admin.')->group(function () {
-        Route::get('/', [AdminController::class, 'categories'])->name('categories');
+        // Route::get('/', [AdminController::class, 'categories'])->name('categories');
         // Route::get('/create', [AdminController::class, 'createCategory'])->name('create');
         // Route::post('/', [AdminController::class, 'storeCategory'])->name('store');
         // Route::get('/{category}/edit', [AdminController::class, 'editCategory'])->name('edit');

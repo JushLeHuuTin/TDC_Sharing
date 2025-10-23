@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Http\Requests\ProcessOrderRequest;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * @property int $id
@@ -43,5 +45,14 @@ class Cart extends Model
         return $this->items->sum(function ($item) {
             return $item->price * $item->quantity;
         });
+    }
+    public function scopeForUserWithDetails(Builder $query, int $userId): void
+    {
+        $query->where('user_id', $userId)
+              ->with('cartItems.product');
+    }
+    public function cartItems()
+    {
+        return $this->hasMany(CartItem::class);
     }
 }
