@@ -60,6 +60,15 @@ class Product extends Model
     }
 
     /**
+     * SỬA LỖI: Thêm mối quan hệ `seller()` để tương thích với logic hiện tại.
+     * Đây thực chất là một tên gọi khác cho mối quan hệ `user()`.
+     */
+    public function seller(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
      * Mối quan hệ: Một sản phẩm thuộc về một danh mục (Category).
      */
     public function category(): BelongsTo
@@ -150,6 +159,7 @@ class Product extends Model
     {
         return $query->where('status', 'published');
     }
+<<<<<<< HEAD:backend/app/Models/Product.php
     public function scopeSearch(Builder $query, string $keyword): Builder
     {
         return $query->where('status', 'active') // Chỉ tìm trong các sản phẩm đang hoạt động
@@ -189,4 +199,6 @@ class Product extends Model
     {
         return $this->belongsToMany(User::class, 'wishlist', 'product_id', 'user_id');
     }
+=======
+>>>>>>> hanh/f16/show-total-products:app/Models/Product.php
 }

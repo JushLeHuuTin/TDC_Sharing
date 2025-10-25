@@ -8,8 +8,11 @@ $baseDir = dirname($vendorDir);
 return array(
     'App\\Exceptions\\Handler' => $baseDir . '/app/Exceptions/Handler.php',
     'App\\Http\\Controllers\\AdminController' => $baseDir . '/app/Http/Controllers/AdminController.php',
+<<<<<<< HEAD:backend/vendor/composer/autoload_classmap.php
     'App\\Http\\Controllers\\Api\\CategoryController' => $baseDir . '/app/Http/Controllers/Api/CategoryController.php',
     'App\\Http\\Controllers\\Api\\ProductController' => $baseDir . '/app/Http/Controllers/Api/ProductController.php',
+=======
+>>>>>>> hanh/f16/show-total-products:vendor/composer/autoload_classmap.php
     'App\\Http\\Controllers\\AuthController' => $baseDir . '/app/Http/Controllers/AuthController.php',
     'App\\Http\\Controllers\\CategoryController' => $baseDir . '/app/Http/Controllers/CategoryController.php',
     'App\\Http\\Controllers\\ChatController' => $baseDir . '/app/Http/Controllers/ChatController.php',
@@ -20,18 +23,21 @@ return array(
     'App\\Http\\Controllers\\NotificationController' => $baseDir . '/app/Http/Controllers/NotificationController.php',
     'App\\Http\\Controllers\\ProfileController' => $baseDir . '/app/Http/Controllers/ProfileController.php',
     'App\\Http\\Controllers\\ReportController' => $baseDir . '/app/Http/Controllers/ReportController.php',
-    'App\\Http\\Controllers\\ReviewController' => $baseDir . '/app/Http/Controllers/ReviewController.php',
     'App\\Http\\Controllers\\SearchController' => $baseDir . '/app/Http/Controllers/SearchController.php',
     'App\\Http\\Controllers\\TransactionController' => $baseDir . '/app/Http/Controllers/TransactionController.php',
     'App\\Http\\Requests\\SearchProductRequest' => $baseDir . '/app/Http/Requests/SearchProductRequest.php',
     'App\\Http\\Requests\\StoreCategoryRequest' => $baseDir . '/app/Http/Requests/StoreCategoryRequest.php',
     'App\\Http\\Requests\\StoreProductRequest' => $baseDir . '/app/Http/Requests/StoreProductRequest.php',
+<<<<<<< HEAD:backend/vendor/composer/autoload_classmap.php
     'App\\Http\\Requests\\UpdateCategoryRequest' => $baseDir . '/app/Http/Requests/UpdateCategoryRequest.php',
     'App\\Http\\Requests\\UpdateProductRequest' => $baseDir . '/app/Http/Requests/UpdateProductRequest.php',
     'App\\Http\\Resources\\BreadcrumbResource' => $baseDir . '/app/Http/Resources/BreadcrumbResource.php',
     'App\\Http\\Resources\\FeaturedProductResource' => $baseDir . '/app/Http/Resources/FeaturedProductResource.php',
     'App\\Http\\Resources\\ProductDetailResource' => $baseDir . '/app/Http/Resources/ProductDetailResource.php',
     'App\\Http\\Resources\\ProductResource' => $baseDir . '/app/Http/Resources/ProductResource.php',
+=======
+    'App\\Http\\Requests\\StoreReviewRequest' => $baseDir . '/app/Http/Requests/StoreReviewRequest.php',
+>>>>>>> hanh/f16/show-total-products:vendor/composer/autoload_classmap.php
     'App\\Models\\Address' => $baseDir . '/app/Models/Address.php',
     'App\\Models\\Attribute' => $baseDir . '/app/Models/Attribute.php',
     'App\\Models\\Cart' => $baseDir . '/app/Models/Cart.php',
