@@ -5,7 +5,7 @@ namespace App\Http\Requests\Admin;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rule; // Đảm bảo đã import Rule
 
 class UpdateNotificationRequest extends FormRequest
 {
@@ -14,7 +14,7 @@ class UpdateNotificationRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // Logic phân quyền chính sẽ được xử lý bởi Policy.
+        // Phân quyền đã được xử lý bởi Policy
         return true;
     }
 
@@ -24,20 +24,22 @@ class UpdateNotificationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // Lưu ý: Không cho phép sửa người nhận (user_id) của một thông báo đã có.
-            'type'       => ['sometimes', 'required', 'string', Rule::in(['Thông tin', 'Khuyến mãi', 'Cảnh báo'])],
-            'content'    => ['sometimes', 'required', 'string', 'max:255'],
-            'is_read'    => ['sometimes', 'required', 'boolean'],
+            // CẬP NHẬT QUAN TRỌNG: Đảm bảo các giá trị Rule::in khớp với DB
+            'type'    => ['sometimes', 'required', 'string', Rule::in(['order', 'promotion', 'system', 'message'])], // <-- ĐÃ SỬA
+            'content' => ['sometimes', 'required', 'string', 'max:255'],
+            'is_read' => ['sometimes', 'boolean'], // Cho phép cập nhật trạng thái đọc
         ];
+        // 'sometimes' nghĩa là chỉ validate nếu trường đó được gửi lên
     }
 
-    /**
+     /**
      * Get custom messages for validator errors.
      */
     public function messages(): array
     {
         return [
             'type.required' => 'Vui lòng chọn loại thông báo.',
+            'type.in' => 'Loại thông báo được chọn không hợp lệ. Các loại hợp lệ: order, promotion, system, message.',
             'content.required' => 'Vui lòng nhập nội dung thông báo.',
             'content.max' => 'Nội dung thông báo không vượt quá 255 ký tự.',
             'is_read.boolean' => 'Trạng thái đọc phải là true hoặc false.',
@@ -53,7 +55,6 @@ class UpdateNotificationRequest extends FormRequest
             'success' => false,
             'message' => 'Dữ liệu không hợp lệ.',
             'errors'  => $validator->errors()
-        ], 422));
+        ], 422)); // 422 Unprocessable Entity
     }
 }
-
