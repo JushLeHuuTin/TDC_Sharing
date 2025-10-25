@@ -15,7 +15,6 @@ class StoreProductRequest extends FormRequest
      */
     public function authorize() : bool
     {
-        // return auth()->check(); // Yêu cầu đăng nhập
         return true;
     }
 
