@@ -101,7 +101,6 @@ class ProductController extends Controller
                 'is_featured' => $request->is_featured ?? false,
                 'slug' => $slug
             ]);
-
             // Upload và lưu hình ảnh
             // $uploadedImages = $this->uploadProductImages(
             //     $request->file('images'), 

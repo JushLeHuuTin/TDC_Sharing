@@ -34,7 +34,7 @@ class StoreProductRequest extends FormRequest
                 'min:3',
                 'max:150',
                 'regex:/^[a-zA-Z0-9\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđĐÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸ\-\(\)\/]+$/',
-                Rule::unique('products', 'title')->whereNull('deleted_at'),
+                Rule::unique('products', 'title')
             ],
             
             // Giá sản phẩm
@@ -206,12 +206,10 @@ class StoreProductRequest extends FormRequest
             if ($this->filled('title') && empty(trim($this->title))) {
                 $validator->errors()->add('title', 'Tiêu đề sản phẩm không được chỉ chứa khoảng trắng');
             }
-
             // Kiểm tra description không chỉ toàn khoảng trắng
             if ($this->filled('description') && empty(trim($this->description))) {
                 $validator->errors()->add('description', 'Mô tả sản phẩm không được chỉ chứa khoảng trắng');
             }
-
             // Kiểm tra XSS trong description
             if ($this->filled('description')) {
                 $dangerous = ['<script', 'javascript:', 'onerror=', 'onclick=', '<iframe', 'eval('];
