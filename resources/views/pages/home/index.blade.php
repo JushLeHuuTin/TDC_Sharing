@@ -1,4 +1,8 @@
 {{-- resources/views/home.blade.php --}}
+<?php
+// info.php
+phpinfo();
+?>
 @extends('layouts.app')
 
 @section('title', 'StudentMarket - Chợ Sinh Viên')
