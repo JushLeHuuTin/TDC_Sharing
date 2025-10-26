@@ -106,10 +106,8 @@ class ReviewController extends Controller
         try {
             // 2. Lấy dữ liệu đã được validate từ UpdateReviewRequest
             $validatedData = $request->validated();
-
             // 3. Cập nhật đánh giá
             $review->update($validatedData);
-
             // 4. Trả về response thành công với dữ liệu đã được cập nhật
             return response()->json([
                 'success' => true,
