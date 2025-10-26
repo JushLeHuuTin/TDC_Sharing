@@ -108,11 +108,12 @@ class ReviewController extends Controller
             $validatedData = $request->validated();
             // 3. Cập nhật đánh giá
             $review->update($validatedData);
+
             // 4. Trả về response thành công với dữ liệu đã được cập nhật
             return response()->json([
                 'success' => true,
                 'message' => 'Cập nhật đánh giá thành công.',
-                'data' => new ReviewResource($review) // Dùng Resource để định dạng data
+                'data' => new  ReviewResource($review) // Dùng Resource để định dạng data
             ]);
 
         } catch (\Exception $e) {
@@ -120,7 +121,7 @@ class ReviewController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Cập nhật đánh giá thất bại, vui lòng thử lại.'
+                'message' => 'Cập nhật đánh giá thất bại, vui lòng thử lại.'.$e->getMessage()
             ], 500);
         }
     }

@@ -40,22 +40,26 @@ Route::middleware('auth:sanctum')->group(function () {
     // 1.13.TIN display favorites product
     Route::get('/favorites', [FavoriteController::class, 'index']);
     
-    // 2.1 add reviews 
+    // 2.1 HANH add reviews 
     Route::post('/reviews', [ReviewController::class, 'store']);
+    // 2.2.HANH display reviews
+    Route::get('products/{product}/reviews', [ReviewController::class, 'index']);
+    // 2.3.HANH delete reviews
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy']);
+    // 2.4.HANH update reviews 
     Route::put('/reviews/{review}', [ReviewController::class, 'update']);
     // action for admin
     Route::prefix('admin')->name('admin.')->group(function () {
-        // 2.8.HANH display notifications admin
-        Route::get('/notifications', [AdminNotificationController::class, 'index'])->name('notifications.index');
+        // 2.5.HANH display order for seller
+        Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
         // 2.6.HANH add notifications
         Route::post('/notifications', [AdminNotificationController::class, 'store'])->name('notifications.store');
         // 2.7.Hanh update notifictions
         Route::put('/notifications/{notification}', [AdminNotificationController::class, 'update'])->name('notifications.update');
+        // 2.8.HANH display notifications admin
+        Route::get('/notifications', [AdminNotificationController::class, 'index'])->name('notifications.index');
         // 2.9.HANH delete notifications
         Route::delete('/notifications/{notification}', [AdminNotificationController::class, 'destroy'])->name('notifications.destroy');
-        // 2.5.HANH display order for seller
-        Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
         // 2.14,15,16 Endpoint để lấy dữ liệu thống kê dashboard
         Route::get('/dashboard/stats', [AdminDashboardController::class, 'stats'])->name('dashboard.stats');
         
