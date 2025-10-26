@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\JsonResponse;
 use App\Http\Resources\ReviewResource; // Import API Resource
+use Illuminate\Support\Facades\Gate;
 
 use Illuminate\Http\Request;
 
@@ -73,15 +74,20 @@ class ReviewController extends Controller
     //xoa
     public function destroy(Review $review): JsonResponse
     {
-        // 1. Kiểm tra quyền hạn: Dòng này sẽ gọi đến 'delete' method trong ReviewPolicy
-        // Nó sẽ kiểm tra xem người dùng hiện tại có phải chủ đánh giá hoặc admin không.
-        $this->authorize('delete', $review);
+        // 1. Kiểm tra quyền hạn thủ công bằng Gate
+        // Gate::denies sẽ gọi đến hàm 'delete' trong ReviewPolicy
+        if (Gate::denies('delete', $review)) {
+            // Nếu không có quyền, trả về lỗi JSON 403 tùy chỉnh
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn không có quyền xóa đánh giá này.'
+            ], 403); // 403 Forbidden
+        }
 
+        // 2. Nếu có quyền, tiến hành xóa
         try {
-            // 2. Thực hiện xóa
             $review->delete();
 
-            // 3. Trả về thông báo thành công
             return response()->json([
                 'success' => true,
                 'message' => 'Xóa đánh giá thành công.'
