@@ -3,6 +3,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\FavoriteController;
+use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Api\Admin\orderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
@@ -38,6 +39,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/categories', [CategoryController::class, 'index']);
     // 1.13.TIN display favorites product
     Route::get('/favorites', [FavoriteController::class, 'index']);
+    
+    // 2.1 add reviews 
+    Route::post('/reviews', [ReviewController::class, 'store']);
+    Route::delete('/reviews/{review}', [ReviewController::class, 'destroy']);
+    Route::put('/reviews/{review}', [ReviewController::class, 'update']);
     // action for admin
     Route::prefix('admin')->name('admin.')->group(function () {
         // 2.8.HANH display notifications admin
