@@ -24,14 +24,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/reviews/{review}', [ReviewController::class, 'update']);
     // Thêm group route cho các chức năng của Seller
     Route::prefix('seller')->name('seller.')->group(function () {
+        //10,12. Hien thi,loc don hang
         Route::get('/orders', [SellerOrderController::class, 'index'])->name('orders.index');
+        //11 chi tiet don hang
         Route::get('/orders/{order}', [SellerOrderController::class, 'show'])->name('orders.show');
-           // Endpoint để duyệt (approve) đơn hàng
+        // Endpoint để duyệt (approve) đơn hàng
+        //13 duyet don hang
         Route::put('/orders/{order}/approve', [SellerOrderController::class, 'approve'])->name('orders.approve');
-        
+
         // Endpoint để từ chối (reject) đơn hàng
         Route::put('/orders/{order}/reject', [SellerOrderController::class, 'reject'])->name('orders.reject');
-    
+
         // Các route khác của seller sẽ được thêm vào đây sau
     });
     // Group route cho các chức năng của Admin
