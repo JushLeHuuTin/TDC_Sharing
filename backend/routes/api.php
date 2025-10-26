@@ -1,9 +1,11 @@
 <?php
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\Seller\OrderController as SellerOrderController;
 use App\Http\Controllers\Api\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Api\Admin\orderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
@@ -12,7 +14,7 @@ use App\Models\Category;
 // 1.4.TIN display products list
 Route::get('/products', [ProductController::class, 'index']);
 // 1.5.TIN display feature products list
-Route::get('/featured-products', [ProductController::class, 'featured']); 
+Route::get('/featured-products', [ProductController::class, 'featured']);
 // 1.6.TIN search product with keywords
 Route::get('/products/search', [ProductController::class, 'search']);
 // 1.7.TIN display product list by category
@@ -39,7 +41,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/categories', [CategoryController::class, 'index']);
     // 1.13.TIN display favorites product
     Route::get('/favorites', [FavoriteController::class, 'index']);
-    
+    // Group route for seller
+    Route::prefix('seller')->name('seller.')->group(function () {
+        //10,12.HANH display filler orders
+        Route::get('/orders', [SellerOrderController::class, 'index'])->name('orders.index');
+        //11.HANH show detail orders
+        Route::get('/orders/{order}', [SellerOrderController::class, 'show'])->name('orders.show');
+        //13.HANH approve order
+        Route::put('/orders/{order}/approve', [SellerOrderController::class, 'approve'])->name('orders.approve');
+        // Endpoint để từ chối (reject) đơn hàng
+        Route::put('/orders/{order}/reject', [SellerOrderController::class, 'reject'])->name('orders.reject');
+
+        // Các route khác của seller sẽ được thêm vào đây sau
+    });
     // 2.1 HANH add reviews 
     Route::post('/reviews', [ReviewController::class, 'store']);
     // 2.2.HANH display reviews
@@ -62,7 +76,5 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/notifications/{notification}', [AdminNotificationController::class, 'destroy'])->name('notifications.destroy');
         // 2.14,15,16 Endpoint để lấy dữ liệu thống kê dashboard
         Route::get('/dashboard/stats', [AdminDashboardController::class, 'stats'])->name('dashboard.stats');
-        
     });
-    
 });
