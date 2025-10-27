@@ -58,6 +58,15 @@ class CartItemSeeder extends Seeder
                 'note' => 'Bao gồm Apple Pencil',
                 'added_at' => Carbon::now()->subDays(3)
             ],
+             // Cart của user 2
+            [
+                'cart_id' => 4,
+                'product_id' => 1, // iPad Pro
+                'quantity' => 1,
+                'price' => 32990000.00,
+                'note' => 'Bao gồm Apple Pencil',
+                'added_at' => Carbon::now()->subDays(3)
+            ],
         ];
 
         foreach ($cartItems as $item) {

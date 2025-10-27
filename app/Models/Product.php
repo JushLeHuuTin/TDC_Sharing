@@ -117,26 +117,11 @@ class Product extends Model
     /**
      * Accessor: Lấy URL đầy đủ của ảnh đại diện.
      */
-    public function getFeaturedImageUrlAttribute(): ?string
-    {
-        $featuredImage = $this->images()->where('is_featured', true)->first();
-
-        if (!$featuredImage) {
-            $featuredImage = $this->images()->first();
-        }
-
-        if ($featuredImage && $featuredImage->url) {
-            // Kiểm tra xem URL đã là URL đầy đủ chưa
-            if (filter_var($featuredImage->url, FILTER_VALIDATE_URL)) {
-                return $featuredImage->url;
-            }
-            // Nếu chỉ là path, dùng Storage::url()
-            return Storage::url($featuredImage->url);
-        }
-
-        // Trả về ảnh mặc định nếu không có ảnh nào
-        return asset('images/default-product.png');
-    }
+  public function featuredImage()
+{
+    // Giả định tên bảng là ProductImage
+    return $this->hasMany(ProductImage::class)->where('is_featured', 1);
+}
 
     //======================================================================
     // QUERY SCOPES (PHẠM VI TRUY VẤN)

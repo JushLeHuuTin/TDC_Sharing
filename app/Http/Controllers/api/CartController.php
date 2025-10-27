@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use App\Services\CartService;
 use Illuminate\Http\JsonResponse;
 
 class CartController extends Controller
@@ -99,119 +100,22 @@ class CartController extends Controller
             return response()->json(['message' => 'Đã có lỗi xảy ra, vui lòng thử lại sau.'], 500); // Internal Server Error
         }
     }
-    public function index(): JsonResponse
+  public function index(CartService $cartService): JsonResponse
     {
-
         // Ràng buộc 10: Bảo mật - Lấy user hiện tại
         $user = Auth::user();
         if (!$user) {
+            // Controller chỉ chịu trách nhiệm xác thực cơ bản
             return response()->json(['message' => 'Người dùng chưa đăng nhập.'], 401);
         }
-        // 1. Tìm Giỏ hàng (Cart) của người dùng
-        $cart = Cart::where('user_id', $user->id)->first();
-        if (!$cart) {
-            // Người dùng chưa có giỏ hàng (thông thường, giỏ hàng sẽ được tạo tự động)
-            $cartItems = collect(); // Trả về Collection rỗng
-        } else {
-            // 2. Lấy các Mục trong Giỏ hàng (Cart Items)
-            $cartItems = CartItem::with([
-                'product' => function ($query) {
-                    $query->select('id', 'title', 'price');
-                },
-                'product.user' => function ($query) {
-                    $query->select('id', 'full_name');
-                }
-            ])
-                ->where('cart_id', $cart->id) // Thay đổi điều kiện: lọc theo cart_id
-                ->get();
-        }
-        if ($cartItems->isEmpty()) {
-            // Ràng buộc 1: Nếu không có sản phẩm
-            return response()->json(['message' => 'Giỏ hàng trống.'], 200);
-        }
 
-        // Bước 1: Group sản phẩm theo người bán (Shop) - Ràng buộc 1
-        $groupedItems = $cartItems->groupBy('product.user_id');
-                die($groupedItems);
-
-        $shops = [];
-
-        // Bước 2: Duyệt qua từng nhóm Shop để tính toán
-        foreach ($groupedItems as $sellerId => $items) {
-            $shopSubtotal = 0;
-            $shopItems = [];
-
-            // Lấy thông tin Seller (Shop)
-            $seller = $items->first()->product->seller;
-
-            foreach ($items as $item) {
-                // Ràng buộc 2: Tính subtotal (tạm tính) cho từng sản phẩm
-                $price = $item->product->price ?? 0;
-                $quantity = $item->quantity > 0 ? $item->quantity : 1;
-                $subtotal = $price * $quantity;
-
-                // Cập nhật tổng shop và tổng toàn bộ
-                $shopSubtotal += $subtotal;
-                $overallSubtotal += $subtotal;
-
-                $shopItems[] = [
-                    'cart_item_id' => $item->id,
-                    'product_id' => $item->product_id,
-                    'product_name' => $item->product->name,
-                    'price' => $price,
-                    'quantity' => $quantity,
-                    'subtotal' => $subtotal,
-                    // Ràng buộc 2: Xử lý lỗi giá/số lượng (đã xử lý logic)
-                    'error' => ($item->product->price === null) ? 'Liên hệ giá' : null,
-                ];
-            }
-
-            // Ràng buộc 5: Giả định tính Phí vận chuyển (Mặc định là 0, frontend sẽ chọn)
-            // LƯU Ý: Logic thực tế cần tính phí dựa trên địa chỉ người mua, khối lượng/kích thước và phương thức.
-            $shippingFee = $this->calculateShippingFee($sellerId); // Giả định hàm tính phí
-            $overallShippingFee += $shippingFee;
-
-            // Ràng buộc 6: Giả định chiết khấu (Discount)
-            $discount = 0; // Áp dụng voucher ở bước sau (Checkout)
-
-            $shopTotal = $shopSubtotal + $shippingFee - $discount;
-
-            $shops[] = [
-                // Ràng buộc 1: Thông tin người bán
-                'seller_id' => $sellerId,
-                'shop_name' => $seller->full_name,
-
-                // Ràng buộc 2: Danh sách sản phẩm
-                'items' => $shopItems,
-
-                // Ràng buộc 4, 5, 6: Tổng tiền theo shop
-                'shop_subtotal' => $shopSubtotal, // Tạm tính (Ràng buộc 4)
-                'shipping_fee' => $shippingFee,   // Phí vận chuyển (Ràng buộc 5)
-                'discount' => $discount,          // Giảm giá (Ràng buộc 6)
-                'shop_total' => $shopTotal,       // Tổng đơn hàng (Ràng buộc 6)
-
-                // Ràng buộc 3: Phương thức vận chuyển (Mặc định)
-                'shipping_methods' => $this->getShippingMethods($sellerId),
-                'selected_shipping_method_id' => 1, // Mặc định chọn 1
-            ];
-        }
-
-        // Ràng buộc 8: Thẻ tổng giỏ hàng (Toàn bộ)
-        $overallTotal = $overallSubtotal + $overallShippingFee - $overallDiscount;
-
+        // 3. Gọi Service: Controller chuyển giao nhiệm vụ xử lý nghiệp vụ phức tạp cho Service
+        $cartData = $cartService->getFormattedCartData($user);
+        
+        // Controller chỉ trả về kết quả
         return response()->json([
             'message' => 'Lấy dữ liệu giỏ hàng thành công.',
-            'data' => [
-                'shops' => $shops,
-                'overall_summary' => [
-                    'subtotal' => $overallSubtotal,
-                    'shipping_fee' => $overallShippingFee,
-                    'discount' => $overallDiscount,
-                    'total' => $overallTotal,
-                ],
-                // Ràng buộc 9: Nút Tiến hành đặt hàng (Frontend)
-                'is_cart_ready_for_checkout' => $overallSubtotal > 0,
-            ]
+            'data' => $cartData,
         ]);
     }
 

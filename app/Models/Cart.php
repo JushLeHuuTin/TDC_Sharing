@@ -4,27 +4,47 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Cart extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id',"seller_id"];
+    /**
+     * user_id: Người mua (Buyer)
+     * seller_id: Người bán (Vendor/Shop)
+     */
+    protected $fillable = ['user_id', 'seller_id'];
 
-    public function user()
+    // --- QUAN HỆ VỚI NGƯỜI MUA ---
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        // Quan hệ với User (người mua)
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function items()
+    // --- QUAN HỆ VỚI NGƯỜI BÁN ---
+    public function seller(): BelongsTo
     {
-        return $this->hasMany(CartItem::class);
+        // Quan hệ với User (người bán - vì bảng Product dùng user_id làm seller_id)
+        // Đây là cách Eloquent hiểu ai là người bán của nhóm giỏ hàng này.
+        return $this->belongsTo(User::class, 'seller_id');
     }
 
-    public function getTotalPrice()
+    // --- QUAN HỆ VỚI CÁC MỤC TRONG GIỎ HÀNG ---
+    public function items(): HasMany
     {
+        return $this->hasMany(CartItem::class, 'cart_id');
+    }
+    
+    // Phương thức tính tổng giá (Tạm thời. Cần Product Price từ CartItem)
+    public function getTotalPrice(): float
+    {
+        // Lưu ý: Giá trị giá (price) phải được lấy từ quan hệ Product trong CartItem.
         return $this->items->sum(function ($item) {
-            return $item->price * $item->quantity;
+            // Cần đảm bảo $item có quan hệ product để lấy price
+            return ($item->product->price ?? 0) * $item->quantity;
         });
     }
 }
