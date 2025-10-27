@@ -29,7 +29,6 @@ class CartController extends Controller
             'product_id' => 'required|integer|exists:products,id',
             'quantity' => 'sometimes|integer|min:1', // `sometimes` nghĩa là chỉ validate nếu có, không bắt buộc
         ]);
-
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422); // Unprocessable Entity
         }
@@ -92,7 +91,6 @@ class CartController extends Controller
             DB::commit(); // Hoàn tất giao dịch nếu mọi thứ thành công
 
             return response()->json(['message' => 'Sản phẩm đã được thêm vào giỏ hàng thành công!'], 200);
-
         } catch (\Exception $e) {
             DB::rollBack(); // Hoàn tác lại tất cả thay đổi nếu có lỗi xảy ra
             Log::error('Lỗi khi thêm sản phẩm vào giỏ hàng: ' . $e->getMessage()); // Ghi log lỗi để debug
@@ -103,24 +101,30 @@ class CartController extends Controller
     }
     public function index(): JsonResponse
     {
+
         // Ràng buộc 10: Bảo mật - Lấy user hiện tại
         $user = Auth::user();
         if (!$user) {
             return response()->json(['message' => 'Người dùng chưa đăng nhập.'], 401);
         }
-
-        // Lấy tất cả Cart Items của user hiện tại với Product và Seller
-        $cartItems = CartItem::with([
-            'product' => function ($query) {
-                $query->select('id', 'name', 'price', 'user_id'); // chỉ lấy các cột cần thiết
-            },
-            'product.seller' => function ($query) {
-                $query->select('id', 'full_name'); // Lấy thông tin người bán
-            }
-        ])
-        ->where('user_id', $user->id)
-        ->get();
-
+        // 1. Tìm Giỏ hàng (Cart) của người dùng
+        $cart = Cart::where('user_id', $user->id)->first();
+        if (!$cart) {
+            // Người dùng chưa có giỏ hàng (thông thường, giỏ hàng sẽ được tạo tự động)
+            $cartItems = collect(); // Trả về Collection rỗng
+        } else {
+            // 2. Lấy các Mục trong Giỏ hàng (Cart Items)
+            $cartItems = CartItem::with([
+                'product' => function ($query) {
+                    $query->select('id', 'title', 'price');
+                },
+                'product.user' => function ($query) {
+                    $query->select('id', 'full_name');
+                }
+            ])
+                ->where('cart_id', $cart->id) // Thay đổi điều kiện: lọc theo cart_id
+                ->get();
+        }
         if ($cartItems->isEmpty()) {
             // Ràng buộc 1: Nếu không có sản phẩm
             return response()->json(['message' => 'Giỏ hàng trống.'], 200);
@@ -128,19 +132,15 @@ class CartController extends Controller
 
         // Bước 1: Group sản phẩm theo người bán (Shop) - Ràng buộc 1
         $groupedItems = $cartItems->groupBy('product.user_id');
+                die($groupedItems);
 
-        // Khởi tạo các biến tổng toàn bộ giỏ hàng
-        $overallSubtotal = 0;
-        $overallShippingFee = 0;
-        $overallDiscount = 0;
-        
         $shops = [];
 
         // Bước 2: Duyệt qua từng nhóm Shop để tính toán
         foreach ($groupedItems as $sellerId => $items) {
             $shopSubtotal = 0;
             $shopItems = [];
-            
+
             // Lấy thông tin Seller (Shop)
             $seller = $items->first()->product->seller;
 
@@ -180,7 +180,7 @@ class CartController extends Controller
                 // Ràng buộc 1: Thông tin người bán
                 'seller_id' => $sellerId,
                 'shop_name' => $seller->full_name,
-                
+
                 // Ràng buộc 2: Danh sách sản phẩm
                 'items' => $shopItems,
 
@@ -189,7 +189,7 @@ class CartController extends Controller
                 'shipping_fee' => $shippingFee,   // Phí vận chuyển (Ràng buộc 5)
                 'discount' => $discount,          // Giảm giá (Ràng buộc 6)
                 'shop_total' => $shopTotal,       // Tổng đơn hàng (Ràng buộc 6)
-                
+
                 // Ràng buộc 3: Phương thức vận chuyển (Mặc định)
                 'shipping_methods' => $this->getShippingMethods($sellerId),
                 'selected_shipping_method_id' => 1, // Mặc định chọn 1

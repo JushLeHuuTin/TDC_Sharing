@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Product extends Model
 {
     use HasFactory;
-    use SoftDeletes;
+    // use SoftDeletes;
     /**
      * Tên bảng trong cơ sở dữ liệu.
      */
@@ -63,7 +64,12 @@ class Product extends Model
     {
         return $this->belongsTo(Category::class, 'category_id');
     }
-
+    // Product là bên "Một", nó có nhiều CartItems.
+    public function cartItems()
+    {
+        // 'hasMany' định nghĩa quan hệ One-to-Many
+        return $this->hasMany(CartItem::class);
+    }
     /**
      * Mối quan hệ: Một sản phẩm có nhiều hình ảnh (ProductImage).
      */
@@ -87,8 +93,8 @@ class Product extends Model
     public function attributes(): BelongsToMany
     {
         return $this->belongsToMany(Attribute::class, 'product_attributes', 'product_id', 'attribute_id')
-                    ->withPivot('value', 'id') // Lấy thêm cột 'value' và 'id' từ bảng trung gian
-                    ->withTimestamps();
+            ->withPivot('value', 'id') // Lấy thêm cột 'value' và 'id' từ bảng trung gian
+            ->withTimestamps();
     }
     public function productAttributes(): HasMany
     {
@@ -101,7 +107,7 @@ class Product extends Model
     public function wishlistedByUsers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'wishlist', 'product_id', 'user_id')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     //======================================================================
