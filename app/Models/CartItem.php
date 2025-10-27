@@ -10,8 +10,13 @@ class CartItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'cart_item_id', 'cart_id', 'product_id',
-        'quantity', 'price', 'note', 'added_at'
+        'cart_item_id',
+        'cart_id',
+        'product_id',
+        'quantity',
+        'price',
+        'note',
+        'added_at'
     ];
 
     protected $casts = [
@@ -23,6 +28,13 @@ class CartItem extends Model
         return $this->belongsTo(Cart::class);
     }
 
+    public static function findItemInCart(int $cartId, int $productId): ?self
+    {
+        return static::where('cart_id', $cartId)
+            ->where('product_id', $productId)
+            ->first();
+    }
+    
     public function product()
     {
         return $this->belongsTo(Product::class);
