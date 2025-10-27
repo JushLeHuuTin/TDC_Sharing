@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreCartRequest;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
@@ -22,17 +23,8 @@ class CartController extends Controller
     {
         $this->cartService = $cartService;
     }
-    public function addItem(Request $request)
+    public function addItem(StoreCartRequest $request)
     {
-        // --- Ràng buộc đầu vào ---
-        $validator = Validator::make($request->all(), [
-            'product_id' => 'required|integer|exists:products,id',
-            'quantity' => 'sometimes|integer|min:1',
-        ]);
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
         $productId = $request->input('product_id');
         $quantity = $request->input('quantity', 1);
         $user = Auth::user();
@@ -45,7 +37,6 @@ class CartController extends Controller
             $product = Product::find($productId);
             // --- 1. Get Seller ID ---
             $sellerId = $product->user_id;
-            // --- XỬ LÝ CÁC RÀNG BUỘC LOGIC ---
             // 1. Ràng buộc: Người bán không thể tự mua sản phẩm của mình
             try {
                 $this->authorize('buySelf', $product);
