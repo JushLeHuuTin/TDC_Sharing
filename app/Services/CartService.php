@@ -122,7 +122,7 @@ class CartService
     }
     public function handleAddItem(User $user, int $productId, int $quantity): void
     {
-        DB::beginTransaction();
+        // DB::beginTransaction();
         try {
             // Lấy sản phẩm và lock hàng (để tránh race condition khi kiểm tra tồn kho)
             $product = Product::lockForUpdate()->find($productId);

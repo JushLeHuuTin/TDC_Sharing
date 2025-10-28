@@ -23,46 +23,46 @@ class CartController extends Controller
     {
         $this->cartService = $cartService;
     }
-    // public function addItem(StoreCartRequest $request)
-    // {
-    //     $productId = $request->input('product_id');
-    //     $quantity = $request->input('quantity', 1);
-    //     $user = Auth::user();
-    //     if (!$user) {
-    //         return response()->json(['message' => 'Nguoi dung chua dang nhap.'], 401);
-    //     }
-    //     // --- Bắt đầu khối xử lý có Transaction để đảm bảo toàn vẹn dữ liệu ---
-    //     DB::beginTransaction();
-    //     try {
-    //         $product = Product::find($productId);
-    //         // --- 1. Get Seller ID ---
-    //         $sellerId = $product->user_id;
-    //         // 1. Ràng buộc: Người bán không thể tự mua sản phẩm của mình
-    //         try {
-    //             $this->authorize('buySelf', $product);
-    //         } catch (\Exception $e) {
-    //             return response()->json([
-    //                 'success' => true,
-    //                 'message' => "Ban khong the them san pham cua chinh minh"
-    //             ], 201);
-    //         }
-    //         // 2. Ràng buộc: Kiểm tra sản phẩm có còn hàng không (stock > 0)
-    //         if ($product->stocks < $quantity) {
-    //             DB::rollBack();
-    //             // Thông báo lỗi theo yêu cầu của bạn
-    //             return response()->json(['message' => 'Sản phẩm đã hết hàng hoặc không đủ số lượng.'], 409); // Conflict
-    //         }
-    //         // --- XỬ LÝ LOGIC CHÍNH ---
-    //         $this->cartService->handleAddItem($user, $productId, $quantity);
-    //         return response()->json(['message' => 'Sản phẩm đã được thêm vào giỏ hàng thành công!'], 200);
-    //     } catch (\Exception $e) {
-    //         DB::rollBack(); // Hoàn tác lại tất cả thay đổi nếu có lỗi xảy ra
-    //         Log::error('Lỗi khi thêm sản phẩm vào giỏ hàng: ' . $e->getMessage()); // Ghi log lỗi để debug
+    public function addItem(StoreCartRequest $request)
+    {
+        $productId = $request->input('product_id');
+        $quantity = $request->input('quantity', 1);
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['message' => 'Nguoi dung chua dang nhap.'], 401);
+        }
+        // --- Bắt đầu khối xử lý có Transaction để đảm bảo toàn vẹn dữ liệu ---
+        DB::beginTransaction();
+        try {
+            $product = Product::find($productId);
+            // --- 1. Get Seller ID ---
+            $sellerId = $product->user_id;
+            // 1. Ràng buộc: Người bán không thể tự mua sản phẩm của mình
+            try {
+                $this->authorize('buySelf', $product);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Ban khong the them san pham cua chinh minh"
+                ], 201);
+            }
+            // 2. Ràng buộc: Kiểm tra sản phẩm có còn hàng không (stock > 0)
+            if ($product->stocks < $quantity) {
+                DB::rollBack();
+                // Thông báo lỗi theo yêu cầu của bạn
+                return response()->json(['message' => 'Sản phẩm đã hết hàng hoặc không đủ số lượng.'], 409); // Conflict
+            }
+            // --- XỬ LÝ LOGIC CHÍNH ---
+            $this->cartService->handleAddItem($user, $productId, $quantity);
+            return response()->json(['message' => 'Sản phẩm đã được thêm vào giỏ hàng thành công!'], 200);
+        } catch (\Exception $e) {
+            DB::rollBack(); // Hoàn tác lại tất cả thay đổi nếu có lỗi xảy ra
+            Log::error('Lỗi khi thêm sản phẩm vào giỏ hàng: ' . $e->getMessage()); // Ghi log lỗi để debug
 
-    //         // Thông báo lỗi chung theo yêu cầu của bạn
-    //         return response()->json(['message' => 'Đã có lỗi xảy ra, vui lòng thử lại sau.' . $e->getMessage()], 500); // Internal Server Error
-    //     }
-    // }
+            // Thông báo lỗi chung theo yêu cầu của bạn
+            return response()->json(['message' => 'Đã có lỗi xảy ra, vui lòng thử lại sau.' . $e->getMessage()], 500); // Internal Server Error
+        }
+    }
     public function deleteItem(int $cartItemId)
     {
         $user = Auth::user();
