@@ -60,10 +60,10 @@ class StoreVoucherRequest extends FormRequest
             ],
 
             // 6. Giá trị tối đa: Validate >= 0 (mặc định trong DB là 0)
-            'max_discount_value' => 'required|numeric|min:0',
+            'discount_value' => 'required|numeric|min:0',
 
             // 7. Đơn hàng tối thiểu: Validate >= 0 (mặc định trong DB là 0)
-            'min_order_value' => 'required|numeric|min:0',
+            'min_purchase' => 'required|numeric|min:0',
 
             // 8. Số lượng voucher: Validate > 0
             'quantity' => 'required|integer|min:1',
@@ -103,23 +103,18 @@ class StoreVoucherRequest extends FormRequest
             'name.max' => 'Tên voucher không quá 100 ký tự.',
 
             // 4. Loại voucher
-            'type.required' => 'Vui lòng chọn loại voucher.',
-            'type.in' => 'Loại voucher không hợp lệ.',
-
-            // 5. Giá trị giảm
-            'value.required' => 'Vui lòng nhập giá trị giảm.',
-            'value.numeric' => 'Giá trị giảm phải là số.',
-            'value.min' => 'Giá trị giảm không hợp lệ.', // Bắt lỗi > 0
+            'discount_type.required' => 'Vui lòng chọn loại voucher.',
+            'discount_type.in' => 'Loại voucher không hợp lệ.',
 
             // 6. Giá trị tối đa
-            'max_discount_value.required' => 'Vui lòng nhập giá trị giảm tối đa.',
-            'max_discount_value.numeric' => 'Giá trị tối đa phải là số.',
-            'max_discount_value.min' => 'Giá trị tối đa không hợp lệ.',
+            'discount_value.required' => 'Vui lòng nhập giá trị giảm tối đa.',
+            'discount_value.numeric' => 'Giá trị tối đa phải là số.',
+            'discount_value.min' => 'Giá trị tối đa không hợp lệ.',
 
             // 7. Đơn hàng tối thiểu
-            'min_order_value.required' => 'Vui lòng nhập đơn hàng tối thiểu.',
-            'min_order_value.numeric' => 'Đơn hàng tối thiểu phải là số.',
-            'min_order_value.min' => 'Đơn hàng tối thiểu không hợp lệ.',
+            'min-purchase.required' => 'Vui lòng nhập đơn hàng tối thiểu.',
+            'min-purchase.numeric' => 'Đơn hàng tối thiểu phải là số.',
+            'min-purchase.min' => 'Đơn hàng tối thiểu không hợp lệ.',
 
             // 8. Số lượng voucher
             'quantity.required' => 'Vui lòng nhập số lượng voucher.',
@@ -137,9 +132,9 @@ class StoreVoucherRequest extends FormRequest
             'end_date.after' => 'Ngày hết hạn phải sau ngày bắt đầu.',
 
             // 11. Mỗi KH dùng tối đa
-            'max_uses_per_user.required' => 'Vui lòng nhập số lần sử dụng tối đa.',
-            'max_uses_per_user.integer' => 'Số lần sử dụng phải là số nguyên.',
-            'max_uses_per_user.min' => 'Số lần sử dụng phải ≥ 1.',
+            'usage_limit.required' => 'Vui lòng nhập số lần sử dụng tối đa.',
+            'usage_limit.integer' => 'Số lần sử dụng phải là số nguyên.',
+            'usage_limit.min' => 'Số lần sử dụng phải ≥ 1.',
 
             // 12. Đối tượng sử dụng
             'target_audience.required' => 'Vui lòng chọn đối tượng sử dụng.',
@@ -157,13 +152,13 @@ class StoreVoucherRequest extends FormRequest
             // 11. Đảm bảo giá trị tối thiểu là 1 nếu không truyền vào (mặc dù đã có min:1 trong rules)
             'max_uses_per_user' => $this->max_uses_per_user ?? 1,
             // 6. Đảm bảo giá trị tối đa là 0 nếu không truyền vào
-            'max_discount_value' => $this->max_discount_value ?? 0,
+            'discount_value' => $this->discount_value ?? 0,
             // 7. Đơn hàng tối thiểu
-            'min_order_value' => $this->min_order_value ?? 0,
+            'min_purchase' => $this->min_purchase ?? 0,
             // Đảm bảo các giá trị numeric là số thực
             'value' => is_string($this->value) ? floatval($this->value) : $this->value,
-            'max_discount_value' => is_string($this->max_discount_value) ? floatval($this->max_discount_value) : $this->max_discount_value,
-            'min_order_value' => is_string($this->min_order_value) ? floatval($this->min_order_value) : $this->min_order_value,
+            'discount_value' => is_string($this->discount_value) ? floatval($this->discount_value) : $this->discount_value,
+            'min_purchase' => is_string($this->min_purchase) ? floatval($this->min_purchase) : $this->min_purchase,
         ]);
     }
      protected function failedValidation(Validator $validator): void
