@@ -24,7 +24,7 @@ class ProductSeeder extends Seeder
                 'slug' => 'iphone-15-pro-max-256gb'
             ],
             [
-                'user_id' => 1,
+                'user_id' => 2,
                 'category_id' => 5,
                 'title' => 'iPhone 14 Pro 128GB',
                 'description' => 'iPhone 14 Pro với Dynamic Island, camera 48MP, chip A16 Bionic',
@@ -36,7 +36,7 @@ class ProductSeeder extends Seeder
                 'slug' => 'iphone-14-pro-128gb'
             ],
             [
-                'user_id' => 1,
+                'user_id' => 3,
                 'category_id' => 6, // Samsung
                 'title' => 'Samsung Galaxy S24 Ultra 512GB',
                 'description' => 'Galaxy S24 Ultra với bút S Pen, camera 200MP, màn hình Dynamic AMOLED 6.8 inch',
@@ -60,7 +60,7 @@ class ProductSeeder extends Seeder
                 'slug' => 'samsung-galaxy-z-fold-5-256gb'
             ],
             [
-                'user_id' => 1,
+                'user_id' => 2,
                 'category_id' => 2, // Laptop
                 'title' => 'MacBook Pro 14 inch M3 Pro',
                 'description' => 'MacBook Pro 14 inch với chip M3 Pro, RAM 18GB, SSD 512GB, màn hình Liquid Retina XDR',
@@ -72,7 +72,7 @@ class ProductSeeder extends Seeder
                 'slug' => 'macbook-pro-14-m3-pro'
             ],
             [
-                'user_id' => 1,
+                'user_id' => 3,
                 'category_id' => 2,
                 'title' => 'Dell XPS 15 9530',
                 'description' => 'Dell XPS 15 với Intel Core i7-13700H, RAM 16GB, SSD 512GB, RTX 4050',

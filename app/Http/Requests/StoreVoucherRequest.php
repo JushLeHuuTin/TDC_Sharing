@@ -5,6 +5,8 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 
 class StoreVoucherRequest extends FormRequest
@@ -16,10 +18,7 @@ class StoreVoucherRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // 16. Bảo mật: Đảm bảo chỉ admin hợp lệ tạo được
-        // Giả sử có một hàm helper hoặc middleware để kiểm tra vai trò admin
-        // Ví dụ: return auth()->user()->isAdmin();
-        return Auth::check(); // Tạm thời chỉ check đã đăng nhập
+        return Auth::check();
     }
 
     /**
@@ -150,12 +149,6 @@ class StoreVoucherRequest extends FormRequest
             'is_active.boolean' => 'Trạng thái kích hoạt không hợp lệ.',
         ];
     }
-
-    /**
-     * Chuẩn bị dữ liệu cho validation (đặt giá trị mặc định nếu cần).
-     *
-     * @return void
-     */
     protected function prepareForValidation(): void
     {
         // 13. Kích hoạt ngay: Boolean (mặc định = false nếu không chọn)
@@ -172,5 +165,12 @@ class StoreVoucherRequest extends FormRequest
             'max_discount_value' => is_string($this->max_discount_value) ? floatval($this->max_discount_value) : $this->max_discount_value,
             'min_order_value' => is_string($this->min_order_value) ? floatval($this->min_order_value) : $this->min_order_value,
         ]);
+    }
+     protected function failedValidation(Validator $validator): void
+    {
+        throw new HttpResponseException(response()->json([
+            'message' => 'Lỗi xác thực dữ liệu đầu vào.',
+            'errors' => $validator->errors(),
+        ], 422)); // 422 Unprocessable Content
     }
 }
