@@ -22,8 +22,9 @@ class NotificationPolicy
     {
         return $user->role === 'admin';
     }
-      /**
+   /**
      * Determine whether the user can update the model.
+     * Đảm bảo hàm này tồn tại và đúng
      */
     public function update(User $user, Notification $notification): bool
     {

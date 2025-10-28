@@ -9,19 +9,19 @@ class ReviewResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {
+        // Sử dụng $this->resource để rõ ràng hơn
+        $review = $this->resource; 
+
         return [
-            'id'             => $this->id,
-            // Lấy tên người dùng, nếu không có (VD: user đã bị xóa) thì trả về 'Người dùng ẩn danh'
-            'reviewer_name'  => $this->whenLoaded('user', optional($this->user)->full_name ?? 'Người dùng ẩn danh'),
-            'rating'         => $this->rating,
-            'comment'        => $this->comment,
-            // Định dạng ngày tháng cho dễ đọc (VD: "2 ngày trước")
-            'created_at'     => $this->created_at ? $this->created_at->diffForHumans() : '--',
+            'id'            => $review->id,
+            // Đảm bảo truy cập đúng $review->user
+            'reviewer_name' => optional($review->user)->full_name ?? 'Người dùng ẩn danh', 
+            'rating'        => $review->rating,
+            'comment'       => $review->comment,
+            'created_at'    => $review->created_at ? $review->created_at->diffForHumans() : '--',
         ];
     }
 }

@@ -127,9 +127,11 @@ class ReviewController extends Controller
     }
 
     //hien thi
-     public function index(Request $request, Product $product): JsonResponse
+     /**
+     * Display a listing of the reviews for a specific product.
+     */
+    public function index(Request $request, Product $product): JsonResponse
     {
-        // Validate dữ liệu đầu vào từ query string (để lọc)
         $request->validate([
             'rating' => 'nullable|integer|in:1,2,3,4,5',
         ]);
@@ -137,33 +139,26 @@ class ReviewController extends Controller
         // --- 1. Tính toán các số liệu thống kê ---
         $statsQuery = $product->reviews();
         $totalReviews = $statsQuery->count();
-        // Tính sao trung bình, làm tròn 1 chữ số, trả về 0 nếu chưa có đánh giá
         $averageRating = $totalReviews > 0 ? round($statsQuery->avg('rating'), 1) : 0;
-
-        // Đếm số lượng đánh giá cho mỗi loại sao (5 sao, 4 sao, ...)
         $ratingCounts = $product->reviews()
             ->select('rating', DB::raw('count(*) as count'))
             ->groupBy('rating')
             ->pluck('count', 'rating')->all();
-
-        // Gán 0 cho các loại sao không có lượt đánh giá
         for ($i = 5; $i >= 1; $i--) {
             $ratingCounts[$i] = $ratingCounts[$i] ?? 0;
         }
 
-        // --- 2. Lấy danh sách đánh giá đã được lọc và phân trang ---
-        $reviewsQuery = Review::with('user') // Eager loading để lấy thông tin người dùng
-                               ->where('product_id', $product->id);
+        // --- 2. Lấy danh sách đánh giá ---
+        // Đảm bảo gọi ->with('user') ở đây
+        $reviewsQuery = $product->reviews()->with('user'); 
 
-        // Áp dụng bộ lọc theo số sao nếu có
         if ($request->filled('rating')) {
             $reviewsQuery->where('rating', $request->query('rating'));
         }
 
-        // Sắp xếp theo mới nhất và phân trang (8 đánh giá mỗi trang)
         $reviews = $reviewsQuery->latest()->paginate(8);
 
-        // --- 3. Trả về Response hoàn chỉnh ---
+        // --- 3. Trả về Response ---
         return response()->json([
             'success' => true,
             'data' => [

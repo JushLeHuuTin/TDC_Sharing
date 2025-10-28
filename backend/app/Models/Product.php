@@ -81,10 +81,14 @@ class Product extends Model
     /**
      * Mối quan hệ: Một sản phẩm có nhiều đánh giá (Review).
      */
+   /**
+     * Mối quan hệ: Một sản phẩm có nhiều đánh giá (Review).
+     */
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class, 'product_id');
     }
+
 
     /**
      * Mối quan hệ Many-to-Many: Lấy ra các Model Attribute thông qua bảng product_attributes.
