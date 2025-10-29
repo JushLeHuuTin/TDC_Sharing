@@ -22,7 +22,8 @@ class VoucherSeeder extends Seeder
                 'start_date' => Carbon::now()->subDays(10),
                 'end_date' => Carbon::now()->addMonths(3),
                 'usage_limit' => 100,
-                'used_count' => 15
+                'used_count' => 15,
+                'is_active' => 1
             ],
             [
                 'code' => 'SALE500K',
@@ -33,7 +34,8 @@ class VoucherSeeder extends Seeder
                 'start_date' => Carbon::now()->subDays(5),
                 'end_date' => Carbon::now()->addMonths(2),
                 'usage_limit' => 50,
-                'used_count' => 8
+                'used_count' => 8,
+                'is_active' => 1
             ],
             [
                 'code' => 'FREESHIP',
@@ -44,7 +46,8 @@ class VoucherSeeder extends Seeder
                 'start_date' => Carbon::now()->subDays(20),
                 'end_date' => Carbon::now()->addMonths(1),
                 'usage_limit' => 200,
-                'used_count' => 45
+                'used_count' => 45,
+                'is_active' => 1
             ],
             [
                 'code' => 'TECH2024',
@@ -55,7 +58,8 @@ class VoucherSeeder extends Seeder
                 'start_date' => Carbon::now()->subDays(15),
                 'end_date' => Carbon::now()->addMonths(4),
                 'usage_limit' => 150,
-                'used_count' => 32
+                'used_count' => 32,
+                'is_active' => 1
             ],
             [
                 'code' => 'EXPIRED2023',
@@ -66,7 +70,8 @@ class VoucherSeeder extends Seeder
                 'start_date' => Carbon::now()->subMonths(3),
                 'end_date' => Carbon::now()->subDays(1),
                 'usage_limit' => 100,
-                'used_count' => 100
+                'used_count' => 100,
+                'is_active' => 1
             ],
         ];
 
