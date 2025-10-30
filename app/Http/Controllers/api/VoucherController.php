@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\StoreVoucherRequest;
 use App\Models\Voucher;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -71,7 +72,7 @@ class VoucherController extends Controller
     public function show(int $id): JsonResponse
     {
         // Giả sử đã check role 'admin' trong middleware/policy
-        
+
         $voucher = Voucher::find($id);
 
         if (!$voucher) {
@@ -93,7 +94,7 @@ class VoucherController extends Controller
     {
         // Dữ liệu đã được xác thực và làm sạch bởi UpdateVoucherRequest
         $data = $request->validated();
-        
+
         // Ràng buộc 1: Tìm voucher
         $voucher = Voucher::find($id);
 
@@ -116,7 +117,6 @@ class VoucherController extends Controller
                 'message' => 'Cập nhật voucher thành công. 🎉',
                 'data' => $voucher,
             ], 200);
-
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -127,13 +127,27 @@ class VoucherController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
-}
-public function index(VoucherIndexRequest $request): JsonResponse
+    }
+    public function index(VoucherIndexRequest $request): JsonResponse
     {
-        // Dữ liệu đã được làm sạch và xác thực
+        try {
+            $this->authorize('viewAny', Voucher::class);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            // Người dùng đã đăng nhập nhưng không có quyền
+            return response()->json([
+                'success' => false,
+                'message' => "Bạn không có quyền truy cập danh sách voucher."
+            ], 403);
+        } catch (\Exception $e) {
+            // Bắt các lỗi khác (ví dụ: lỗi DB, nhưng sau khi fix bước 1 sẽ ít gặp)
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi server nội bộ: ' . $e->getMessage()
+            ], 500);
+        }
         $validatedData = $request->validated();
-        $perPage = $validatedData['per_page'] ?? 15;
 
+        $perPage = $validatedData['per_page'] ?? 15;
         // Bắt đầu Query Builder
         $query = Voucher::query();
         $now = Carbon::now();
@@ -143,7 +157,7 @@ public function index(VoucherIndexRequest $request): JsonResponse
             $keyword = '%' . $validatedData['search'] . '%';
             $query->where(function ($q) use ($keyword) {
                 $q->where(DB::raw('LOWER(code)'), 'like', $keyword)
-                  ->orWhere(DB::raw('LOWER(name)'), 'like', $keyword);
+                    ->orWhere(DB::raw('LOWER(name)'), 'like', $keyword);
             });
         }
 
@@ -153,18 +167,18 @@ public function index(VoucherIndexRequest $request): JsonResponse
                 case 'active':
                     // Đang hoạt động: is_active = true VÀ chưa hết hạn
                     $query->where('is_active', true)
-                          ->where('start_date', '<=', $now)
-                          ->where('end_date', '>=', $now);
+                        ->where('start_date', '<=', $now)
+                        ->where('end_date', '>=', $now);
                     break;
                 case 'expired':
                     // Hết hạn: end_date đã qua HOẶC số lượng đã hết
                     $query->where('end_date', '<', $now)
-                          ->orWhere('quantity', '<=', DB::raw('used_count')); // Ràng buộc 8
+                        ->orWhere('quantity', '<=', DB::raw('used_count')); // Ràng buộc 8
                     break;
                 case 'inactive':
                     // Chưa hoạt động hoặc bị tắt thủ công
                     $query->where('is_active', false)
-                          ->orWhere('start_date', '>', $now);
+                        ->orWhere('start_date', '>', $now);
                     break;
             }
         }
@@ -173,16 +187,16 @@ public function index(VoucherIndexRequest $request): JsonResponse
         if (!empty($validatedData['type'])) {
             $query->where('discount_type', $validatedData['type']);
         }
-        
+
         // Ràng buộc 10: Sắp xếp
         $sortBy = $validatedData['sort_by'] ?? 'created_at';
         $sortDir = $validatedData['sort_dir'] ?? 'desc';
         $query->orderBy($sortBy, $sortDir);
-        
-        // Ràng buộc 9 & 13: Phân trang và Hiệu năng
+
+        // // Ràng buộc 9 & 13: Phân trang và Hiệu năng
         $vouchers = $query->paginate($perPage);
 
-        // Ràng buộc 5: Thống kê nhanh
+        // // Ràng buộc 5: Thống kê nhanh
         $stats = $this->getQuickStats();
 
         // Ràng buộc 4 & 6: Hiển thị và Trạng thái
@@ -193,7 +207,6 @@ public function index(VoucherIndexRequest $request): JsonResponse
                 return [
                     'id' => $voucher->id,
                     'code' => $voucher->code,
-                    'name' => $voucher->name,
                     'type' => $voucher->discount_type,
                     'value' => $voucher->discount_value,
                     'max_value' => $voucher->discount_max,
@@ -209,7 +222,7 @@ public function index(VoucherIndexRequest $request): JsonResponse
             }),
         ]);
     }
-    
+
     /**
      * Ràng buộc 5: Tính toán thống kê nhanh
      */
@@ -218,12 +231,12 @@ public function index(VoucherIndexRequest $request): JsonResponse
         return [
             'total_vouchers' => Voucher::count(),
             'active_vouchers' => Voucher::where('is_active', true)
-                                        ->where('end_date', '>=', Carbon::now())
-                                        ->count(),
+                ->where('end_date', '>=', Carbon::now())
+                ->count(),
             'used_vouchers' => Voucher::sum('used_count'),
         ];
     }
-    
+
     /**
      * Ràng buộc 6: Logic xác định trạng thái hiển thị
      */
