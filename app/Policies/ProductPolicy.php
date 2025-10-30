@@ -48,7 +48,7 @@ class ProductPolicy
      */
     public function delete(User $user, Product $product): bool
     {
-        return $user->id === $product->user_id ;
+        return $user->id === $product->user_id;
     }
     public function before(User $user, string $ability): bool|null
     {
@@ -56,7 +56,7 @@ class ProductPolicy
         if ($user->role === 'admin') {
             return true;
         }
- 
+
         return null; // Nếu không phải admin, trả về null để tiếp tục kiểm tra các quyền khác
     }
     /**
@@ -73,5 +73,11 @@ class ProductPolicy
     public function forceDelete(User $user, Product $product): bool
     {
         return false;
+    }
+    public function buySelf(User $user, Product $product): bool
+    {
+        // Trả về FALSE nếu user_id của sản phẩm bằng user_id của người dùng hiện tại
+        // Gate::denies('buySelf', $product) sẽ trả về TRUE nếu user_id khớp.
+        return $product->user_id !== $user->id;
     }
 }

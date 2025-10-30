@@ -23,20 +23,37 @@ class OrderPolicy
     /**
      * Xác định xem người dùng có thể xem đơn hàng cụ thể không.
      */
-    public function view(User $user, Order $order): bool
+    public function view(User $user, Order $order): Response // Thay đổi kiểu trả về thành Response
     {
         // 1. Kiểm tra người mua
         if ($user->id === $order->buyer_id) {
-            return true;
+            return Response::allow();
         }
 
         // 2. Kiểm tra người bán liên quan (Nếu người dùng là người bán của bất kỳ sản phẩm nào trong đơn hàng)
-        $isRelatedSeller = $order->items->contains('seller_id', $user->id);
+        
+        // Sử dụng Query Builder thay vì Collection methods để tối ưu hóa truy vấn
+        $isRelatedSeller = $order->orderItems()
+                                 ->whereHas('product', function ($query) use ($user) {
+                                     // Giả định OrderItem có mối quan hệ Product, và Product có trường user_id (seller_id)
+                                     $query->where('user_id', $user->id); 
+                                 })
+                                 ->exists();
+
         if ($isRelatedSeller) {
-            return true;
+            return Response::allow();
         }
 
-        return false;
+        // Nếu không phải người mua và không phải người bán liên quan
+        return Response::deny('Bạn không có quyền truy cập vào đơn hàng này.');
+    }
+    public function viewAny(User $user): bool
+    {
+        return $user->role === 'customer' || $user->role === 'seller';
+    }
+    public function create(User $user): bool
+    {
+        return $user->role === 'customer';
     }
 
     // ... Các hàm policy khác: update, delete, create
