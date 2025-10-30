@@ -23,7 +23,7 @@ class VoucherPolicy
     }
     public function viewAny(User $user): bool
     {
-        return $user->hasRole('admin');
+        return $user->role === 'admin';
     }
 
     /**
@@ -31,7 +31,7 @@ class VoucherPolicy
      */
     public function update(User $user, Voucher $voucher): bool
     {
-        return $user->hasRole('admin');
+          return $user->role === 'admin';
     }
 
     /**
@@ -39,7 +39,7 @@ class VoucherPolicy
      */
     public function delete(User $user, Voucher $voucher): bool
     {
-        return $user->hasRole('admin');
+          return $user->role === 'admin';
     }
 
     // Các hàm khác như update, delete, view sẽ được định nghĩa ở đây

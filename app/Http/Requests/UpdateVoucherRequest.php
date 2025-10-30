@@ -6,6 +6,8 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class UpdateVoucherRequest extends FormRequest
 {
@@ -20,7 +22,7 @@ class UpdateVoucherRequest extends FormRequest
         // Kiểm tra quyền Admin/Quản lý voucher
         // Bạn cần triển khai Policy/Middleware để check role 'admin'
         // Giả định middleware 'auth:sanctum' đã được thiết lập.
-        return Auth::check() && Auth::user()->hasRole('admin'); 
+        return true;
     }
 
     /**
@@ -43,7 +45,6 @@ class UpdateVoucherRequest extends FormRequest
             ],
 
             // Ràng buộc 2: Tên voucher (name)
-            'name' => ['required', 'string', 'max:150', 'not_regex:/[<>\/]/i'], // Chặn ký tự đặc biệt cơ bản
 
             // Ràng buộc 3: Mô tả voucher (description)
             'description' => ['nullable', 'string', 'max:255'],
@@ -60,8 +61,6 @@ class UpdateVoucherRequest extends FormRequest
             // Ràng buộc 7: Đơn hàng tối thiểu (min_purchase) - DECIMAL
             'min_purchase' => ['required', 'numeric', 'min:0'],
 
-            // Ràng buộc 8: Số lượng voucher (quantity)
-            'quantity' => ['required', 'integer', 'min:0'], 
 
             // Ràng buộc 9 & 10: Ngày bắt đầu và Ngày kết thúc
             'start_date' => [
@@ -123,9 +122,6 @@ class UpdateVoucherRequest extends FormRequest
             'code.unique' => 'Mã voucher đã tồn tại.',
             
             // Ràng buộc 2
-            'name.required' => 'Vui lòng nhập tên voucher.',
-            'name.max' => 'Tên voucher không được quá 150 ký tự.',
-            'name.not_regex' => 'Tên voucher không được chứa ký tự đặc biệt.',
 
             // Ràng buộc 3
             'description.max' => 'Mô tả không được quá 255 ký tự.',
@@ -139,7 +135,6 @@ class UpdateVoucherRequest extends FormRequest
             'discount_value.min' => 'Giá trị giảm không hợp lệ.',
             'discount_max.min' => 'Giá trị tối đa không hợp lệ.',
             'min_purchase.min' => 'Đơn hàng tối thiểu không hợp lệ.',
-            'quantity.min' => 'Số lượng voucher phải lớn hơn hoặc bằng 0.',
             'usage_limit.min' => 'Số lần dùng tối đa phải lớn hơn hoặc bằng 0.',
 
             // Ràng buộc 9 & 10
@@ -147,5 +142,13 @@ class UpdateVoucherRequest extends FormRequest
             'end_date.after' => 'Ngày kết thúc phải sau Ngày bắt đầu.',
             'end_date.after_or_equal' => 'Ngày kết thúc phải sau Ngày hiện tại.',
         ];
+    }
+    protected function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(response()->json([
+            'success' => false,
+            'message' => 'Dữ liệu không hợp lệ',
+            'errors' => $validator->errors()
+        ], 422));
     }
 }

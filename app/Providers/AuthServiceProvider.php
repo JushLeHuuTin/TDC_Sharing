@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider; 
+use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use App\Models\Product;
 use App\Policies\ProductPolicy;
 use App\Models\Order;
@@ -22,6 +22,11 @@ class AuthServiceProvider extends ServiceProvider
     // ... (VoucherPolicy nếu đã tạo)
         Voucher::class => VoucherPolicy::class, 
         
+        \App\Models\Voucher::class => \App\Policies\VoucherPolicy::class,
+        'App\Models\Order' => 'App\Policies\OrderPolicy',
+        // ... (VoucherPolicy nếu đã tạo)
+        Voucher::class => VoucherPolicy::class,
+
         // 🔥 ĐĂNG KÝ ORDER POLICY
         Order::class => OrderPolicy::class,
 
@@ -43,5 +48,4 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
     }
-    
 }
