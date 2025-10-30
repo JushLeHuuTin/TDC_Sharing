@@ -5,8 +5,8 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\VoucherController;
 use App\Http\Controllers\OrderController;
-use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\PromotionController;
 
 Route::post('/products', [ProductController::class, 'store']);
 // Các route yêu cầu phải đăng nhập thì cho vào group này

@@ -6,7 +6,8 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 class StorePromotionRequest extends FormRequest
 {
     /**
@@ -14,7 +15,7 @@ class StorePromotionRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return Auth::check() && Auth::user()->hasRole('admin'); 
+        return Auth::check(); 
     }
 
     /**
@@ -36,10 +37,11 @@ class StorePromotionRequest extends FormRequest
             'discount_value' => ['required', 'numeric', 'min:0.01'],
 
             // Ràng buộc 5: Giá trị tối đa
-            'max_discount_value' => ['nullable', 'numeric', 'min:0'],
+            'max_discount' => ['nullable', 'numeric', 'min:0'],
+            'usage_limit' => ['nullable', 'numeric', 'min:0'],
 
             // Ràng buộc 6: Đơn hàng tối thiểu
-            'min_order_value' => ['required', 'numeric', 'min:0'],
+            'min_purchase' => ['required', 'numeric', 'min:0'],
 
             // Ràng buộc 7: Ngày bắt đầu
             'start_date' => [
@@ -62,7 +64,7 @@ class StorePromotionRequest extends FormRequest
 
             // Ràng buộc 10: Đối tượng sử dụng
             'target_audiences' => ['required', 'array', 'min:1'],
-            'target_audiences.*' => ['integer', 'exists:user_groups,id'], // Giả định có bảng user_groups
+            'target_audiences.*' => ['integer', 'exists:users,id'], // Giả định có bảng user_groups
 
             // Ràng buộc 11: Danh mục áp dụng
             'category_ids' => ['required', 'array', 'min:1'],
@@ -84,8 +86,8 @@ class StorePromotionRequest extends FormRequest
             }
             
             // Ràng buộc 5: Nếu có Giá trị tối đa, nó phải lớn hơn Giá trị giảm (Nếu là Fixed)
-            if ($data['discount_type'] === 'fixed' && isset($data['max_discount_value']) && $data['max_discount_value'] < $data['discount_value']) {
-                 $validator->errors()->add('max_discount_value', 'Giá trị tối đa phải lớn hơn hoặc bằng Giá trị giảm.');
+            if ($data['discount_type'] === 'fixed' && isset($data['max_discount']) && $data['max_discount'] < $data['discount_value']) {
+                 $validator->errors()->add('max_discount', 'Giá trị tối đa phải lớn hơn hoặc bằng Giá trị giảm.');
             }
         });
     }
@@ -115,5 +117,13 @@ class StorePromotionRequest extends FormRequest
             'category_ids.required' => 'Vui lòng chọn danh mục áp dụng hợp lệ.',
             'category_ids.*.exists' => 'Danh mục đã chọn không hợp lệ.',
         ];
+    }
+    protected function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(response()->json([
+            'success' => false,
+            'message' => 'Dữ liệu không hợp lệ',
+            'errors' => $validator->errors()
+        ], 422));
     }
 }

@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\StorePromotionRequest;
 use App\Models\Promotion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
 
 class PromotionController extends Controller
 {
@@ -27,22 +28,15 @@ class PromotionController extends Controller
         DB::beginTransaction();
         try {
             // 1. Tạo bản ghi Promotion chính
-            $promotion = Promotion::create($promotionData);
+            $promotion = Promotion::create($data);
 
-            // 2. Lưu các danh mục áp dụng (Promotion_Categories)
-            // Giả định Promotion có mối quan hệ belongsToMany với Category
-            $promotion->categories()->attach($categoryIds); 
-
-            // 3. Lưu đối tượng sử dụng (Promotion_UserGroups)
-            // Giả định Promotion có mối quan hệ belongsToMany với UserGroup
-            $promotion->audiences()->attach($audienceIds); 
             
             DB::commit();
 
             // Ràng buộc 12: Thông báo thành công
             return response()->json([
                 'message' => 'Tạo chương trình khuyến mãi thành công. 🎉',
-                'data' => $promotion->load(['categories', 'audiences']),
+                'data' => $promotion,
             ], 201);
 
         } catch (\Exception $e) {
