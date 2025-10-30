@@ -3,10 +3,10 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CartController;
-use App\Http\Controllers\VoucherController;
+use App\Http\Controllers\Api\VoucherController;
 use App\Http\Controllers\OrderController;
-use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\PromotionController;
 
 Route::post('/products', [ProductController::class, 'store']);
 // Các route yêu cầu phải đăng nhập thì cho vào group này
@@ -14,6 +14,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::delete('/products/{product}', [ProductController::class, 'destroy']);
     Route::post('/cart/add', [CartController::class, 'addItem'])->name('cart.add');
+    Route::delete('/cart/{cartItem}', [CartController::class, 'deleteItem']);
     Route::post('/vouchers', [VoucherController::class, 'store']);
      // API tạo đơn hàng sau khi thanh toán
     Route::post('/orders', [OrderController::class, 'store']);
@@ -34,7 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Ràng buộc 7: Nút Hoàn tất đặt hàng (Gọi lại API tạo đơn đã xây dựng)
     Route::post('/orders', [OrderController::class, 'store']);
-
+    
     // API Lấy danh sách voucher
     Route::get('/vouchers', [VoucherController::class, 'index']);
 
