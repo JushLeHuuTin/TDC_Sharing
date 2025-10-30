@@ -1,7 +1,13 @@
-/backend/storage/logs/
-/backend/storage/*.log
-# Bỏ qua file cache và log của Laravel
+# Bỏ qua file rác ở thư mục GỐC (nếu có)
 /bootstrap/cache/
 /storage/framework/
 /storage/logs/
-*.log
+
+# Bỏ qua file rác ở thư mục 'backend' (nếu có)
+/backend/bootstrap/cache/
+/backend/storage/framework/
+/backend/storage/logs/
+
+# Bỏ qua tất cả các file .log trong các thư mục storage
+/storage/*.log
+/backend/storage/*.log
