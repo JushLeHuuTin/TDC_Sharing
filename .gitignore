@@ -1,13 +1,15 @@
-# Bỏ qua file rác ở thư mục GỐC (nếu có)
+# Bỏ qua file rác của Laravel
 /bootstrap/cache/
 /storage/framework/
 /storage/logs/
-
-# Bỏ qua file rác ở thư mục 'backend' (nếu có)
 /backend/bootstrap/cache/
 /backend/storage/framework/
 /backend/storage/logs/
 
-# Bỏ qua tất cả các file .log trong các thư mục storage
-/storage/*.log
-/backend/storage/*.log
+# Bỏ qua file rác hệ thống
+.DS_Store
+.deepsource.toml
+
+# Bỏ qua thư viện và file env
+/vendor/
+/.env
