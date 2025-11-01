@@ -106,4 +106,18 @@ class OrderController extends Controller
             ], 500);
         }
     }
+    public function show(Order $order): JsonResponse
+    {
+        // 1. Kiểm tra quyền hạn: Seller có quyền xem chi tiết đơn hàng này không?
+        $this->authorize('view', $order);
+
+        // 2. Tải các mối quan hệ cần thiết
+        $order->load(['buyer', 'address', 'items.product']);
+
+        // 3. Trả về response đã được định dạng
+        return response()->json([
+            'success' => true,
+            'data'    => new OrderDetailResource($order)
+        ]);
+    }
 }
