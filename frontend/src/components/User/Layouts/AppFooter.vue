@@ -14,9 +14,9 @@
                 <div>
                     <div class="flex items-center mb-4">
                         <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-2">
-                            <i class="fas fa-graduation-cap text-white"></i>
+                            <fa :icon="['fas', 'graduation-cap']" class="text-white" />
                         </div>
-                        <h3 class="text-xl font-bold">StudentMarket</h3>
+                        <h3 class="text-xl font-bold">TDC_Sharing</h3>
                     </div>
                     <p class="text-gray-400">Nền tảng mua bán dành riêng cho sinh viên Việt Nam</p>
                 </div>
@@ -48,16 +48,16 @@
                     <h4 class="font-semibold mb-4">Kết nối</h4>
                     <div class="flex space-x-4">
                         <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                            <i class="fab fa-facebook text-xl"></i>
+                            <fa icon="facebook" class="text-xl" />
                         </a>
                         <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                            <i class="fab fa-instagram text-xl"></i>
+                            <fa :icon="['fab', 'instagram']" class="text-xl" />
                         </a>
                         <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                            <i class="fab fa-twitter text-xl"></i>
+                            <fa :icon="['fab', 'twitter']" class="text-xl" />
                         </a>
                         <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                            <i class="fab fa-youtube text-xl"></i>
+                            <fa :icon="['fab', 'youtube']" class="text-xl" />
                         </a>
                     </div>
                 </div>
@@ -65,7 +65,7 @@
             
             <!-- Bản quyền -->
             <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-                <p>&copy; 2024 StudentMarket. Tất cả quyền được bảo lưu.</p>
+                <p>&copy; 2024 TDC_Sharing. Tất cả quyền được bảo lưu.</p>
             </div>
         </div>
     </footer>

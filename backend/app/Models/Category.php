@@ -13,8 +13,14 @@ class Category extends Model
     use HasFactory;
 
     protected $fillable = [
-        'parent_id', 'name', 'description', 'icon',
-        'color', 'display_order', 'is_visible', 'slug'
+        'parent_id',
+        'name',
+        'description',
+        'icon',
+        'color',
+        'display_order',
+        'is_visible',
+        'slug'
     ];
 
     protected $casts = [
@@ -32,9 +38,9 @@ class Category extends Model
     }
 
     public function products()
-    {
-        return $this->hasMany(Product::class);
-    }
+{
+    return $this->hasMany(Product::class)->where('status', 'active');
+}
 
     public function attributes()
     {
@@ -86,7 +92,7 @@ class Category extends Model
         foreach ($categories as $category) {
             $children = $allGrouped->get($category->id, collect());
             $category->children = $children; // Gán collection con vào thuộc tính 'children'
-            
+
             // Nếu có danh mục con, tiếp tục xây dựng cây cho chúng
             if ($children->isNotEmpty()) {
                 self::buildTree($children, $allGrouped);
@@ -96,8 +102,9 @@ class Category extends Model
     public function scopeTopFive(Builder $query): Builder
     {
         return $query->where('is_visible', true) // Chỉ lấy các danh mục đang được kích hoạt
-                     ->orderBy('display_order', 'asc') // Sắp xếp theo thứ tự hiển thị
-                     ->orderBy('id', 'asc') // Thêm sắp xếp phụ để đảm bảo thứ tự nhất quán khi display_order trùng nhau
-                     ->take(5); // Giới hạn chỉ lấy 5 danh mục
+            ->withCount('products')
+            ->orderBy('display_order', 'asc') // Sắp xếp theo thứ tự hiển thị
+            ->orderBy('id', 'asc') // Thêm sắp xếp phụ để đảm bảo thứ tự nhất quán khi display_order trùng nhau
+            ->take(5); // Giới hạn chỉ lấy 5 danh mục
     }
 }

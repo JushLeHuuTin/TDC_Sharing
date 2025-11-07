@@ -84,7 +84,7 @@ const hideSuggestions = () => {
                 autocomplete="off"
             >
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <i class="fas fa-search text-gray-400"></i>
+                <fa :icon="['fas', 'search']" class="text-gray-400" />
             </div>
             <!-- Sử dụng @click.prevent="handleSubmit" để ngăn form submit mặc định -->
             <button @click.prevent="handleSubmit" type="submit" class="absolute inset-y-0 right-0 pr-1 flex items-center">

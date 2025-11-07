@@ -1,7 +1,8 @@
 <?php
 
 namespace Database\Seeders;
-
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -15,6 +16,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
+        Schema::disableForeignKeyConstraints();
         // Gọi các seeders theo đúng thứ tự (quan trọng vì có foreign keys)
         $this->call([
             UserSeeder::class,              // 1. Users trước (không phụ thuộc)
@@ -36,7 +38,8 @@ class DatabaseSeeder extends Seeder
             AttributeOptionsSeeder::class,           
             NotificationSeeder::class,      // 18. Notifications (phụ thuộc Users)
         ]);
-        
+        // ⚠️ BẬT LẠI KIỂM TRA FOREIGN KEY
+        Schema::enableForeignKeyConstraints();
         $this->command->info('✅ Đã seed xong tất cả dữ liệu!');
         $this->command->info('📊 Thống kê:');
         $this->command->info('   - Users: ' . \App\Models\User::count());

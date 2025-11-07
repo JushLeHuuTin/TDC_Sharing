@@ -12,6 +12,7 @@ class TopCategoryResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name ?? 'Danh mục chưa có tên', // Fallback nếu tên null
+            'count' => $this->products_count ?? 0,
             'slug' => $this->slug, // Cung cấp slug để frontend tạo link
             'icon' => $this->icon ?? 'fas fa-tag', // Icon mặc định nếu không có
             'color' => $this->color ?? '#333333', // Màu mặc định nếu không có

@@ -18,6 +18,7 @@ class FeaturedProductResource extends JsonResource
             'seller_name' => Str::limit($this->seller?->full_name ?? 'Người bán không xác định', 30, '...'),
             'university' => $this->seller?->university?->name ?? 'Chưa cập nhật', // Dùng nullsafe operator cho nested relation
             'created_date' => $this->created_at ? $this->created_at->format('d/m/Y') : 'Không rõ ngày',
+            'status' => $this->status
         ];
     }
 }

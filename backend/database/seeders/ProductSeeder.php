@@ -10,162 +10,116 @@ class ProductSeeder extends Seeder
 {
     public function run()
     {
+        // Xóa dữ liệu cũ để tránh trùng lặp
+        Product::truncate();
+        
         $products = [
+            // --- TÀI NGUYÊN HỌC TẬP (Category ID 5 & 6) ---
             [
                 'user_id' => 1,
-                'category_id' => 5, // iPhone
-                'title' => 'iPhone 15 Pro Max 256GB',
-                'description' => 'iPhone 15 Pro Max với chip A17 Pro mạnh mẽ, camera 48MP, màn hình Super Retina XDR 6.7 inch',
-                'price' => 29990000.00,
+                'category_id' => 5, // Giáo trình & Sách chuyên ngành
+                'title' => 'Giáo trình Lập trình Hướng đối tượng C++',
+                'description' => 'Sách giáo trình bản gốc, còn mới 95%, có highlight một vài chỗ quan trọng. Kèm theo bài tập lab đã giải.',
+                'price' => 120000.00,
                 'status' => 'active',
-                'stocks' => 50,
+                'stocks' => 1,
                 'is_visible' => true,
                 'is_featured' => true,
-                'views_count' => 0,
-                'slug' => 'iphone-15-pro-max-256gb'
+                'views_count' => 50,
+                'slug' => 'giao-trinh-lap-trinh-c++'
             ],
             [
                 'user_id' => 1,
-                'category_id' => 5,
-                'title' => 'iPhone 14 Pro 128GB',
-                'description' => 'iPhone 14 Pro với Dynamic Island, camera 48MP, chip A16 Bionic',
-                'price' => 24990000.00,
+                'category_id' => 6, // Đề thi & Bài tập
+                'title' => 'Tài liệu ôn thi TOEIC 750+ (Có file nghe)',
+                'description' => 'Bộ 5 đề thi thử TOEIC mới nhất, kèm transcript và audio chất lượng cao. Đã in sẵn.',
+                'price' => 50000.00,
                 'status' => 'active',
-                'stocks' => 30,
+                'stocks' => 1,
                 'is_visible' => true,
                 'is_featured' => true,
-                'views_count' => 0,
-                'slug' => 'iphone-14-pro-128gb'
+                'views_count' => 80,
+                'slug' => 'tai-lieu-on-thi-toeic-750'
             ],
             [
                 'user_id' => 1,
-                'category_id' => 6, // Samsung
-                'title' => 'Samsung Galaxy S24 Ultra 512GB',
-                'description' => 'Galaxy S24 Ultra với bút S Pen, camera 200MP, màn hình Dynamic AMOLED 6.8 inch',
-                'price' => 31990000.00,
+                'category_id' => 5, 
+                'title' => 'Sách "Kinh tế vi mô" - Tái bản mới nhất',
+                'description' => 'Sách còn nguyên seal, chưa bóc. Mua về nhưng không dùng đến. Giá bìa 200k.',
+                'price' => 150000.00,
                 'status' => 'active',
-                'stocks' => 40,
+                'stocks' => 1,
+                'is_visible' => true,
+                'is_featured' => false,
+                'views_count' => 35,
+                'slug' => 'sach-kinh-te-vi-mo-moi'
+            ],
+            [
+                'user_id' => 1,
+                'category_id' => 6, 
+                'title' => 'Bộ đề cương ôn thi giữa kỳ môn Giải tích 1 (Dạng PDF)',
+                'description' => 'Tài liệu tổng hợp các dạng bài tập quan trọng và các đề thi giữa kỳ năm trước. Chỉ bán bản mềm.',
+                'price' => 30000.00,
+                'status' => 'active',
+                'stocks' => 999, // Tài liệu mềm có thể bán nhiều
                 'is_visible' => true,
                 'is_featured' => true,
-                'views_count' => 0,
-                'slug' => 'samsung-galaxy-s24-ultra-512gb'
+                'views_count' => 120,
+                'slug' => 'bo-de-cuong-giai-tich-1'
             ],
+
+            // --- THIẾT BỊ & CÔNG NGHỆ (Category ID 7 & 8) ---
             [
                 'user_id' => 1,
-                'category_id' => 6,
-                'title' => 'Samsung Galaxy Z Fold 5 256GB',
-                'description' => 'Điện thoại màn hình gập Galaxy Z Fold 5, chip Snapdragon 8 Gen 2',
-                'price' => 35990000.00,
+                'category_id' => 7, // Laptop, PC & Linh kiện
+                'title' => 'Laptop Dell Inspiron 14 5402 (Đã qua sử dụng)',
+                'description' => 'Laptop Core i5 Gen 11, RAM 8GB, SSD 512GB. Mua được 1 năm, ngoại hình 90%, thích hợp làm bài tập và code cơ bản.',
+                'price' => 9500000.00,
                 'status' => 'active',
-                'stocks' => 15,
-                'is_visible' => true,
-                'is_featured' => false,
-                'views_count' => 0,
-                'slug' => 'samsung-galaxy-z-fold-5-256gb'
-            ],
-            [
-                'user_id' => 1,
-                'category_id' => 2, // Laptop
-                'title' => 'MacBook Pro 14 inch M3 Pro',
-                'description' => 'MacBook Pro 14 inch với chip M3 Pro, RAM 18GB, SSD 512GB, màn hình Liquid Retina XDR',
-                'price' => 52990000.00,
-                'status' => 'active',
-                'stocks' => 25,
+                'stocks' => 1,
                 'is_visible' => true,
                 'is_featured' => true,
-                'views_count' => 0,
-                'slug' => 'macbook-pro-14-m3-pro'
+                'views_count' => 150,
+                'slug' => 'laptop-dell-inspiron-14-used'
             ],
             [
                 'user_id' => 1,
-                'category_id' => 2,
-                'title' => 'Dell XPS 15 9530',
-                'description' => 'Dell XPS 15 với Intel Core i7-13700H, RAM 16GB, SSD 512GB, RTX 4050',
-                'price' => 45990000.00,
+                'category_id' => 8, // Phụ kiện học tập
+                'title' => 'Tai nghe Sony WH-CH510 (Màu đen, còn hộp)',
+                'description' => 'Tai nghe Bluetooth không dây, pin trâu, âm thanh tốt để nghe giảng và học ngoại ngữ. Còn bảo hành 3 tháng.',
+                'price' => 350000.00,
                 'status' => 'active',
-                'stocks' => 20,
-                'is_visible' => true,
-                'is_featured' => false,
-                'views_count' => 0,
-                'slug' => 'dell-xps-15-9530'
-            ],
-            [
-                'user_id' => 1,
-                'category_id' => 3, // Tablet
-                'title' => 'iPad Pro 12.9 inch M2 256GB',
-                'description' => 'iPad Pro với chip M2, màn hình Liquid Retina XDR, hỗ trợ Apple Pencil 2',
-                'price' => 32990000.00,
-                'status' => 'active',
-                'stocks' => 35,
+                'stocks' => 1,
                 'is_visible' => true,
                 'is_featured' => true,
-                'views_count' => 0,
-                'slug' => 'ipad-pro-129-m2-256gb'
+                'views_count' => 60,
+                'slug' => 'tai-nghe-sony-wh-ch510'
             ],
             [
                 'user_id' => 1,
-                'category_id' => 3,
-                'title' => 'Samsung Galaxy Tab S9 Ultra',
-                'description' => 'Galaxy Tab S9 Ultra với màn hình 14.6 inch, chip Snapdragon 8 Gen 2, bút S Pen',
-                'price' => 28990000.00,
+                'category_id' => 7, 
+                'title' => 'Màn hình máy tính ASUS 24 inch (Cũ)',
+                'description' => 'Màn hình Full HD, 75Hz, không điểm chết. Rất phù hợp cho sinh viên thiết kế hoặc lập trình.',
+                'price' => 1800000.00,
                 'status' => 'active',
-                'stocks' => 18,
+                'stocks' => 1,
                 'is_visible' => true,
                 'is_featured' => false,
-                'views_count' => 0,
-                'slug' => 'samsung-galaxy-tab-s9-ultra'
+                'views_count' => 45,
+                'slug' => 'man-hinh-asus-24-inch'
             ],
             [
                 'user_id' => 1,
-                'category_id' => 7, // Tai nghe
-                'title' => 'AirPods Pro 2 USB-C',
-                'description' => 'Tai nghe AirPods Pro thế hệ 2 với chip H2, chống ồn chủ động, cổng USB-C',
-                'price' => 6490000.00,
+                'category_id' => 8, 
+                'title' => 'Pin sạc dự phòng Xiaomi 10000mAh (99%)',
+                'description' => 'Sạc dự phòng nhỏ gọn, mới dùng vài lần, sạc nhanh 18W. Kèm cáp sạc.',
+                'price' => 250000.00,
                 'status' => 'active',
-                'stocks' => 100,
-                'is_visible' => true,
-                'is_featured' => true,
-                'views_count' => 0,
-                'slug' => 'airpods-pro-2-usb-c'
-            ],
-            [
-                'user_id' => 1,
-                'category_id' => 7,
-                'title' => 'Sony WH-1000XM5',
-                'description' => 'Tai nghe Sony WH-1000XM5 chống ồn cao cấp, âm thanh Hi-Res',
-                'price' => 8990000.00,
-                'status' => 'active',
-                'stocks' => 60,
+                'stocks' => 1,
                 'is_visible' => true,
                 'is_featured' => false,
-                'views_count' => 0,
-                'slug' => 'sony-wh-1000xm5'
-            ],
-            [
-                'user_id' => 1,
-                'category_id' => 8, // Sạc dự phòng
-                'title' => 'Anker PowerCore 20000mAh',
-                'description' => 'Pin sạc dự phòng Anker 20000mAh, sạc nhanh PD 20W',
-                'price' => 990000.00,
-                'status' => 'active',
-                'stocks' => 200,
-                'is_visible' => true,
-                'is_featured' => false,
-                'views_count' => 0,
-                'slug' => 'anker-powercore-20000mah'
-            ],
-            [
-                'user_id' => 1,
-                'category_id' => 8,
-                'title' => 'Xiaomi Power Bank 3 10000mAh',
-                'description' => 'Pin sạc dự phòng Xiaomi 10000mAh, nhỏ gọn, sạc nhanh 18W',
-                'price' => 390000.00,
-                'status' => 'active',
-                'stocks' => 300,
-                'is_visible' => true,
-                'is_featured' => false,
-                'views_count' => 0,
-                'slug' => 'xiaomi-power-bank-3-10000mah'
+                'views_count' => 30,
+                'slug' => 'sac-du-phong-xiaomi-10000mah'
             ],
         ];
 

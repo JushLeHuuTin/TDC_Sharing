@@ -11,6 +11,10 @@ use App\Http\Controllers\Api\Admin\orderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
 
 use App\Models\Category;
+
+Route::get('/products/create', [ProductController::class, function(){
+    return view('page.products.create');
+}])->name('product.create');
 // 1.4.TIN display products list
 Route::get('/products', [ProductController::class, 'index']);
 // 1.5.TIN display feature products list
