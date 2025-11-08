@@ -17,7 +17,6 @@ const props = defineProps({
         default: null,
     }
 });
-
 const successMessage = ref(props.flash.success);
 const errorMessage = ref(props.flash.error);
 

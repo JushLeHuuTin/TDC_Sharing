@@ -14,7 +14,7 @@
             Nền tảng mua bán dành riêng cho sinh viên - Kết nối, chia sẻ, tiết kiệm!
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-            @auth
+            @guest
                 <a href="#" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
                     <i class="fas fa-user-plus mr-2"></i>Đăng ký ngay
                 </a>
@@ -25,10 +25,8 @@
                 <a href="{{ route('products.create') }}" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
                     <i class="fas fa-plus mr-2"></i>Đăng bán ngay
                 </a>
-                <a href="{{ route('products.index') }}" class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors">
-                    <i class="fas fa-search mr-2"></i>Khám phá sản phẩm
-                </a>
-            @endauth
+                {{--  --}}
+            @endguest
         </div>
     </div>
 </section>

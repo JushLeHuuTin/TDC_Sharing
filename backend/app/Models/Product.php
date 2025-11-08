@@ -176,7 +176,7 @@ class Product extends Model
     public function scopeFeatured(Builder $query): Builder
     {
         return $query->where('is_featured', true)
-                     ->where('status', 'active')
+                     ->where('is_visible', '1')
                      ->with(['seller', 'featuredImage']) // Tải sẵn thông tin người bán VÀ trường đại học của họ
                      ->latest()
                      ->limit(4); // Giới hạn chỉ lấy 4 sản phẩm nổi bật

@@ -14,12 +14,6 @@ const props = defineProps({
 });
 
 // Chuyển đổi hàm định dạng số và logic định tuyến của Blade sang Vue
-const formattedPrice = computed(() => {
-    return new Intl.NumberFormat('vi-VN', { 
-        style: 'currency', 
-        currency: 'VND' 
-    }).format(props.product.price);
-});
 
 // const formattedOriginalPrice = computed(() => {
 //     if (!props.product.original_price) return null;
@@ -81,12 +75,12 @@ const toggleFavorite = (event) => {
                 <span 
                     class="condition-badge text-xs px-2 py-1 rounded-full font-medium"
                     :class="[
-                        product.condition === 'new' 
+                        product.status === 'new' 
                             ? 'bg-blue-100 text-blue-700' 
                             : 'bg-gray-100 text-gray-600'
                     ]"
                 >
-                    {{ product.condition === 'new' ? 'Như mới' : 'Đã qua sử dụng' }}
+                    {{ product.status === 'new' ? 'Như mới' : 'Đã qua sử dụng' }}
                 </span>
             </div>
         </div>
@@ -99,28 +93,28 @@ const toggleFavorite = (event) => {
             <div class="flex items-center justify-between mb-3">
                 <div>
                     <span class="text-xl font-bold text-blue-600">
-                        {{ formattedPrice }}
+                        {{ product.price }}
                     </span>
                     </div>
             </div>
 
             <div class="flex items-center justify-between text-sm text-gray-500">
                 <div class="flex items-center">
-                    <i class="fas fa-map-marker-alt mr-1"></i>
-                    <span>{{ product.location }}</span>
+                    <!-- <i class="fas fa-map-marker-alt mr-1"></i> -->
+                    <!-- <span>{{ product.location }}</span> -->
                 </div>
-                <span>{{ formattedDate }}</span>
+                <span>{{ product.created_date }}</span>
             </div>
 
             <div class="flex items-center mt-3 pt-3 border-t border-gray-100">
                 <img 
-                    :src="product.seller?.avatar || `https://ui-avatars.com/api/?name=${product.seller?.name || 'Seller'}`" 
+                    :src="product.seller?.avatar || `https://ui-avatars.com/api/?name=${product.seller_name || 'Seller'}`" 
                     :alt="product.seller?.name" 
                     class="w-6 h-6 rounded-full mr-2"
                 />
-                <span class="text-sm text-gray-700 flex-1">{{ product.seller?.name }}</span>
+                <span class="text-sm text-gray-700 flex-1">{{ product.seller_name }}</span>
                 <div class="flex items-center">
-                    <i class="fas fa-star text-yellow-400 text-xs mr-1"></i>
+                    <fa :icon="['fas', 'star']" class="text-yellow-400 text-xs mr-1" />
                     <span class="text-xs text-gray-600">4</span>
                 </div>
             </div>
