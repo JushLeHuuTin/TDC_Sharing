@@ -83,24 +83,24 @@ class StoreProductRequest extends FormRequest
             ],
 
             // Hình ảnh sản phẩm
-            // 'images' => [
-            //     // 'required',
-            //     'array',
-            //     'min:1',
-            //     'max:5'
-            // ],
-            // 'images.0' => [
-            //     'required', 
-            //     'image',
-            //     'mimes:jpeg,jpg,png,webp',
-            //     'max:2048',
-            // ],
-            // 'images.*' => [
-            //     'nullable', 
-            //     'image',
-            //     'mimes:jpeg,jpg,png,webp',
-            //     'max:2048',
-            // ],
+            'images' => [
+                // 'required',
+                'array',
+                'min:1',
+                'max:5'
+            ],
+            'images.0' => [
+                'required', 
+                'image',
+                'mimes:jpeg,jpg,png,webp',
+                'max:2048',
+            ],
+            'images.*' => [
+                'nullable', 
+                'image',
+                'mimes:jpeg,jpg,png,webp',
+                'max:2048',
+            ],
 
             // Ảnh đại diện (index của mảng images)
             'featured_image_index' => [

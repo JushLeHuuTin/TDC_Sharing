@@ -199,7 +199,7 @@ class ProductController extends Controller
     public function store(StoreProductRequest $request)
     {
         DB::beginTransaction();
-        $uploadedImages = []; // Khai báo mảng để theo dõi các ảnh đã upload
+        $uploadedImages = []; 
 
         try {
             // ... (Tạo Slug và Product Model) ...
@@ -215,10 +215,7 @@ class ProductController extends Controller
                 'is_featured' => $request->is_featured ?? false,
                 'slug' => $this->generateUniqueSlug($request->title)
             ]);
-
-            // 1. Upload và lưu hình ảnh 🎯 BỎ COMMENT VÀ SỬ DỤNG
             $images = $request->file('images');
-            // dd($request->all(), $request->file('images'));
             if (!empty($images)) {
                 // 💡 Gọi hàm helper đã định nghĩa
                 $uploadedImages = $this->uploadProductImages($images, $product->id);
@@ -228,8 +225,10 @@ class ProductController extends Controller
                 $product->images()->createMany($uploadedImages);
             }
 
-            if ($request->filled('attributes')) {
-                $attributesData = collect($request->attributes)
+            $rawAttributes = $request->input('attributes'); 
+
+            if (!empty($rawAttributes)) {
+                $attributesData = collect($rawAttributes)
                     ->map(fn($attr) => [
                         'attribute_id' => $attr['attribute_id'],
                         'value'        => $attr['value']
@@ -237,7 +236,6 @@ class ProductController extends Controller
                     ->values(); 
                 $product->productAttributes()->createMany($attributesData->all());
             }
-
             DB::commit();
             return response()->json([
                 'success' => true,
