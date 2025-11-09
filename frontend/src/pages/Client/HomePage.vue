@@ -48,16 +48,6 @@ onMounted(() => {
     categoryStore.fetchCategories(false);
     productStore.fetchFeaturedProducts();
 });
-// Sử dụng các hàm để mô phỏng hành vi của route() trong Blade
-// const getRoute = (name) => {
-//     const routes = {
-//         'products.create': '/products/create',
-//         'products.index': '/products',
-//         'products.register': '/register',
-//         'products.login': '/login',
-//     };
-//     return routes[name] || '#';
-// };
 
 // Hàm để định dạng số (tương tự ProductCard, nhưng dùng cho Stats)
 const formatNumber = (number) => {

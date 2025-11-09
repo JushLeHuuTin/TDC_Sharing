@@ -2,24 +2,18 @@
 import { ref, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useCategoryStore } from '@/stores/categoryStore';
-// Cần thêm imports cho Font Awesome icons nếu chưa có
-// import { faExclamationTriangle, faSpinner, faInfoCircle } from '@fortawesome/free-solid-svg-icons'; 
 
 const props = defineProps({
-    // Nhận hàm để đóng modal và truyền ID đã chọn
     onCategorySelected: Function,
-    // Nhận trạng thái hiển thị modal từ component cha
     isVisible: Boolean,
+    
 });
 
 const categoryStore = useCategoryStore();
-// flattenedCategories chứa [id, name (có gạch ngang), level, isParent]
 const { flattenedCategories, isLoading: isLoadingCategories } = storeToRefs(categoryStore);
-
 const selectedCategory = ref('');
 
 // --- LOGIC XỬ LÝ SỰ KIỆN (Giữ nguyên) ---
-
 const selectAndClose = () => {
     if (selectedCategory.value) {
         props.onCategorySelected(selectedCategory.value);

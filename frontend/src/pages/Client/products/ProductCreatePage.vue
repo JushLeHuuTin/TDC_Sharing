@@ -5,24 +5,28 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import CategoryChooserModal from '@/pages/Client/products/CategoryChooserModal.vue';
 import { faCloudUploadAlt, faPlus, faEdit, faRocket, faSave, faTimes, faChevronDown, faSpinner } from '@fortawesome/free-solid-svg-icons'; // Import các icon cần thiết
 import { storeToRefs } from 'pinia';
-import { useCategoryStore } from '@/stores/categoryStore';
+
 import { useAuthStore } from '@/stores/auth';
 import { useProductStore } from '@/stores/productStore';
+import { useCategoryStore } from '@/stores/categoryStore';
+
 import axios from 'axios';
 import { getCurrentInstance } from 'vue';
-
 // --- STORES VÀ SETUP ---
 const router = useRouter();
-const categoryStore = useCategoryStore();
+
 const authStore = useAuthStore();
 const productStore = useProductStore();
+const categoryStore = useCategoryStore();
+
 const { submissionError, isCreating } = storeToRefs(productStore);
 const { flattenedCategories, isLoading: isLoadingCategories, error: categoryError } = storeToRefs(categoryStore);
 const { user, isLoggedIn, isAdmin } = storeToRefs(authStore);
+const { dynamicAttributes, isLoadingAttributes } = storeToRefs(categoryStore);
 const instance = getCurrentInstance();
 const $toast = instance.appContext.config.globalProperties.$toast;
 
-// --- STATE CỦA FORM (Đã dọn dẹp) ---
+// state cua form
 const form = reactive({
     title: '',
     description: '',
@@ -31,12 +35,8 @@ const form = reactive({
     price: null,
     attributes: [],
 });
+// show category modal
 const showCategoryModal = ref(false);
-
-// --- DỮ LIỆU ĐỘNG TỪ API ---
-const dynamicAttributes = ref([]);
-const isLoadingAttributes = ref(false);
-
 // --- STATE CỤC BỘ ---
 const maxTitleLength = 100;
 const maxDescriptionLength = 2000;
@@ -44,50 +44,20 @@ const imageFiles = ref(new Array(7).fill(null));
 const imagePreviews = ref(new Array(7).fill(null));
 const isSubmitting = ref(false);
 const errorMessages = ref({});
-
-
 // --- COMPUTED PROPERTIES ---
 const titleCount = computed(() => form.title.length);
 const descCount = computed(() => form.description.length);
-
+let stopWatcher;
 watch(() => form.category_id, async (newId) => {
     if (newId) {
-        await fetchDynamicAttributes(newId);
+        const mappedData = await categoryStore.fetchDynamicAttributes(newId);
+        console.log(dynamicAttributes.value);
+        form.attributes = mappedData;
     } else {
         dynamicAttributes.value = [];
         form.attributes = [];
     }
 });
-
-
-// --- LOGIC GỌI API THUỘC TÍNH ĐỘNG ---
-const fetchDynamicAttributes = async (categoryId) => {
-    isLoadingAttributes.value = true;
-    dynamicAttributes.value = [];
-    form.attributes = [];
-
-    try {
-        const url = `http://127.0.0.1:8000/api/categories/${categoryId}/attributes`;
-        const response = await axios.get(url);
-
-        const attributes = response.data.data || [];
-        dynamicAttributes.value = attributes;
-
-        // Khởi tạo giá trị ban đầu cho các thuộc tính mới
-        form.attributes = attributes.map(attr => ({
-            attribute_id: attr.id, // hoặc attr.attribute_id tùy backend trả
-            value: ''
-        }));
-
-    } catch (error) {
-        console.error(`Lỗi tải thuộc tính cho category ${categoryId}:`, error);
-        alert('Không thể tải thuộc tính chi tiết cho danh mục này. Vui lòng thử lại.');
-    } finally {
-        isLoadingAttributes.value = false;
-    }
-};
-
-
 // --- XỬ LÝ SUBMIT (Cần gửi Attribute Values) ---
 const submitForm = async (action) => {
     const formData = new FormData();
@@ -115,7 +85,8 @@ const submitForm = async (action) => {
         }
 
         // Append vào formData nếu có giá trị
-        formData.append(`attributes[${index}][attribute_id]`, attr.id);
+        console.log(attr);
+        formData.append(`attributes[${index}][attribute_id]`, attr.attribute_id);
         formData.append(`attributes[${index}][value]`, value);
     });
     errorMessages.value = {};
@@ -128,9 +99,8 @@ const submitForm = async (action) => {
         // router.push({ name: 'products.index' });
 
     } catch (e) {
-        // 5. Xử lý lỗi (Nếu Store ném lỗi 422)
         if (e.message === 'Validation Failed') {
-            errorMessages.value = productStore.submissionError; // Lấy lỗi 422 từ store
+            errorMessages.value = productStore.submissionError;
             $toast.warning('Lỗi xác thực dữ liệu! Vui lòng kiểm tra các trường đã tô đỏ.');
             console.log(errorMessages.value);
         } else if (e.message === 'Unauthorized') {
@@ -144,8 +114,6 @@ const submitForm = async (action) => {
 };
 
 const handleInitialCategorySelected = (selectedId) => {
-
-    // 1. Ẩn Modal (Luôn chạy đầu tiên)
     showCategoryModal.value = false;
 
     if (selectedId) {
@@ -153,7 +121,6 @@ const handleInitialCategorySelected = (selectedId) => {
         console.log(`Danh mục đã chọn: ID ${selectedId}. Bắt đầu tải thuộc tính động.`);
 
     } else {
-        // alert('Việc đăng bán đã bị hủy. Quay lại trang chủ.');
         router.push('/');
     }
 };
@@ -185,10 +152,16 @@ const removeImage = (index) => {
 // --- LIFECYCLE HOOKS (Giữ nguyên) ---
 onMounted(() => {
     categoryStore.fetchCategories(true);
-    if (!form.category_id) {
-        setTimeout(() => { showCategoryModal.value = true; }, 100);
-    }
+    stopWatcher = watch(isLoadingCategories, (newVal) => {
+        if (newVal === false && !form.category_id) {
+            setTimeout(() => { showCategoryModal.value = true; }, 100);
+            if (stopWatcher) {
+                stopWatcher();
+            }
+        }
+    }, { immediate: true }); // Chạy ngay lập tức khi component mount
 });
+
 </script>
 <template>
     <AppLayout :user="user" title="Đăng bán sản phẩm - TDC_Sharing">
@@ -341,12 +314,14 @@ onMounted(() => {
                                 <fa :icon="faSpinner" class="fa-spin me-2" /> Đang tải thuộc tính...
                             </div>
 
-                            <div v-else-if="dynamicAttributes.length === 0" class="text-sm text-muted pt-3">
+                            <div v-else-if="!dynamicAttributes || dynamicAttributes.length === 0"
+                                class="text-sm text-muted pt-3">
                                 Không có thuộc tính bổ sung cho danh mục này.
                             </div>
 
                             <div v-else class="pt-3">
                                 <div v-for="(attr, index) in dynamicAttributes" :key="attr.id" class="mb-3">
+                                    <template v-if="form.attributes[index]">
                                     <label :for="attr.name" class="block text-sm font-medium text-gray-700 mb-2">
                                         {{ attr.label }}
                                         <span v-if="attr.required" class="text-red-500">*</span>
@@ -375,6 +350,11 @@ onMounted(() => {
                                             class="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                             :placeholder="attr.placeholder || ''" />
                                     </template>
+                                    <p v-if="errorMessages['attributes.' + index + '.value']"
+                                        class="text-sm text-red-600">
+                                        {{ errorMessages['attributes.' + index + '.value'][0] }}
+                                    </p>
+                                </template>
                                 </div>
                             </div>
                         </div>
