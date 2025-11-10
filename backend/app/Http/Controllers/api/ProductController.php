@@ -43,11 +43,8 @@ class ProductController extends Controller
         // 4. Trả về dữ liệu đã được transform
         return ProductResource::collection($products);
     }
-    public function getProduct(StoreProductRequest $request)
+    public function getProduct()
     {
-        // $search = $request->query('s');
-        // $products = Product::searchByKeyword($search);
-
         return view('pages.products.productManage', [
             // 'products' => $products,
             // 'search'   => $search
@@ -57,6 +54,12 @@ class ProductController extends Controller
     {
         // Gọi scope đã định nghĩa và phân trang
         $products = Product::activeAndReady()->paginate(8);
+        // Trả về dữ liệu qua API Resource như cũ
+        return ProductResource::collection($products);
+    }
+    public function getMyProduct (Request $request){
+        // Gọi scope đã định nghĩa và phân trang
+        $products = Product::myProducts()->paginate(8);
         // Trả về dữ liệu qua API Resource như cũ
         return ProductResource::collection($products);
     }

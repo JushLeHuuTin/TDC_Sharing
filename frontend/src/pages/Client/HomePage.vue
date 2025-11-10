@@ -36,7 +36,6 @@ const productStore = useProductStore();
 const { user, isLoggedIn, isAdmin } = storeToRefs(authStore);
 const { topFiveCategories, isLoading, error } = storeToRefs(categoryStore);
 const { featuredProducts, isLoadingFeatured, featuredError } = storeToRefs(productStore);
-console.log(topFiveCategories);
 // --- DỮ LIỆU GIẢ/MOCK DỮ LIỆU CHO TESTIMONIALS ---
 const testimonials = ref([
     { name: 'Nguyễn Minh Anh', university: 'ĐH Khoa học Tự nhiên', avatar: 'https://via.placeholder.com/60', rating: 5, comment: 'Tuyệt vời! Tôi đã bán được laptop cũ và mua được máy tính mới với giá rất hợp lý.' },

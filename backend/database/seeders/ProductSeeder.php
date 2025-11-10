@@ -29,7 +29,7 @@ class ProductSeeder extends Seeder
                 'slug' => 'giao-trinh-lap-trinh-c++'
             ],
             [
-                'user_id' => 1,
+                'user_id' => 2,
                 'category_id' => 6, // Đề thi & Bài tập
                 'title' => 'Tài liệu ôn thi TOEIC 750+ (Có file nghe)',
                 'description' => 'Bộ 5 đề thi thử TOEIC mới nhất, kèm transcript và audio chất lượng cao. Đã in sẵn.',
@@ -47,7 +47,7 @@ class ProductSeeder extends Seeder
                 'title' => 'Sách "Kinh tế vi mô" - Tái bản mới nhất',
                 'description' => 'Sách còn nguyên seal, chưa bóc. Mua về nhưng không dùng đến. Giá bìa 200k.',
                 'price' => 150000.00,
-                'status' => 'active',
+                'status' => 'new',
                 'stocks' => 1,
                 'is_visible' => true,
                 'is_featured' => false,
@@ -60,7 +60,7 @@ class ProductSeeder extends Seeder
                 'title' => 'Bộ đề cương ôn thi giữa kỳ môn Giải tích 1 (Dạng PDF)',
                 'description' => 'Tài liệu tổng hợp các dạng bài tập quan trọng và các đề thi giữa kỳ năm trước. Chỉ bán bản mềm.',
                 'price' => 30000.00,
-                'status' => 'active',
+                'status' => 'draft',
                 'stocks' => 999, // Tài liệu mềm có thể bán nhiều
                 'is_visible' => true,
                 'is_featured' => true,
@@ -75,7 +75,7 @@ class ProductSeeder extends Seeder
                 'title' => 'Laptop Dell Inspiron 14 5402 (Đã qua sử dụng)',
                 'description' => 'Laptop Core i5 Gen 11, RAM 8GB, SSD 512GB. Mua được 1 năm, ngoại hình 90%, thích hợp làm bài tập và code cơ bản.',
                 'price' => 9500000.00,
-                'status' => 'active',
+                'status' => 'pending',
                 'stocks' => 1,
                 'is_visible' => true,
                 'is_featured' => true,
@@ -88,7 +88,7 @@ class ProductSeeder extends Seeder
                 'title' => 'Tai nghe Sony WH-CH510 (Màu đen, còn hộp)',
                 'description' => 'Tai nghe Bluetooth không dây, pin trâu, âm thanh tốt để nghe giảng và học ngoại ngữ. Còn bảo hành 3 tháng.',
                 'price' => 350000.00,
-                'status' => 'active',
+                'status' => 'sold',
                 'stocks' => 1,
                 'is_visible' => true,
                 'is_featured' => true,
@@ -101,7 +101,7 @@ class ProductSeeder extends Seeder
                 'title' => 'Màn hình máy tính ASUS 24 inch (Cũ)',
                 'description' => 'Màn hình Full HD, 75Hz, không điểm chết. Rất phù hợp cho sinh viên thiết kế hoặc lập trình.',
                 'price' => 1800000.00,
-                'status' => 'active',
+                'status' => 'hidden',
                 'stocks' => 1,
                 'is_visible' => true,
                 'is_featured' => false,

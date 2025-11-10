@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 // use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -169,7 +170,13 @@ class Product extends Model
     }
     public function scopeActiveAndReady(Builder $query): Builder
     {
-        return $query->where('status', 'active')
+        return $query->where('is_visible', '1')
+            ->with(['seller', 'featuredImage'])
+            ->latest();
+    }
+    public function scopeMyProducts(Builder $query): Builder
+    {
+        return $query->where('user_id', Auth::id())
             ->with(['seller', 'featuredImage'])
             ->latest();
     }

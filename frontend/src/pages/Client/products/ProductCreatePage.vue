@@ -96,7 +96,7 @@ const submitForm = async (action) => {
         const newProduct = await productStore.createProduct(formData);
         // 4. Xử lý thành công
         $toast.success(`Đăng bán thành công!`);
-        // router.push({ name: 'products.index' });
+        router.push({ name: 'products.my' });
 
     } catch (e) {
         if (e.message === 'Validation Failed') {

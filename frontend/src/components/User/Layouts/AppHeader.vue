@@ -180,9 +180,9 @@ const getRoute = (name) => {
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <fa :icon="['fas', 'user']" class="mr-2" />Hồ sơ
                                 </a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <router-link to="/products/my" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <fa :icon="['fas', 'box']" class="mr-2" />Sản phẩm của tôi
-                                </a>
+                                </router-link>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <fa :icon="['fas', 'plus']" class="mr-2" />Đăng sản phẩm
                                 </a>

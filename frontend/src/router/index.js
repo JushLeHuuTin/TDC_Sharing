@@ -21,6 +21,7 @@ import NotificationsPage from '@/components/Admin/Components/NotificationsPage.v
 // import ProfilePage from '@/components/Admin/Components/ProfilePage.vue';
 // import CategoriesPage from '@/components/Admin/Components/CategoriesPage.vue';
 import ProductCreatePage from '@/pages/Client/products/ProductCreatePage.vue';
+import ProductManagePage from '@/pages/Client/products/ProductManagePage.vue';
 // Cần import các Page khác ở đây khi chuyển đổi chúng (ví dụ: ProductView, AdminDashboard,...)
 
 const router = createRouter({
@@ -32,8 +33,6 @@ const router = createRouter({
       component: HomePage,
       meta: { title: 'TDC_Sharing - Chợ Sinh Viên' }
     },
-    // Thêm các Route khác ở đây
-    // Ví dụ cho trang chi tiết sản phẩm:
     {
       path: '/products/:id',
       name: 'products.show',
@@ -49,10 +48,20 @@ const router = createRouter({
     },
     {
       path: '/products/create',
-      name: 'products.create', // ⬅️ Tên route bạn sử dụng trong code
+      name: 'products.create',
       component: ProductCreatePage,
       meta: { 
           title: 'Đăng bán sản phẩm',
+          requiresAuth: true, 
+          roles: ['customer', 'admin'] 
+      }
+    },
+    {
+      path: '/products/my',
+      name: 'products.my',
+      component: ProductManagePage,
+      meta: { 
+          title: 'Sản phẩm của tôi',
           requiresAuth: true, 
           roles: ['customer', 'admin'] 
       }

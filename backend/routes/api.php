@@ -17,6 +17,7 @@ Route::get('/products/create', [ProductController::class, function(){
 }])->name('product.create');
 // 1.4.TIN display products list
 Route::get('/products', [ProductController::class, 'index']);
+Route::get('/products/my', [ProductController::class, 'getMyProduct']);
 // 1.5.TIN display feature products list
 Route::get('/featured-products', [ProductController::class, 'featured']);
 // 1.6.TIN search product with keywords
