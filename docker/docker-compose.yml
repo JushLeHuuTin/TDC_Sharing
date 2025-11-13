@@ -1,11 +1,16 @@
 version: "3.3"
 
 services:
+<<<<<<< HEAD
+=======
+  # PHP + Apache container (Laravel)
+>>>>>>> tin/f5/display-featured-products
   app:
     build:
       context: ../backend
       dockerfile: Dockerfile
     container_name: laravel_app
+<<<<<<< HEAD
     ports:
       - "8000:80"
     volumes:
@@ -24,10 +29,35 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: tdc_sharing
+=======
+    volumes:
+      - ../backend:/var/www/html
+    ports:
+      - "8000:80"
+    # SỬA LỖI: Dùng cú pháp array đơn giản (để tránh lỗi invalid type)
+    depends_on:
+      - db
+    # THÊM: command để chờ database khởi động (thay thế condition: service_healthy)
+    command: ["/bin/bash", "-c", "sleep 30 && apache2-foreground"]
+    networks:
+      - laravel_net
+
+  # MySQL container
+  db:
+    image: mysql:8.0
+    container_name: mysql_dbd
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: tdc_sharing
+      MYSQL_USER: tin
+      MYSQL_PASSWORD: tin
+>>>>>>> tin/f5/display-featured-products
     ports:
       - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
+<<<<<<< HEAD
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
@@ -39,3 +69,34 @@ services:
 
 volumes:
   db_data:
+=======
+    networks:
+      - laravel_net
+    # BỎ healthcheck vì không được depends_on sử dụng
+    # healthcheck:
+    #   test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+    #   timeout: 20s
+    #   retries: 10
+
+  # phpMyAdmin container
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: root
+    ports:
+      - "8081:80"
+    depends_on:
+      - db
+    networks:
+      - laravel_net
+
+volumes:
+  db_data:
+
+networks:
+  laravel_net:
+>>>>>>> tin/f5/display-featured-products
