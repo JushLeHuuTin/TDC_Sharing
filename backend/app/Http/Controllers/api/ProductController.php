@@ -23,6 +23,8 @@ use Throwable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Auth\Access\AuthorizationException;
 
 // use Illuminate\Support\Facades\Auth;
 
@@ -423,42 +425,47 @@ class ProductController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Product $product)
+    public function destroy($id)
     {
         try {
+            $product = Product::find($id);
+    
+            if (!$product) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sản phẩm không tồn tại hoặc đã bị xóa trước đó.'
+                ], 404);
+            }
             $this->authorize('delete', $product);
-        } catch (exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' =>  "Không có quyền xoá sản phẩm"
-            ], 500);
-        }
-        try {
-            // 2. DÙNG TRANSACTION: Đảm bảo an toàn nếu cần xóa nhiều thứ liên quan (ví dụ: ảnh).
             DB::beginTransaction();
-
-            // (Tùy chọn) Xóa các file ảnh liên quan trong storage
-            // foreach ($product->images as $image) {
-            //     Storage::disk('public')->delete($image->url);
-            // }
-            // $product->images()->delete(); // Xóa record ảnh trong DB
-
-            // 3. XÓA SẢN PHẨM: Eloquent tự động chống SQL Injection.
-            // Nếu dùng SoftDeletes, nó sẽ chỉ cập nhật `deleted_at`.
+    
             $product->delete();
-
-            // 4. COMMIT TRANSACTION: Xác nhận xóa thành công.
+    
             DB::commit();
-
-            // 5. TRẢ VỀ THÔNG BÁO THÀNH CÔNG
+    
+            // 4️⃣ Trả kết quả
             return response()->json([
                 'success' => true,
                 'message' => 'Sản phẩm đã được xóa thành công.'
-            ]);
+            ], 200);
+    
+        } catch (AuthorizationException $e) {
+            // Không có quyền xoá
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn không có quyền xóa sản phẩm này.'
+            ], 403);
+    
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sản phẩm không tồn tại hoặc đã bị xóa.'
+            ], 404);
+    
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Lỗi khi xóa sản phẩm: ' . $e->getMessage());
-
+    
             return response()->json([
                 'success' => false,
                 'message' => 'Đã có lỗi xảy ra, không thể xóa sản phẩm.'

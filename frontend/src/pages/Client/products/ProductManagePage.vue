@@ -5,7 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import { useAuthStore } from '@/stores/auth';
 import { storeToRefs } from 'pinia';
 import { useProductStore } from '@/stores/productStore';
-import BasePagination from '@/components/BasePagination.vue'; 
+import BasePagination from '@/components/BasePagination.vue';
 import { getCurrentInstance } from 'vue';
 const instance = getCurrentInstance();
 const $toast = instance.appContext.config.globalProperties.$toast;
@@ -15,7 +15,7 @@ const authStore = useAuthStore();
 const productStore = useProductStore();
 
 const { user, isLoggedIn } = storeToRefs(authStore); // Giả định user được lấy từ Store
-const { myProducts, submissionError,myProductsStatusCounts,pagination } = storeToRefs(productStore); // Giả định user được lấy từ Store
+const { myProducts, submissionError, myProductsStatusCounts, pagination } = storeToRefs(productStore); // Giả định user được lấy từ Store
 // 🎯 STATE MANAGEMENT
 const currentStatus = ref('active'); // Trạng thái tab hiện tại
 const searchQuery = ref('');
@@ -64,7 +64,7 @@ const formatTime = (date) => {
 // 1. Đếm số lượng sản phẩm theo trạng thái
 const tabCounts = computed(() => {
     // 💡 Dữ liệu này đã được fetch từ API và là tổng số toàn hệ thống
-    return myProductsStatusCounts.value; 
+    return myProductsStatusCounts.value;
 });
 // 2. Lọc và sắp xếp sản phẩm (Logic chính)
 const filteredProducts = computed(() => {
@@ -76,7 +76,7 @@ const filteredProducts = computed(() => {
         const query = searchQuery.value.toLowerCase();
         list = list.filter(p => p.title.toLowerCase().includes(query));
     }
-    
+
     // 3. Sắp xếp (Logic sắp xếp giữ nguyên)
     const sorters = {
         'oldest': (a, b) => new Date(a.created_date) - new Date(b.created_date),
@@ -112,7 +112,7 @@ const getPerformanceClass = (performance) => {
 const changeTab = (status) => {
     currentStatus.value = status; // Cập nhật trạng thái tab UI
 
-   productStore.fetchMyProducts(status, 1, sortBy.value);
+    productStore.fetchMyProducts(status, 1, sortBy.value);
 };
 const handlePageChange = (page) => {
     productStore.fetchMyProducts(currentStatus.value, page, sortBy.value);
@@ -126,10 +126,10 @@ const startEdit = (id) => {
 
         editForm.id = product.id;
         editForm.title = product.title;
-        editForm.price = cleanPriceForInput(product.price); 
+        editForm.price = cleanPriceForInput(product.price);
         editForm.description = product.description;
         editForm.status = product.status;
-        
+
         // Bật edit mode
         product.price = cleanPriceForInput(product.price);
         console.log(product.price);
@@ -152,8 +152,8 @@ const cancelEdit = (id) => {
 };
 
 const saveProduct = async (id) => {
-    const product = myProducts.value.find(p => p.id === id); 
-    
+    const product = myProducts.value.find(p => p.id === id);
+
     if (!product || editForm.id !== id) return showToast('Lỗi: Phiên chỉnh sửa không hợp lệ!', 'error');
 
     if (!editForm.title || editForm.price < 1000) {
@@ -173,7 +173,7 @@ const saveProduct = async (id) => {
     formData.append('title', editForm.title);
     formData.append('price', editForm.price);
     formData.append('description', editForm.description || '');
-    formData.append('status', editForm.status); 
+    formData.append('status', editForm.status);
     try {
         const updatedData = await productStore.updateProduct(product.id, formData);
         product.isEditing = false;
@@ -199,11 +199,27 @@ const changeProductStatus = (id, newStatus) => {
     }
 };
 
-const deleteProduct = (id) => {
-    if (confirm('Bạn có chắc muốn xóa sản phẩm này?')) {
-        myProducts.value = myProducts.value.filter(p => p.id !== id);
-        showToast('Đã xóa sản phẩm!', 'success');
+const deleteProduct = async (id) => {
+  const confirmDelete = confirm('Bạn có chắc muốn xóa sản phẩm này?');
+  if (!confirmDelete) return;
+
+  try {
+    const res = await productStore.deleteProduct(id);
+    $toast.success(res.message); // Dùng message từ backend
+    myProducts.value = myProducts.value.filter(p => p.id !== id);
+  } catch (error) {
+    const status = error.response?.status;
+    const message = error.response?.data?.message || 'Đã xảy ra lỗi';
+
+    if (status === 404) {
+      $toast.warning('Sản phẩm đã bị xóa hoặc không tồn tại.');
+      myProducts.value = myProducts.value.filter(p => p.id !== id);
+    } else if (status === 403) {
+      $toast.error('Bạn không có quyền xóa sản phẩm này!');
+    } else {
+      $toast.error(message);
     }
+  }
 };
 
 const getImageUrl = (imagePath) => {
@@ -358,8 +374,10 @@ onMounted(() => {
                                                         <div class="mb-2">
                                                             <input type="text" class="form-control form-control-sm"
                                                                 v-model="editForm.title">
-                                                                <p v-if="submissionError?.title" class="text-sm text-red-600">{{ submissionError['title'][0]
-                            }}</p>
+                                                            <p v-if="submissionError?.title"
+                                                                class="text-sm text-red-600">{{
+                                                                submissionError['title'][0]
+                                                                }}</p>
                                                         </div>
                                                         <div class="row mb-2">
                                                             <div class="col-md-6">
@@ -367,8 +385,10 @@ onMounted(() => {
                                                                     <input type="number" class="form-control"
                                                                         v-model.number="editForm.price">
                                                                     <span class="input-group-text">₫</span>
-                                                                    <p v-if="submissionError?.price" class="text-sm text-red-600">{{ submissionError['price'][0]
-                            }}</p>
+                                                                    <p v-if="submissionError?.price"
+                                                                        class="text-sm text-red-600">{{
+                                                                        submissionError['price'][0]
+                                                                        }}</p>
                                                                 </div>
                                                             </div>
                                                             <div class="col-md-6">
@@ -380,16 +400,20 @@ onMounted(() => {
                                                                     <option value="hidden">Đã ẩn</option>
                                                                     <option value="sold">Đã bán</option>
                                                                 </select>
-                                                                <p v-if="submissionError?.status" class="text-sm text-red-600">{{ submissionError['status'][0]
-                            }}</p>
+                                                                <p v-if="submissionError?.status"
+                                                                    class="text-sm text-red-600">{{
+                                                                    submissionError['status'][0]
+                                                                    }}</p>
                                                             </div>
                                                         </div>
                                                         <div class="mb-2">
                                                             <textarea class="form-control form-control-sm" rows="2"
                                                                 placeholder="Mô tả sản phẩm..."
                                                                 v-model="editForm.description"></textarea>
-                                                                <p v-if="submissionError?.description" class="text-sm text-red-600">{{ submissionError['description'][0]
-                            }}</p>
+                                                            <p v-if="submissionError?.description"
+                                                                class="text-sm text-red-600">{{
+                                                                submissionError['description'][0]
+                                                                }}</p>
                                                         </div>
                                                     </template>
                                                     <template v-else>
@@ -468,7 +492,8 @@ onMounted(() => {
                                                                     data-bs-toggle="dropdown" title="Thêm">
                                                                     <fa :icon="['fas', 'ellipsis-v']" />
                                                                 </button>
-                                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                                <ul class="dropdown-menu dropdown-menu-end"
+                                                                    style="z-index:999">
                                                                     <li><a class="dropdown-item" href="#"
                                                                             @click.prevent="changeProductStatus(product.id, 'active')">
                                                                             <fa :icon="['fas', 'refresh']"
@@ -563,10 +588,7 @@ onMounted(() => {
                         </div>
                     </div>
                 </div>
-                <BasePagination 
-                    :pagination="pagination"
-                    :on-page-change="handlePageChange"
-                />
+                <BasePagination :pagination="pagination" :on-page-change="handlePageChange" />
             </div>
 
             <div class="modal fade" id="createProductModal" tabindex="-1">

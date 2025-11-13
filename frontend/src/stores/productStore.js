@@ -35,19 +35,19 @@ export const useProductStore = defineStore('product', {
         async fetchFeaturedProducts() {
             if (this.featuredProducts.length > 0) {
                 // Tối ưu: Nếu đã có dữ liệu, không gọi API nữa
-                return; 
+                return;
             }
-            
+
             this.isLoadingFeatured = true;
             this.featuredError = null;
-            
+
             try {
                 const url = 'http://127.0.0.1:8000/api/featured-products';
                 const response = await axios.get(url);
-                
+
                 // Giả định API trả về mảng sản phẩm trong response.data.data
                 this.featuredProducts = response.data.data || response.data;
-                
+
             } catch (error) {
                 this.featuredError = 'Lỗi tải sản phẩm nổi bật từ API.';
                 console.error('Lỗi khi tải sản phẩm nổi bật:', error);
@@ -55,23 +55,23 @@ export const useProductStore = defineStore('product', {
                 this.isLoadingFeatured = false;
             }
         },
-        
+
         async fetchRecentProducts() {
             if (this.recentProducts.length > 0) {
                 // Tối ưu: Nếu đã có dữ liệu, không gọi API nữa
-                return; 
+                return;
             }
-            
+
             this.isLoadingRecent = true;
             this.recentError = null;
-            
+
             try {
                 const url = 'http://127.0.0.1:8000/api/recent-products';
                 const response = await axios.get(url);
-                
+
                 // Giả định API trả về mảng sản phẩm trong response.data.data
                 this.recentProducts = response.data.data || response.data;
-                
+
             } catch (error) {
                 this.recentError = 'Lỗi tải sản phẩm mới nhất từ API.';
                 console.error('Lỗi khi tải sản phẩm mới nhất:', error);
@@ -82,7 +82,7 @@ export const useProductStore = defineStore('product', {
         async createProduct(formData) {
             this.isCreating = true;
             this.submissionError = null;
-            
+
             const authStore = useAuthStore();
             const token = authStore.token;
 
@@ -99,13 +99,13 @@ export const useProductStore = defineStore('product', {
                         'Authorization': `Bearer ${token}`,
                     }
                 });
-                
+
                 this.isCreating = false;
                 return response.data.data; // Trả về object sản phẩm vừa tạo
-                
+
             } catch (error) {
                 this.isCreating = false;
-                
+
                 if (error.response && error.response.status === 422) {
                     // Lỗi Validation
                     this.submissionError = error.response.data.errors;
@@ -120,17 +120,17 @@ export const useProductStore = defineStore('product', {
                 throw new Error('System Error');
             }
         },
-        async updateProduct(productId, formData) { 
+        async updateProduct(productId, formData) {
             this.isUpdating = true;
             this.submissionError = null;
-            
+
             const authStore = useAuthStore();
             const token = authStore.token;
 
             if (!token) {
                 this.isUpdating = false;
                 this.submissionError = 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.';
-                throw new Error('Unauthorized'); 
+                throw new Error('Unauthorized');
             }
             formData.append('_method', 'PUT');
             try {
@@ -140,13 +140,13 @@ export const useProductStore = defineStore('product', {
                         'Authorization': `Bearer ${token}`,
                     }
                 });
-                
+
                 this.isUpdating = false;
-                return response.data.data; 
-                
+                return response.data.data;
+
             } catch (error) {
                 this.isUpdating = false;
-                
+
                 if (error.response) {
                     if (error.response.status === 422) {
                         this.submissionError = error.response.data.errors;
@@ -165,7 +165,7 @@ export const useProductStore = defineStore('product', {
         updateProductInList(updatedProduct) {
             // 1. Tìm index của sản phẩm trong mảng
             const index = this.myProducts.findIndex(p => p.id === updatedProduct.id);
-    
+
             if (index !== -1) {
                 Object.assign(this.myProducts[index], updatedProduct);
             }
@@ -182,9 +182,9 @@ export const useProductStore = defineStore('product', {
                 this.pagination.totalItems = response.data.meta.total;
                 this.pagination.perPage = response.data.meta.per_page;
                 this.pagination.links = response.data.meta.links;
-                this.myProducts = response.data.data; 
+                this.myProducts = response.data.data;
                 console.log(this.pagination);
-                
+
             } catch (error) {
                 // ...
             } finally {
@@ -198,10 +198,21 @@ export const useProductStore = defineStore('product', {
         async fetchMyProductsStatusCounts() {
             try {
                 const response = await axios.get('http://127.0.0.1:8000/api/user/products/counts');
-                this.myProductsStatusCounts = response.data.data; 
+                this.myProductsStatusCounts = response.data.data;
             } catch (e) {
                 console.error('Không thể tải status counts.');
             }
         },
+        async deleteProduct(id) {
+            try {
+              const res = await axios.delete(`http://127.0.0.1:8000/api/products/${id}`);
+              // Cập nhật store, loại bỏ sản phẩm khỏi danh sách
+              this.myProducts = this.myProducts.filter(p => p.id !== id);
+              return res.data; // { success: true, message: '...' }
+            } catch (error) {
+              // Ném error ra component để xử lý toast
+              throw error;
+            }
+          }
     },
 });
