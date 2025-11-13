@@ -30,6 +30,8 @@ Route::get('/products/{product:slug}', [ProductController::class, 'show']);
 Route::get('/categories/top-five', [CategoryController::class, 'topFive']);
 // Các route yêu cầu phải đăng nhập thì cho vào group này
 Route::middleware('auth:sanctum')->group(function () {
+Route::get('/user/products/counts', [ProductController::class, 'getMyProductStatusCounts']);
+
     // 1.1.TIN add product   
     Route::post('/products', [ProductController::class, 'store']);
     // 1.2.TIN update product

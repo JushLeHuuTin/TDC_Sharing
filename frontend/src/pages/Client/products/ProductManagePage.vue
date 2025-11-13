@@ -5,7 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import { useAuthStore } from '@/stores/auth';
 import { storeToRefs } from 'pinia';
 import { useProductStore } from '@/stores/productStore';
-
+import BasePagination from '@/components/BasePagination.vue'; 
 import { getCurrentInstance } from 'vue';
 const instance = getCurrentInstance();
 const $toast = instance.appContext.config.globalProperties.$toast;
@@ -15,7 +15,7 @@ const authStore = useAuthStore();
 const productStore = useProductStore();
 
 const { user, isLoggedIn } = storeToRefs(authStore); // Giả định user được lấy từ Store
-const { myProducts, submissionError } = storeToRefs(productStore); // Giả định user được lấy từ Store
+const { myProducts, submissionError,myProductsStatusCounts,pagination } = storeToRefs(productStore); // Giả định user được lấy từ Store
 // 🎯 STATE MANAGEMENT
 const currentStatus = ref('active'); // Trạng thái tab hiện tại
 const searchQuery = ref('');
@@ -63,37 +63,31 @@ const formatTime = (date) => {
 
 // 1. Đếm số lượng sản phẩm theo trạng thái
 const tabCounts = computed(() => {
-    const productsArray = myProducts.value || [];
-    return {
-        active: productsArray.filter(p => p.status === 'active').length, // ⬅️ Đã sửa
-        draft: productsArray.filter(p => p.status === 'draft').length,
-        pending: productsArray.filter(p => p.status === 'pending').length,
-        sold: productsArray.filter(p => p.status === 'sold').length,
-        hidden: productsArray.filter(p => p.status === 'hidden').length
-    };
+    // 💡 Dữ liệu này đã được fetch từ API và là tổng số toàn hệ thống
+    return myProductsStatusCounts.value; 
 });
 // 2. Lọc và sắp xếp sản phẩm (Logic chính)
 const filteredProducts = computed(() => {
+    // 1. Lấy dữ liệu đã được lọc sẵn từ API
     let list = myProducts.value ? myProducts.value.slice() : [];
-    // Lọc theo trạng thái hiện tại (currentStatus)
-    list = list.filter(p => p.status === currentStatus.value);
 
-    // Lọc theo tìm kiếm
+    // 2. Lọc theo tìm kiếm (Giữ lại logic này vì nó là lọc cục bộ)
     if (searchQuery.value) {
         const query = searchQuery.value.toLowerCase();
         list = list.filter(p => p.title.toLowerCase().includes(query));
     }
-
-    // Sắp xếp
+    
+    // 3. Sắp xếp (Logic sắp xếp giữ nguyên)
     const sorters = {
         'oldest': (a, b) => new Date(a.created_date) - new Date(b.created_date),
         'price_high': (a, b) => cleanPriceForInput(b.price) - cleanPriceForInput(a.price),
-        'price_low': (a, b) => a.price - b.price,
+        'price_low': (a, b) => cleanPriceForInput(a.price) - cleanPriceForInput(b.price),
         'views': (a, b) => b.views - a.views,
         'newest': (a, b) => new Date(b.created_date) - new Date(a.created_date),
     };
 
-    return list.slice().sort(sorters[sortBy.value] || sorters['newest']);
+    // Chỉ cần sắp xếp mảng đã lọc theo tìm kiếm (nếu có)
+    return list.sort(sorters[sortBy.value] || sorters['newest']);
 });
 
 // --- ACTION HANDLERS (CRUD & UI) ---
@@ -116,9 +110,13 @@ const getPerformanceClass = (performance) => {
 };
 
 const changeTab = (status) => {
-    currentStatus.value = status;
-};
+    currentStatus.value = status; // Cập nhật trạng thái tab UI
 
+   productStore.fetchMyProducts(status, 1, sortBy.value);
+};
+const handlePageChange = (page) => {
+    productStore.fetchMyProducts(currentStatus.value, page, sortBy.value);
+};
 // CRUD Handlers (Đã chuyển đổi logic từ JS thuần)
 const startEdit = (id) => {
     const product = myProducts.value.find(p => p.id === id);
@@ -210,14 +208,9 @@ const deleteProduct = (id) => {
 
 const getImageUrl = (imagePath) => {
     if (!imagePath) {
-        // Trả về ảnh placeholder nếu không có ảnh
-        return 'https://via.placeholder.com/150';
+        return 'http://127.0.0.1:8000/storage/products/default-product.jpg';
     }
-    // Đảm bảo có dấu / giữa BASE_STORAGE_URL và imagePath
-    // Xử lý trường hợp imagePath bắt đầu bằng / (nếu có)
     const cleanedPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
-
-    // Nối URL: http://127.0.0.1:8000/storage/ + products/9/weCv3m4SVfUhWXyH7dcjd80ywLdexBELpYJMKjt1.jpg
     return BASE_STORAGE_URL.endsWith('/')
         ? BASE_STORAGE_URL + cleanedPath
         : BASE_STORAGE_URL + '/' + cleanedPath;
@@ -241,8 +234,8 @@ function showToast(message, type = 'info') {
 // --- LIFECYCLE ---
 onMounted(() => {
     console.log('ddd');
+    productStore.fetchMyProductsStatusCounts();
     productStore.fetchMyProducts();
-
     // Khởi tạo Bootstrap Modal instance
     if (window.bootstrap) {
         const modalElement = document.getElementById('createProductModal');
@@ -570,6 +563,10 @@ onMounted(() => {
                         </div>
                     </div>
                 </div>
+                <BasePagination 
+                    :pagination="pagination"
+                    :on-page-change="handlePageChange"
+                />
             </div>
 
             <div class="modal fade" id="createProductModal" tabindex="-1">

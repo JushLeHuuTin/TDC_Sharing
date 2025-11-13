@@ -20,7 +20,7 @@ const productStore = useProductStore();
 const categoryStore = useCategoryStore();
 
 const { submissionError, isCreating } = storeToRefs(productStore);
-const { flattenedCategories, isLoading: isLoadingCategories, error: categoryError } = storeToRefs(categoryStore);
+const { categoriesTree, isLoading: isLoadingCategories, error: categoryError } = storeToRefs(categoryStore);
 const { user, isLoggedIn, isAdmin } = storeToRefs(authStore);
 const { dynamicAttributes, isLoadingAttributes } = storeToRefs(categoryStore);
 const instance = getCurrentInstance();
@@ -151,7 +151,7 @@ const removeImage = (index) => {
 };
 // --- LIFECYCLE HOOKS (Giữ nguyên) ---
 onMounted(() => {
-    categoryStore.fetchCategories(true);
+    categoryStore.fetchCategories();
     stopWatcher = watch(isLoadingCategories, (newVal) => {
         if (newVal === false && !form.category_id) {
             setTimeout(() => { showCategoryModal.value = true; }, 100);
@@ -171,7 +171,7 @@ onMounted(() => {
                 <div class="border-b border-gray-200 pb-6 mb-6">
                     <h1 class="text-2xl font-bold text-gray-900 mb-2">Đăng bán sản phẩm</h1>
                     <p class="text-gray-600">Danh mục:
-                        <span class="text-blue-600 fw-bold">{{flattenedCategories.find(c => c.id ==
+                        <span class="text-blue-600 fw-bold">{{categoriesTree.find(c => c.id ==
                             form.category_id)?.name}}</span>
                     </p>
                 </div>
@@ -263,7 +263,7 @@ onMounted(() => {
                             <select id="category" name="category_id" required v-model="form.category_id"
                                 :class="['w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent', errorMessages['category_id'] ? 'border-red-500' : 'border-gray-300']">
                                 <option value="">Chọn danh mục</option>
-                                <option v-for="cat in flattenedCategories" :key="cat.id" :value="cat.id">
+                                <option v-for="cat in categoriesTree" :key="cat.id" :value="cat.id">
                                     {{ cat.name }}
                                 </option>
                             </select>

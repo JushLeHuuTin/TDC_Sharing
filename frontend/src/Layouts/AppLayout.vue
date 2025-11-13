@@ -67,7 +67,6 @@ onMounted(() => {
                 </div>
             </div>
 
-            <!-- SLOT: Nội dung trang cụ thể -->
             <slot />
         </main>
 

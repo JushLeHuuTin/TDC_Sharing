@@ -12,7 +12,17 @@ const props = defineProps({
         default: true,
     },
 });
+const BASE_STORAGE_URL = import.meta.env.VITE_BASE_STORAGE_URL || '/storage/';
 
+const getImageUrl = (imagePath) => {
+    if (!imagePath) {
+        return 'http://127.0.0.1:8000/storage/products/default-product.jpg';
+    }
+    const cleanedPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+    return BASE_STORAGE_URL.endsWith('/')
+        ? BASE_STORAGE_URL + cleanedPath
+        : BASE_STORAGE_URL + '/' + cleanedPath;
+};
 // Chuyển đổi hàm định dạng số và logic định tuyến của Blade sang Vue
 
 // const formattedOriginalPrice = computed(() => {
@@ -54,7 +64,7 @@ const toggleFavorite = (event) => {
     >
         <div class="relative h-48 bg-gray-100">
             <img 
-                :src="product.image || 'https://picsum.photos/300/200?random=17'" 
+                :src="getImageUrl(product.product_image) || 'https://picsum.photos/300/200?random=17'" 
                 :alt="product.title" 
                 class="w-full h-full object-cover"
             />
@@ -71,7 +81,7 @@ const toggleFavorite = (event) => {
                 </form>
             </div>
 
-            <div class="absolute bottom-3 left-3">
+            <!-- <div class="absolute bottom-3 left-3">
                 <span 
                     class="condition-badge text-xs px-2 py-1 rounded-full font-medium"
                     :class="[
@@ -82,7 +92,7 @@ const toggleFavorite = (event) => {
                 >
                     {{ product.status === 'new' ? 'Như mới' : 'Đã qua sử dụng' }}
                 </span>
-            </div>
+            </div> -->
         </div>
 
         <div class="p-4">

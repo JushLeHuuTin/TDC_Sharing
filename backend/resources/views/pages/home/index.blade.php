@@ -25,6 +25,9 @@
                 <a href="{{ route('products.create') }}" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
                     <i class="fas fa-plus mr-2"></i>Đăng bán ngay
                 </a>
+                <a href="{{ route('products.index') }}" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Đăng bán ngay
+                </a>
                 {{--  --}}
             @endguest
         </div>

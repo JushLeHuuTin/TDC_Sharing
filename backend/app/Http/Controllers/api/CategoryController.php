@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+
 class CategoryController extends Controller
 {
     //
@@ -37,14 +38,14 @@ class CategoryController extends Controller
         // 2. LẤY DỮ LIỆU ĐÃ VALIDATE:
         $validatedData = $request->validated();
 
-        
+
         try {
             // 3. XỬ LÝ TRANSACTION (để đảm bảo an toàn, dù chỉ có 1 câu lệnh)
             $slug = $this->generateUniqueSlug($request->name);
-            $category = DB::transaction(function () use ($validatedData,$slug) {
+            $category = DB::transaction(function () use ($validatedData, $slug) {
                 $dataToCreate = $validatedData;
                 $dataToCreate['slug'] = $slug; // <-- Gán slug vào mảng data
-                
+
                 return Category::create($dataToCreate);
             });
 
@@ -84,26 +85,34 @@ class CategoryController extends Controller
         $breadcrumb = BreadcrumbResource::collection($category->getBreadcrumb());
 
         // 2. Lấy sản phẩm trong danh mục (và các danh mục con) rồi phân trang
-        $products = Product::inCategory($category)->paginate(8);
+        $product = Product::inCategory($category);
+        // lọc theo giá
+        if ($request->filled('price_min')) {
+            $product->where('price', '>=', $request->price_min);
+        }
+        if ($request->filled('price_max')) {
+            $product->where('price', '<=', $request->price_max);
+        }
 
+        $products = $product->paginate(8);
         // 3. Kiểm tra nếu không có sản phẩm nào
         if ($products->isEmpty() && $request->query('page', 1) == 1) {
             return response()->json([
                 'breadcrumb' => $breadcrumb,
                 'message' => 'Hiện chưa có sản phẩm nào trong danh mục này.',
-                'products' => $products, // Trả về cấu trúc phân trang rỗng
+                'data' => $products, // Trả về cấu trúc phân trang rỗng
             ]);
         }
 
         // 4. Trả về response hoàn chỉnh
-        return response()->json([
-            'breadcrumb' => $breadcrumb,
-            'products' => ProductResource::collection($products),
-        ]);
+        return ProductResource::collection($products)
+            ->additional([
+                'breadcrumb' => $breadcrumb,
+            ]);
     }
     public function update(UpdateCategoryRequest $request, Category $category)
     {
-        
+
         // 1. PHÂN QUYỀN: Tự động gọi CategoryPolicy@update
         // Nếu không có quyền, sẽ tự động trả về lỗi 403 Forbidden.
         $this->authorize('update', $category);
@@ -116,7 +125,7 @@ class CategoryController extends Controller
             DB::transaction(function () use ($category, $validatedData) {
                 $category->update($validatedData);
             });
-            
+
             // Model sẽ tự động tạo lại slug nếu 'name' thay đổi (nhờ code trong hàm booted())
 
             // 4. TRẢ VỀ KẾT QUẢ THÀNH CÔNG
@@ -125,7 +134,6 @@ class CategoryController extends Controller
                 'message' => 'Cập nhật danh mục thành công.',
                 'data' => $category->fresh(), // Lấy lại dữ liệu mới nhất từ DB
             ], 200);
-
         } catch (\Exception $e) {
             // 5. BẮT LỖI VÀ THÔNG BÁO
             Log::error('Lỗi khi cập nhật danh mục: ' . $e->getMessage());
@@ -138,8 +146,9 @@ class CategoryController extends Controller
     }
     public function destroy(Category $category)
     {
-        try{$this->authorize('delete', $category);}
-        catch (exception $e){
+        try {
+            $this->authorize('delete', $category);
+        } catch (exception $e) {
             return response()->json([
                 'success' => false,
                 'message' =>  "Không có quyền xoá danh muc"
@@ -179,7 +188,7 @@ class CategoryController extends Controller
             ], 500);
         }
     }
-  
+
     public function index()
     {
         // 1. PHÂN QUYỀN: Kiểm tra xem user có quyền xem danh sách không
@@ -211,8 +220,8 @@ class CategoryController extends Controller
             // 3. Chuẩn bị dữ liệu cho Frontend
             $data = $attributes->map(function ($attr) {
                 // Định dạng lại tên thuộc tính để dễ dàng truy cập trong Vue form (dùng snake_case)
-                $name = str_replace('-', '_', Str::slug($attr->name)); 
-                
+                $name = str_replace('-', '_', Str::slug($attr->name));
+
                 return [
                     'id' => $attr->id,
                     'name' => $name, // Ví dụ: 'tinh_trang', 'thuong_hieu'
@@ -220,11 +229,11 @@ class CategoryController extends Controller
                     'required' => $attr->required, // Giả định có cột 'required'
                     'data_type' => $attr->data_type, // 'text', 'enum', 'number', etc.
                     'placeholder' => $attr->placeholder ?? '',
-                    
+
                     // Thêm attributesOptions chỉ khi là ENUM
-                    'attributesOptions' => $attr->data_type === 'select' 
-                                 ? $attr->attributesOptions->map(fn($opt) => ['value' => $opt->value, 'label' => $opt->value]) 
-                                 : null,
+                    'attributesOptions' => $attr->data_type === 'select'
+                        ? $attr->attributesOptions->map(fn($opt) => ['value' => $opt->value, 'label' => $opt->value])
+                        : null,
                 ];
             });
 
@@ -233,7 +242,6 @@ class CategoryController extends Controller
                 'message' => 'Thuộc tính danh mục đã được tải thành công.',
                 'data' => $data,
             ]);
-
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'status' => 'error',

@@ -140,7 +140,7 @@ class StoreProductRequest extends FormRequest
             'price.required' => 'Giá sản phẩm không được để trống',
             'price.numeric' => 'Giá sản phẩm phải là số',
             'price.min' => 'Giá sản phẩm phải lớn hơn 1.000 VNĐ',
-            'price.max' => 'Giá sản phẩm vượt quá giới hạn cho phép',
+            'price.max' => 'Giá sản phẩm không được vượt quá 999,999,999.99đ.',
             'price.regex' => 'Giá sản phẩm có định dạng không hợp lệ',
 
             // Description messages

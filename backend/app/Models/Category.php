@@ -39,7 +39,7 @@ class Category extends Model
 
     public function products()
 {
-    return $this->hasMany(Product::class)->where('status', 'active');
+    return $this->hasMany(Product::class)->where('is_visible', '1')->where('status','active');
 }
 
     public function attributes()
@@ -102,7 +102,8 @@ class Category extends Model
     public function scopeTopFive(Builder $query): Builder
     {
         return $query->where('is_visible', true) // Chỉ lấy các danh mục đang được kích hoạt
-            ->withCount('products')
+        ->whereNotNull('parent_id')    
+        ->withCount('products')
             ->orderBy('display_order', 'asc') // Sắp xếp theo thứ tự hiển thị
             ->orderBy('id', 'asc') // Thêm sắp xếp phụ để đảm bảo thứ tự nhất quán khi display_order trùng nhau
             ->take(5); // Giới hạn chỉ lấy 5 danh mục

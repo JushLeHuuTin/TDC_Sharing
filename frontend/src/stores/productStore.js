@@ -15,7 +15,21 @@ export const useProductStore = defineStore('product', {
         isCreating: false,
         myProducts: [],
         isLoadingMyProducts: false,
-        myProductsError: null
+        myProductsError: null,
+        myProductsStatusCounts: {
+            active: 0,
+            draft: 0,
+            pending: 0,
+            sold: 0,
+            hidden: 0,
+        },
+        pagination: {
+            currentPage: 1,
+            perPage: 8,
+            totalItems: 0,
+            totalPages: 1,
+            links: [] // Links chi tiết (First, Last, Next, Previous)
+        }
     }),
     actions: {
         async fetchFeaturedProducts() {
@@ -156,20 +170,37 @@ export const useProductStore = defineStore('product', {
                 Object.assign(this.myProducts[index], updatedProduct);
             }
         },
-        async fetchMyProducts() {
-            if (this.myProducts.length > 0) {
-                return; 
-            }    
-            this.isLoadingMyProducts = true;
-            this.myProductsError = null;        
+        async fetchMyProducts(status = 'active', page = 1, sort = 'newest') {
+            // if (this.myProducts.length > 0) {
+            //     return; 
+            // }    
             try {
-                const url = 'http://127.0.0.1:8000/api/products';
+                const url = `http://127.0.0.1:8000/api/products/my?status=${status}&page=${page}&sort_by=${sort}`;
                 const response = await axios.get(url);
-                this.myProducts = response.data.data || response.data;
+                this.pagination.currentPage = response.data.meta.current_page;
+                this.pagination.totalPages = response.data.meta.last_page;
+                this.pagination.totalItems = response.data.meta.total;
+                this.pagination.perPage = response.data.meta.per_page;
+                this.pagination.links = response.data.meta.links;
+                this.myProducts = response.data.data; 
+                console.log(this.pagination);
+                
             } catch (error) {
-                console.error('Lỗi khi tải sản phẩm mới nhất:', error);
+                // ...
             } finally {
                 this.isLoadingMyProducts = false;
+            }
+        },
+        async goToPage(page) {
+            if (page < 1 || page > this.pagination.totalPages) return;
+            this.fetchMyProducts(this.currentStatus, page, this.sortBy, this.pagination.perPage);
+        },
+        async fetchMyProductsStatusCounts() {
+            try {
+                const response = await axios.get('http://127.0.0.1:8000/api/user/products/counts');
+                this.myProductsStatusCounts = response.data.data; 
+            } catch (e) {
+                console.error('Không thể tải status counts.');
             }
         },
     },

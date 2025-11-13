@@ -10,121 +10,116 @@ class ProductSeeder extends Seeder
 {
     public function run()
     {
-        // Xóa dữ liệu cũ để tránh trùng lặp
         Product::truncate();
-        
-        $products = [
-            // --- TÀI NGUYÊN HỌC TẬP (Category ID 5 & 6) ---
-            [
-                'user_id' => 1,
-                'category_id' => 5, // Giáo trình & Sách chuyên ngành
-                'title' => 'Giáo trình Lập trình Hướng đối tượng C++',
-                'description' => 'Sách giáo trình bản gốc, còn mới 95%, có highlight một vài chỗ quan trọng. Kèm theo bài tập lab đã giải.',
-                'price' => 120000.00,
-                'status' => 'active',
-                'stocks' => 1,
-                'is_visible' => true,
-                'is_featured' => true,
-                'views_count' => 50,
-                'slug' => 'giao-trinh-lap-trinh-c++'
-            ],
-            [
-                'user_id' => 2,
-                'category_id' => 6, // Đề thi & Bài tập
-                'title' => 'Tài liệu ôn thi TOEIC 750+ (Có file nghe)',
-                'description' => 'Bộ 5 đề thi thử TOEIC mới nhất, kèm transcript và audio chất lượng cao. Đã in sẵn.',
-                'price' => 50000.00,
-                'status' => 'active',
-                'stocks' => 1,
-                'is_visible' => true,
-                'is_featured' => true,
-                'views_count' => 80,
-                'slug' => 'tai-lieu-on-thi-toeic-750'
-            ],
-            [
-                'user_id' => 1,
-                'category_id' => 5, 
-                'title' => 'Sách "Kinh tế vi mô" - Tái bản mới nhất',
-                'description' => 'Sách còn nguyên seal, chưa bóc. Mua về nhưng không dùng đến. Giá bìa 200k.',
-                'price' => 150000.00,
-                'status' => 'new',
-                'stocks' => 1,
-                'is_visible' => true,
-                'is_featured' => false,
-                'views_count' => 35,
-                'slug' => 'sach-kinh-te-vi-mo-moi'
-            ],
-            [
-                'user_id' => 1,
-                'category_id' => 6, 
-                'title' => 'Bộ đề cương ôn thi giữa kỳ môn Giải tích 1 (Dạng PDF)',
-                'description' => 'Tài liệu tổng hợp các dạng bài tập quan trọng và các đề thi giữa kỳ năm trước. Chỉ bán bản mềm.',
-                'price' => 30000.00,
-                'status' => 'draft',
-                'stocks' => 999, // Tài liệu mềm có thể bán nhiều
-                'is_visible' => true,
-                'is_featured' => true,
-                'views_count' => 120,
-                'slug' => 'bo-de-cuong-giai-tich-1'
-            ],
 
-            // --- THIẾT BỊ & CÔNG NGHỆ (Category ID 7 & 8) ---
-            [
-                'user_id' => 1,
-                'category_id' => 7, // Laptop, PC & Linh kiện
-                'title' => 'Laptop Dell Inspiron 14 5402 (Đã qua sử dụng)',
-                'description' => 'Laptop Core i5 Gen 11, RAM 8GB, SSD 512GB. Mua được 1 năm, ngoại hình 90%, thích hợp làm bài tập và code cơ bản.',
-                'price' => 9500000.00,
-                'status' => 'pending',
-                'stocks' => 1,
-                'is_visible' => true,
-                'is_featured' => true,
-                'views_count' => 150,
-                'slug' => 'laptop-dell-inspiron-14-used'
-            ],
-            [
-                'user_id' => 1,
-                'category_id' => 8, // Phụ kiện học tập
-                'title' => 'Tai nghe Sony WH-CH510 (Màu đen, còn hộp)',
-                'description' => 'Tai nghe Bluetooth không dây, pin trâu, âm thanh tốt để nghe giảng và học ngoại ngữ. Còn bảo hành 3 tháng.',
-                'price' => 350000.00,
-                'status' => 'sold',
-                'stocks' => 1,
-                'is_visible' => true,
-                'is_featured' => true,
-                'views_count' => 60,
-                'slug' => 'tai-nghe-sony-wh-ch510'
-            ],
-            [
-                'user_id' => 1,
-                'category_id' => 7, 
-                'title' => 'Màn hình máy tính ASUS 24 inch (Cũ)',
-                'description' => 'Màn hình Full HD, 75Hz, không điểm chết. Rất phù hợp cho sinh viên thiết kế hoặc lập trình.',
-                'price' => 1800000.00,
-                'status' => 'hidden',
-                'stocks' => 1,
-                'is_visible' => true,
-                'is_featured' => false,
-                'views_count' => 45,
-                'slug' => 'man-hinh-asus-24-inch'
-            ],
-            [
-                'user_id' => 1,
-                'category_id' => 8, 
-                'title' => 'Pin sạc dự phòng Xiaomi 10000mAh (99%)',
-                'description' => 'Sạc dự phòng nhỏ gọn, mới dùng vài lần, sạc nhanh 18W. Kèm cáp sạc.',
-                'price' => 250000.00,
-                'status' => 'active',
-                'stocks' => 1,
-                'is_visible' => true,
-                'is_featured' => false,
-                'views_count' => 30,
-                'slug' => 'sac-du-phong-xiaomi-10000mah'
-            ],
-        ];
+        $products = [];
 
-        foreach ($products as $product) {
-            Product::create($product);
+        // Helper tạo slug
+        $makeSlug = fn($title) => Str::slug($title, '-');
+
+        // --- USER 1 ---
+        // 10 sp active category 5
+        for ($i = 1; $i <= 10; $i++) {
+            $title = "Giáo trình chuyên ngành số $i";
+            $products[] = [
+                'user_id' => 1,
+                'category_id' => 5,
+                'title' => $title,
+                'description' => "Sách giáo trình dùng trong học kỳ $i, bản in rõ đẹp.",
+                'price' => rand(50000, 200000),
+                'status' => 'active',
+                'stocks' => rand(1, 3),
+                'is_visible' => true,
+                'is_featured' => $i % 3 == 0,
+                'views_count' => rand(20, 200),
+                'slug' => $makeSlug($title)
+            ];
         }
+
+        // 9 sp active category 7
+        for ($i = 1; $i <= 9; $i++) {
+            $title = "Laptop sinh viên $i";
+            $products[] = [
+                'user_id' => 1,
+                'category_id' => 7,
+                'title' => $title,
+                'description' => "Laptop học tập, hiệu năng ổn định cho sinh viên lập trình.",
+                'price' => rand(7000000, 15000000),
+                'status' => 'active',
+                'stocks' => 1,
+                'is_visible' => true,
+                'is_featured' => $i % 2 == 0,
+                'views_count' => rand(50, 300),
+                'slug' => $makeSlug($title)
+            ];
+        }
+
+        // 11 sp category 7 chia status pending, sold, draft, hidden
+        $statuses = ['pending', 'sold', 'draft', 'hidden'];
+        for ($i = 1; $i <= 11; $i++) {
+            $status = $statuses[$i % count($statuses)];
+            $title = "Thiết bị học tập nâng cao $i";
+            $products[] = [
+                'user_id' => 1,
+                'category_id' => 7,
+                'title' => $title,
+                'description' => "Sản phẩm công nghệ hỗ trợ việc học, tình trạng: $status.",
+                'price' => rand(300000, 5000000),
+                'status' => $status,
+                'stocks' => rand(1, 5),
+                'is_visible' => true,
+                'is_featured' => $i % 4 == 0,
+                'views_count' => rand(10, 400),
+                'slug' => $makeSlug($title)
+            ];
+        }
+
+        // 10 sp còn lại chia ngẫu nhiên
+        $extraCategories = [6, 8, 9, 10];
+        $extraStatuses = ['active', 'pending', 'sold', 'draft'];
+        for ($i = 1; $i <= 10; $i++) {
+            $cat = $extraCategories[array_rand($extraCategories)];
+            $status = $extraStatuses[array_rand($extraStatuses)];
+            $title = "Phụ kiện / Tài liệu hỗ trợ $i";
+            $products[] = [
+                'user_id' => 1,
+                'category_id' => $cat,
+                'title' => $title,
+                'description' => "Sản phẩm hỗ trợ học tập thuộc danh mục $cat.",
+                'price' => rand(20000, 400000),
+                'status' => $status,
+                'stocks' => rand(1, 10),
+                'is_visible' => true,
+                'is_featured' => $i % 5 == 0,
+                'views_count' => rand(5, 100),
+                'slug' => $makeSlug($title)
+            ];
+        }
+
+        // --- USER 2 ---
+        $user2Categories = [5, 6, 7, 8];
+        for ($i = 1; $i <= 10; $i++) {
+            $cat = $user2Categories[array_rand($user2Categories)];
+            $title = "Tài liệu sinh viên U2 - $i";
+            $products[] = [
+                'user_id' => 2,
+                'category_id' => $cat,
+                'title' => $title,
+                'description' => "Sản phẩm do người dùng 2 đăng, danh mục $cat.",
+                'price' => rand(40000, 250000),
+                'status' => 'active',
+                'stocks' => rand(1, 5),
+                'is_visible' => true,
+                'is_featured' => $i % 2 == 0,
+                'views_count' => rand(15, 120),
+                'slug' => $makeSlug($title)
+            ];
+        }
+
+        foreach ($products as $p) {
+            Product::create($p);
+        }
+
+        echo "✅ Đã seed 50 sản phẩm (User1:40, User2:10) thành công!\n";
     }
 }

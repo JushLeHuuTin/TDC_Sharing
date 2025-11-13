@@ -170,7 +170,8 @@ class Product extends Model
     }
     public function scopeActiveAndReady(Builder $query): Builder
     {
-        return $query->where('is_visible', '1')
+        return $query->where('is_visible', '1')->
+        where('status','active')
             ->with(['seller', 'featuredImage'])
             ->latest();
     }

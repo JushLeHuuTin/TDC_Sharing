@@ -57,10 +57,30 @@ class ProductController extends Controller
         // Trả về dữ liệu qua API Resource như cũ
         return ProductResource::collection($products);
     }
-    public function getMyProduct (Request $request){
-        // Gọi scope đã định nghĩa và phân trang
-        $products = Product::myProducts()->paginate(8);
-        // Trả về dữ liệu qua API Resource như cũ
+    public function getMyProduct(Request $request)
+    {
+        $status = $request->query('status', 'active'); 
+        $sortBy = $request->query('sort_by', 'newest'); 
+        $order = $request->query('order', 'desc'); 
+        $perPage = $request->query('per_page', 8);
+
+        $productsQuery = Product::myProducts(); 
+        if (in_array($status, ['active', 'draft', 'pending', 'sold', 'hidden'])) {
+            $productsQuery->where('status', $status);
+        } else {
+             $productsQuery->where('status', 'active'); 
+        }
+        $sortColumn = match ($sortBy) {
+            'price_high', 'price_low' => 'price',
+            'views' => 'views_count',
+            default => 'created_at', // Mới nhất/Cũ nhất
+        };
+        
+        $sortOrder = ($sortBy === 'price_low' || $sortBy === 'oldest') ? 'asc' : 'desc';
+
+        $productsQuery->orderBy($sortColumn, $sortOrder);
+
+        $products = $productsQuery->paginate($perPage);
         return ProductResource::collection($products);
     }
     public function featured()
@@ -78,7 +98,7 @@ class ProductController extends Controller
     public function create()
     {
         //
-        return view('pages.products.create');
+        return view('pages.products.index');
     }
 
     /**
@@ -445,4 +465,26 @@ class ProductController extends Controller
             ], 500);
         }
     }
+    public function getMyProductStatusCounts()
+{
+    $userId = Auth::id();
+
+    $counts = Product::query()
+        ->where('user_id', $userId) // Lọc theo người dùng đang đăng nhập
+        ->select('status', DB::raw('count(*) as count'))
+        ->groupBy('status')
+        ->pluck('count', 'status') 
+        ->toArray();
+
+    $statuses = ['active', 'draft', 'pending', 'sold', 'hidden'];
+    $finalCounts = [];
+    foreach ($statuses as $status) {
+        $finalCounts[$status] = $counts[$status] ?? 0;
+    }
+
+    return response()->json([
+        'status' => 'success',
+        'data' => $finalCounts 
+    ]);
+}
 }

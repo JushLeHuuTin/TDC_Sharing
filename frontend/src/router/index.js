@@ -22,6 +22,7 @@ import NotificationsPage from '@/components/Admin/Components/NotificationsPage.v
 // import CategoriesPage from '@/components/Admin/Components/CategoriesPage.vue';
 import ProductCreatePage from '@/pages/Client/products/ProductCreatePage.vue';
 import ProductManagePage from '@/pages/Client/products/ProductManagePage.vue';
+import CategoriesFilterPage from '@/pages/Client/products/CategoriesFilterPage.vue';
 // Cần import các Page khác ở đây khi chuyển đổi chúng (ví dụ: ProductView, AdminDashboard,...)
 
 const router = createRouter({
@@ -39,6 +40,18 @@ const router = createRouter({
       component: () => import('@/pages/Client/ProductView.vue'),
       meta: { title: 'Chi tiết sản phẩm' }
     },
+    {
+      path: '/danhmuc/:categorySlug',
+      name: 'category.products',
+      component: CategoriesFilterPage,
+      meta: { title: 'Sản phẩm theo Danh mục' }
+    },  
+    {
+      path: '/sanpham',
+      name: 'products.index', 
+      component: CategoriesFilterPage, // ⬅️ Dùng chung component
+      meta: { title: 'Khám phá Sản phẩm' }
+    },
     // Truy cập trang admin
     {
       path: '/login',
@@ -50,20 +63,20 @@ const router = createRouter({
       path: '/products/create',
       name: 'products.create',
       component: ProductCreatePage,
-      meta: { 
-          title: 'Đăng bán sản phẩm',
-          requiresAuth: true, 
-          roles: ['customer', 'admin'] 
+      meta: {
+        title: 'Đăng bán sản phẩm',
+        requiresAuth: true,
+        roles: ['customer', 'admin']
       }
     },
     {
       path: '/products/my',
       name: 'products.my',
       component: ProductManagePage,
-      meta: { 
-          title: 'Sản phẩm của tôi',
-          requiresAuth: true, 
-          roles: ['customer', 'admin'] 
+      meta: {
+        title: 'Sản phẩm của tôi',
+        requiresAuth: true,
+        roles: ['customer', 'admin']
       }
     },
     {
@@ -71,8 +84,8 @@ const router = createRouter({
       component: AdminLayout,
       // Đặt tên cho route chính (sử dụng trong watch của AdminLayout)
       name: 'admin',
-      redirect: '/admin/dashboard', 
-      meta: { requiresAuth: true, roles: ['admin', 'super_admin']},
+      redirect: '/admin/dashboard',
+      meta: { requiresAuth: true, roles: ['admin', 'super_admin'] },
       children: [
         // Dashboard (Route gốc của AdminLayout)
         {
@@ -168,36 +181,36 @@ const router = createRouter({
 
 
 router.beforeEach((to, from, next) => {
-    document.title = to.meta.title || 'StudentMarket';
+  document.title = to.meta.title || 'StudentMarket';
 
-    const authStore = useAuthStore();
-    const userRole = authStore.user?.role; // Lấy role hiện tại
-    const userIsLoggedIn = authStore.isLoggedIn;
-    
-    // --- BƯỚC 1: Xử lý Route Bắt buộc đăng nhập ---
-    if (to.meta.requiresAuth && !userIsLoggedIn) {
-        // Nếu chưa đăng nhập, chuyển hướng đến trang Login
-        next({ name: 'login', query: { redirect: to.fullPath } });
-        return;
-    }
-    const requiredRoles = to.meta.roles;
+  const authStore = useAuthStore();
+  const userRole = authStore.user?.role; // Lấy role hiện tại
+  const userIsLoggedIn = authStore.isLoggedIn;
 
-    if (requiredRoles && userIsLoggedIn) {
-        if (!requiredRoles.includes(userRole)) {
-          
-            next({ name: 'home' }); 
-            return;
-        }
+  // --- BƯỚC 1: Xử lý Route Bắt buộc đăng nhập ---
+  if (to.meta.requiresAuth && !userIsLoggedIn) {
+    // Nếu chưa đăng nhập, chuyển hướng đến trang Login
+    next({ name: 'login', query: { redirect: to.fullPath } });
+    return;
+  }
+  const requiredRoles = to.meta.roles;
+
+  if (requiredRoles && userIsLoggedIn) {
+    if (!requiredRoles.includes(userRole)) {
+
+      next({ name: 'home' });
+      return;
     }
-    if ((to.name === 'login' || to.name === 'register') && userIsLoggedIn) {
-        if (userRole === 'admin' || userRole === 'super_admin') {
-            next({ name: 'admin.dashboard' }); 
-        } else {
-            next({ name: 'home' }); 
-        }
-        return;
+  }
+  if ((to.name === 'login' || to.name === 'register') && userIsLoggedIn) {
+    if (userRole === 'admin' || userRole === 'super_admin') {
+      next({ name: 'admin.dashboard' });
+    } else {
+      next({ name: 'home' });
     }
-    next();
+    return;
+  }
+  next();
 });
 
 export default router;
