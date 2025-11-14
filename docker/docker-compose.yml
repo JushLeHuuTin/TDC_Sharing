@@ -1,35 +1,12 @@
 version: "3.3"
 
 services:
-<<<<<<< HEAD
-=======
   # PHP + Apache container (Laravel)
->>>>>>> tin/f5/display-featured-products
   app:
     build:
       context: ../backend
       dockerfile: Dockerfile
     container_name: laravel_app
-<<<<<<< HEAD
-    ports:
-      - "8000:80"
-    volumes:
-      - ../backend:/var/www/html
-    depends_on:
-      - db
-    environment:
-      - DB_HOST=db
-      - DB_DATABASE=tdc_sharing
-      - DB_USERNAME=root
-      - DB_PASSWORD=root
-
-  db:
-    image: mysql:8.0
-    container_name: mysql_db
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: tdc_sharing
-=======
     volumes:
       - ../backend:/var/www/html
     ports:
@@ -52,24 +29,10 @@ services:
       MYSQL_DATABASE: tdc_sharing
       MYSQL_USER: tin
       MYSQL_PASSWORD: tin
->>>>>>> tin/f5/display-featured-products
     ports:
       - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
-<<<<<<< HEAD
-
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: phpmyadmin
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-    ports:
-      - "8080:80"
-
-volumes:
-  db_data:
-=======
     networks:
       - laravel_net
     # BỎ healthcheck vì không được depends_on sử dụng
@@ -99,4 +62,3 @@ volumes:
 
 networks:
   laravel_net:
->>>>>>> tin/f5/display-featured-products

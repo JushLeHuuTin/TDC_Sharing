@@ -8,14 +8,11 @@ $baseDir = dirname($vendorDir);
 return array(
     'App\\Exceptions\\Handler' => $baseDir . '/app/Exceptions/Handler.php',
     'App\\Http\\Controllers\\AdminController' => $baseDir . '/app/Http/Controllers/AdminController.php',
-<<<<<<< HEAD:vendor/composer/autoload_classmap.php
-=======
 <<<<<<< HEAD:backend/vendor/composer/autoload_classmap.php
     'App\\Http\\Controllers\\Api\\CategoryController' => $baseDir . '/app/Http/Controllers/Api/CategoryController.php',
     'App\\Http\\Controllers\\Api\\ProductController' => $baseDir . '/app/Http/Controllers/Api/ProductController.php',
 =======
 >>>>>>> hanh/f16/show-total-products:vendor/composer/autoload_classmap.php
->>>>>>> tin/f5/display-featured-products:backend/vendor/composer/autoload_classmap.php
     'App\\Http\\Controllers\\AuthController' => $baseDir . '/app/Http/Controllers/AuthController.php',
     'App\\Http\\Controllers\\CategoryController' => $baseDir . '/app/Http/Controllers/CategoryController.php',
     'App\\Http\\Controllers\\ChatController' => $baseDir . '/app/Http/Controllers/ChatController.php',
@@ -28,15 +25,6 @@ return array(
     'App\\Http\\Controllers\\ReportController' => $baseDir . '/app/Http/Controllers/ReportController.php',
     'App\\Http\\Controllers\\SearchController' => $baseDir . '/app/Http/Controllers/SearchController.php',
     'App\\Http\\Controllers\\TransactionController' => $baseDir . '/app/Http/Controllers/TransactionController.php',
-<<<<<<< HEAD:vendor/composer/autoload_classmap.php
-    'App\\Http\\Controllers\\api\\CategoryController' => $baseDir . '/app/Http/Controllers/api/CategoryController.php',
-    'App\\Http\\Requests\\SearchProductRequest' => $baseDir . '/app/Http/Requests/SearchProductRequest.php',
-    'App\\Http\\Requests\\StoreCategoryRequest' => $baseDir . '/app/Http/Requests/StoreCategoryRequest.php',
-    'App\\Http\\Requests\\StoreProductRequest' => $baseDir . '/app/Http/Requests/StoreProductRequest.php',
-    'App\\Http\\Requests\\UpdateProductRequest' => $baseDir . '/app/Http/Requests/UpdateProductRequest.php',
-    'App\\Http\\Resources\\FeaturedProductResource' => $baseDir . '/app/Http/Resources/FeaturedProductResource.php',
-    'App\\Http\\Resources\\ProductResource' => $baseDir . '/app/Http/Resources/ProductResource.php',
-=======
     'App\\Http\\Requests\\SearchProductRequest' => $baseDir . '/app/Http/Requests/SearchProductRequest.php',
     'App\\Http\\Requests\\StoreCategoryRequest' => $baseDir . '/app/Http/Requests/StoreCategoryRequest.php',
     'App\\Http\\Requests\\StoreProductRequest' => $baseDir . '/app/Http/Requests/StoreProductRequest.php',
@@ -50,7 +38,6 @@ return array(
 =======
     'App\\Http\\Requests\\StoreReviewRequest' => $baseDir . '/app/Http/Requests/StoreReviewRequest.php',
 >>>>>>> hanh/f16/show-total-products:vendor/composer/autoload_classmap.php
->>>>>>> tin/f5/display-featured-products:backend/vendor/composer/autoload_classmap.php
     'App\\Models\\Address' => $baseDir . '/app/Models/Address.php',
     'App\\Models\\Attribute' => $baseDir . '/app/Models/Attribute.php',
     'App\\Models\\Cart' => $baseDir . '/app/Models/Cart.php',
