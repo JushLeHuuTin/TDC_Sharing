@@ -22,7 +22,7 @@ const currentView = ref('grid');
 const slug = computed(() => route.params.categorySlug || null);
 onMounted(async () => {
     await categoryStore.fetchCategories();
-    await categoryStore.fetchProductsBySlug(slug.value);
+    // await categoryStore.fetchProductsBySlug(slug.value);
     console.log(slug.value);
     setTimeout(() => {
         isLoading.value = false;
@@ -32,6 +32,16 @@ onMounted(async () => {
 const currentCategoryName = computed(() => {
     const category = flattenedCategories.value.find(c => c.slug === slug.value);
     return category ? category.name.replace(/—\s*/g, '') : 'Tất cả sản phẩm';
+});
+const truncateText = (text, maxLength) => {
+    if (text.length <= maxLength) return text;
+    let truncated = text.slice(0, maxLength);
+    const lastSpace = truncated.lastIndexOf(' ');
+    return lastSpace > 0 ? truncated.substring(0, lastSpace) + '...' : truncated + '...';
+};
+
+const currentSearch = computed(() => {
+    return truncateText(categoryStore.filters.search || '', 20);
 });
 const cleanPriceForInput = (formattedPrice) => {
     if (!formattedPrice) return null;
@@ -64,6 +74,10 @@ const handleApplyFilters = async () => {
         isLoading.value = false;
     }
 };
+const backSlug = async () => {
+    categoryStore.filters.search='';
+    categoryStore.fetchProductsBySlug(slug.value)
+};
 const handlePageChange = (page) => {
     categoryStore.fetchProductsBySlug(slug.value, page);
 };
@@ -95,9 +109,15 @@ watch(() => [route.params.categorySlug, route.name], ([newSlug, newName]) => {
                                 </RouterLink>
                             </li>
                             <li>
-                                <div class="flex items-center">
+                                <div class="flex items-center" @click="backSlug" style="cursor: pointer;">
                                     <fa :icon="['fas', 'chevron-right']" class="text-gray-400 mx-2 fa-xs" />
                                     <span class="text-gray-900 font-medium">{{ currentCategoryName }}</span>
+                                </div>
+                            </li>
+                            <li v-if="currentSearch">
+                                <div class="flex items-center">
+                                    <fa :icon="['fas', 'chevron-right']" class="text-gray-400 mx-2 fa-xs" />
+                                    <span class="text-gray-900 font-medium">{{ currentSearch }}</span>
                                 </div>
                             </li>
                         </ol>

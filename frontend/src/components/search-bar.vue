@@ -1,6 +1,8 @@
 <script setup>
 import { useCategoryStore } from '@/stores/categoryStore';
 import { ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
+const route = useRoute();
 
 const CategoryStore = useCategoryStore();
 // --- STATE ---
@@ -8,7 +10,10 @@ const searchQuery = ref(''); // Lưu trữ nội dung input (thay thế value="{
 const suggestions = ref([]); // Danh sách gợi ý tìm kiếm
 const showSuggestions = ref(false); // Trạng thái hiển thị/ẩn thanh gợi ý
 let searchTimeout = null; // Biến để xử lý Debouncing
-
+const localSearch = ref();
+import { getCurrentInstance } from 'vue';
+const instance = getCurrentInstance();
+const $toast = instance.appContext.config.globalProperties.$toast;
 // --- METHODS ---
 
 // Hàm xử lý logic tìm kiếm (Đã được Debounce)
@@ -52,7 +57,13 @@ const handleInput = () => {
 
 // Hàm xử lý khi người dùng nhấn nút Tìm hoặc Enter
 const handleSearch = () => {
-    CategoryStore.fetchProductsBySlug();
+    CategoryStore.filters.search = localSearch.value;
+    const slug = route.params.categorySlug || null;
+    CategoryStore.fetchProductsBySlug(slug);
+    if(localSearch.value.length>150){
+        $toast.error('vui long nhap it hon 150 ky tu');
+    }
+
 };
 
 // Hàm xử lý khi click ra ngoài (để ẩn suggestions)
@@ -74,7 +85,8 @@ const hideSuggestions = () => {
             <!-- Sử dụng v-model để liên kết với searchQuery -->
             <input 
                 type="text" 
-                v-model="CategoryStore.filters.search"
+                :maxlength="150"
+                v-model="localSearch"
                 @input="handleInput"
                 @keyup.enter="handleSearch" 
                 placeholder="Tìm kiếm sản phẩm..." 
