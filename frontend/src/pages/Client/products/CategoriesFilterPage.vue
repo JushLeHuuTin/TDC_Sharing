@@ -9,7 +9,6 @@ import BasePagination from '@/components/BasePagination.vue';
 
 import CategoryFilter from '@/components/CategoryFilter.vue';
 const categoryStore = useCategoryStore();
-// const reviewStore = useReviewStore();
 
 const { flattenedCategories, isLoading, products, pagination } = storeToRefs(categoryStore);
 const router = useRouter();
@@ -17,19 +16,9 @@ const route = useRoute();
 // --- STATE UI/FILTERING ---
 const sortBy = ref('newest');
 const currentView = ref('grid');
-const currentStatus = ref('active'); //
-const selectedFilters = reactive({
-    categories: [],
-    priceRange: null,
-    conditions: [],
-    location: '',
-    negotiable: false,
-    hasImages: false,
-    verified: false
-});
+// const currentStatus = ref('active'); 
 
 
-// const slug = route.params.categorySlug || null;
 const slug = computed(() => route.params.categorySlug || null);
 onMounted(async () => {
     await categoryStore.fetchCategories();
@@ -56,7 +45,6 @@ const cleanPriceForInput = (formattedPrice) => {
 // // 2. Logic Lọc và Sắp xếp chính
 const filteredProducts = computed(() => {
     const list = Array.isArray(products.value) ? [...products.value] : [];
-    // Sắp xếp
     const sorters = {
         'oldest': (a, b) => new Date(a.created_date) - new Date(b.created_date),
         'price_high': (a, b) => cleanPriceForInput(b.price) - cleanPriceForInput(a.price),
@@ -64,22 +52,12 @@ const filteredProducts = computed(() => {
         'views': (a, b) => b.views - a.views,
         'newest': (a, b) => new Date(b.created_date) - new Date(a.created_date),
     };
-
     return list.slice().sort(sorters[sortBy.value] || sorters['newest']);
 });
-
-const resetFilters = () => {
-    selectedFilters.categories = [];
-    selectedFilters.priceRange = null;
-    selectedFilters.conditions = [];
-    selectedFilters.location = '';
-    handleApplyFilters();
-
-};
 const handleApplyFilters = async () => {
     try {
         isLoading.value = true;
-        await categoryStore.fetchProductsBySlug(slug.value, 1, selectedFilters);
+        await categoryStore.fetchProductsBySlug(slug.value, 1);
     } catch (error) {
         console.error('Lỗi khi áp dụng bộ lọc:', error);
     } finally {
@@ -87,15 +65,12 @@ const handleApplyFilters = async () => {
     }
 };
 const handlePageChange = (page) => {
-    categoryStore.fetchProductsBySlug(slug.value, page,selectedFilters);
-};
-const handleSlugChange = (slug) => {
-    categoryStore.fetchProductsBySlug(slug.value,1);
+    categoryStore.fetchProductsBySlug(slug.value, page);
 };
 // Theo dõi categorySlug VÀ Route Name để bắt được khi chuyển từ trang khác sang /products
 watch(() => [route.params.categorySlug, route.name], ([newSlug, newName]) => {
     if (newName === 'products.index' || newName === 'category.products') {
-        categoryStore.fetchProductsBySlug(newSlug || null,1,selectedFilters);
+        categoryStore.fetchProductsBySlug(newSlug || null,1);
     }
 }, { immediate: true });
 </script>
@@ -105,9 +80,8 @@ watch(() => [route.params.categorySlug, route.name], ([newSlug, newName]) => {
         <div class="flex flex-col lg:flex-row gap-6 p-4 md:p-6">
 
             <div class="lg:w-1/4">
-                <CategoryFilter :categories="flattenedCategories" :selected-filters="selectedFilters"
-                    @reset-filters="resetFilters"
-                    @apply-filters="handleApplyFilters" />
+                <CategoryFilter :categories="flattenedCategories"
+                    @handleFilterChange="handleApplyFilters" />
             </div>
 
             <div class="lg:w-3/4">

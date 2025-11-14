@@ -1,6 +1,8 @@
 <script setup>
+import { useCategoryStore } from '@/stores/categoryStore';
 import { ref, watch } from 'vue';
 
+const CategoryStore = useCategoryStore();
 // --- STATE ---
 const searchQuery = ref(''); // Lưu trữ nội dung input (thay thế value="{{ request('q') }}")
 const suggestions = ref([]); // Danh sách gợi ý tìm kiếm
@@ -42,19 +44,15 @@ const handleInput = () => {
     if (searchTimeout) {
         clearTimeout(searchTimeout);
     }
-    
     // Thiết lập timeout mới sau 300ms
     searchTimeout = setTimeout(() => {
-        fetchSuggestions(searchQuery.value.trim());
+        // fetchSuggestions(searchQuery.value.trim());
     }, 300);
 };
 
 // Hàm xử lý khi người dùng nhấn nút Tìm hoặc Enter
-const handleSubmit = () => {
-    if (searchQuery.value.trim().length > 0) {
-        console.log(`Thực hiện tìm kiếm chính thức: /products?q=${searchQuery.value}`);
-        // Thay thế bằng router.push() hoặc Inertia.visit()
-    }
+const handleSearch = () => {
+    CategoryStore.fetchProductsBySlug();
 };
 
 // Hàm xử lý khi click ra ngoài (để ẩn suggestions)
@@ -76,9 +74,9 @@ const hideSuggestions = () => {
             <!-- Sử dụng v-model để liên kết với searchQuery -->
             <input 
                 type="text" 
-                v-model="searchQuery"
+                v-model="CategoryStore.filters.search"
                 @input="handleInput"
-                @keyup.enter="handleSubmit"
+                @keyup.enter="handleSearch" 
                 placeholder="Tìm kiếm sản phẩm..." 
                 class="w-full pl-10 pr-16 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 autocomplete="off"

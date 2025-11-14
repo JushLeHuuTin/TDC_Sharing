@@ -43,7 +43,17 @@ export const useCategoryStore = defineStore('category', {
             totalItems: 0,
             totalPages: 1,
             links: [] // Links chi tiết (First, Last, Next, Previous)
-        }
+        },
+        filters: {
+            search: '',
+            priceRange: null,
+            categories: [],
+            conditions: [],
+            location: '',
+            negotiable: false,
+            hasImages: false,
+            verified: false
+        },
 
     }),
     actions: {
@@ -95,41 +105,36 @@ export const useCategoryStore = defineStore('category', {
                 this.isLoadingAttributes = false;
             }
         },
-        async fetchProductsBySlug(slug = null, page = 1, filters = {}) {
-            this.loading = true;
+        async fetchProductsBySlug(slug = null, page = 1) {
+            this.isLoading = true;
             this.error = null;
+
             try {
                 const queryParams = new URLSearchParams({
                     page,
-                    ...(filters.priceRange && filters.priceRange.min ? { price_min: filters.priceRange.min } : {}),
-                    ...(filters.priceRange && filters.priceRange.max ? { price_max: filters.priceRange.max } : {}),
-                }).toString();
-                alert(queryParams);
-                console.log(queryParams);
+                    q: this.filters.search,
+                    ...(this.filters.priceRange && this.filters.priceRange.min ? { price_min: this.filters.priceRange.min } : {}),
+                    ...(this.filters.priceRange && this.filters.priceRange.max ? { price_max: this.filters.priceRange.max } : {}),
+                }).toString();;
                 const url = slug
                     ? `http://127.0.0.1:8000/api/categories/${slug}/products?${queryParams}`
                     : `http://127.0.0.1:8000/api/products?${queryParams}`;
 
                 const response = await axios.get(url);
                 this.products = response.data.data || [];
-                const meta = response.data.meta;
-                if (meta) {
-                    this.pagination.currentPage = meta.current_page;
-                    this.pagination.totalPages = meta.last_page;
-                    this.pagination.totalItems = meta.total;
-                    this.pagination.perPage = meta.per_page;
-                    this.pagination.links = meta.links;
-                } else {
-                    this.pagination.currentPage = 1;
-                    this.pagination.totalPages = 1;
-                    this.pagination.totalItems = 0;
-                    this.pagination.perPage = 8; this.pagination.links = [];
-                }
+                const meta = response.data.meta || {};
+                this.pagination = {
+                    currentPage: meta.current_page || 1,
+                    totalPages: meta.last_page || 1,
+                    totalItems: meta.total || 0,
+                    perPage: meta.per_page || 8,
+                    links: meta.links || [],
+                };
             } catch (err) {
                 this.error = err.response?.data?.message || 'Lỗi khi tải dữ liệu';
-                console.error('Fetch category products failed:', err);
+                console.error(err);
             } finally {
-                this.loading = false;
+                this.isLoading = false;
             }
         },
     },
