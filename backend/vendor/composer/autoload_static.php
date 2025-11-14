@@ -545,11 +545,8 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
     public static $classMap = array (
         'App\\Exceptions\\Handler' => __DIR__ . '/../..' . '/app/Exceptions/Handler.php',
         'App\\Http\\Controllers\\AdminController' => __DIR__ . '/../..' . '/app/Http/Controllers/AdminController.php',
-<<<<<<< HEAD:vendor/composer/autoload_static.php
-=======
         'App\\Http\\Controllers\\Api\\CategoryController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/CategoryController.php',
         'App\\Http\\Controllers\\Api\\ProductController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/ProductController.php',
->>>>>>> tin/f5/display-featured-products:backend/vendor/composer/autoload_static.php
         'App\\Http\\Controllers\\AuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/AuthController.php',
         'App\\Http\\Controllers\\CategoryController' => __DIR__ . '/../..' . '/app/Http/Controllers/CategoryController.php',
         'App\\Http\\Controllers\\ChatController' => __DIR__ . '/../..' . '/app/Http/Controllers/ChatController.php',
@@ -562,15 +559,6 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
         'App\\Http\\Controllers\\ReportController' => __DIR__ . '/../..' . '/app/Http/Controllers/ReportController.php',
         'App\\Http\\Controllers\\SearchController' => __DIR__ . '/../..' . '/app/Http/Controllers/SearchController.php',
         'App\\Http\\Controllers\\TransactionController' => __DIR__ . '/../..' . '/app/Http/Controllers/TransactionController.php',
-<<<<<<< HEAD:vendor/composer/autoload_static.php
-        'App\\Http\\Controllers\\api\\CategoryController' => __DIR__ . '/../..' . '/app/Http/Controllers/api/CategoryController.php',
-        'App\\Http\\Requests\\SearchProductRequest' => __DIR__ . '/../..' . '/app/Http/Requests/SearchProductRequest.php',
-        'App\\Http\\Requests\\StoreCategoryRequest' => __DIR__ . '/../..' . '/app/Http/Requests/StoreCategoryRequest.php',
-        'App\\Http\\Requests\\StoreProductRequest' => __DIR__ . '/../..' . '/app/Http/Requests/StoreProductRequest.php',
-        'App\\Http\\Requests\\UpdateProductRequest' => __DIR__ . '/../..' . '/app/Http/Requests/UpdateProductRequest.php',
-        'App\\Http\\Resources\\FeaturedProductResource' => __DIR__ . '/../..' . '/app/Http/Resources/FeaturedProductResource.php',
-        'App\\Http\\Resources\\ProductResource' => __DIR__ . '/../..' . '/app/Http/Resources/ProductResource.php',
-=======
         'App\\Http\\Requests\\SearchProductRequest' => __DIR__ . '/../..' . '/app/Http/Requests/SearchProductRequest.php',
         'App\\Http\\Requests\\StoreCategoryRequest' => __DIR__ . '/../..' . '/app/Http/Requests/StoreCategoryRequest.php',
         'App\\Http\\Requests\\StoreProductRequest' => __DIR__ . '/../..' . '/app/Http/Requests/StoreProductRequest.php',
@@ -581,7 +569,6 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
         'App\\Http\\Resources\\ProductDetailResource' => __DIR__ . '/../..' . '/app/Http/Resources/ProductDetailResource.php',
         'App\\Http\\Resources\\ProductResource' => __DIR__ . '/../..' . '/app/Http/Resources/ProductResource.php',
         'App\\Http\\Requests\\StoreReviewRequest' => __DIR__ . '/../..' . '/app/Http/Requests/StoreReviewRequest.php',
->>>>>>> tin/f5/display-featured-products:backend/vendor/composer/autoload_static.php
         'App\\Models\\Address' => __DIR__ . '/../..' . '/app/Models/Address.php',
         'App\\Models\\Attribute' => __DIR__ . '/../..' . '/app/Models/Attribute.php',
         'App\\Models\\Cart' => __DIR__ . '/../..' . '/app/Models/Cart.php',
