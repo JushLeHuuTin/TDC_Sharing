@@ -134,16 +134,16 @@ const getRoute = (name) => {
                             </div>
                         </div>
 
-                        <!-- Messages -->
-                        <a href="#" class="relative p-2 text-gray-600 hover:text-blue-600">
-                            <fa :icon="['fas', 'heart']" class="text-lg" />
-
-                        </a>
-
                         <!-- Favorites -->
                         <a href="#" class="p-2 text-gray-600 hover:text-blue-600">
-                            <fa :icon="['fas', 'comments']" class="text-lg" />
+                            <fa :icon="['fas', 'heart']" class="text-lg" />
                         </a>
+                        <!-- cart -->
+                        <a href="#" class="relative p-2 text-gray-600 hover:text-blue-600">
+                            <fa :icon="['fas', 'shopping-cart']" class="text-lg" />
+
+                        </a>
+
 
                         <!-- User Menu -->
                         <div class="relative" v-click-away="closeAllMenus">
