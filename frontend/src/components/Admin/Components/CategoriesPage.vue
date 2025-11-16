@@ -1,11 +1,14 @@
 <script setup>
 import { useCategoryStore } from '@/stores/categoryStore';
 import { storeToRefs } from 'pinia';
-import { onMounted, computed } from 'vue';
+import { onMounted, computed, ref } from 'vue';
 import { RouterLink } from 'vue-router';
+import { getCurrentInstance } from 'vue';
 
+const instance = getCurrentInstance();
+const $toast = instance.appContext.config.globalProperties.$toast;
 const categoryStore = useCategoryStore();
-const { categoriesArray, selectedCategoryInfo, expandedCategories, selectedCategoryId } = storeToRefs(categoryStore);
+const { categoriesArray, selectedCategoryInfo, expandedCategories, selectedCategoryId, submissionError, isCreating, isUpdating, isDeleting } = storeToRefs(categoryStore);
 const categoryTreeData = computed(() => categoryStore.categoryTreeData);
 onMounted(async () => {
     await categoryStore.fetchCategories(true); // fetch full tree
@@ -37,6 +40,105 @@ function hasSubCategories(id) {
 function selectCategory(id) {
     categoryStore.selectCategory(id);
 }
+
+function openDeleteModal(id) {
+    deletingCategoryId.value = id;
+    showDeleteModal.value = true;
+}
+
+const showModal = ref(false);
+const isEditing = ref(false);
+const showDeleteModal = ref(false);
+const deletingCategoryId = ref(null);
+
+const form = ref({
+    id: null,
+    name: "",
+    parent_id: "",
+    description: "",
+    icon: "fas fa-tag",
+    color: "#0d6efd",
+    display_order: 0,
+    is_visible: true
+});
+
+// Chỉ lấy level = 1
+const level1Categories = computed(() =>
+    categoryTreeData.value.filter(c => c.level === 1)
+);
+
+function openAddModal(parentId = null) {
+    isEditing.value = false;
+    form.value = {
+        id: null,
+        name: "",
+        parent_id: parentId ?? "",
+        description: "",
+        icon: "fas fa-tag",
+        color: "#0d6efd",
+        display_order: 0,
+        is_visible: true
+    };
+    showModal.value = true;
+}
+
+function openEditModal(id) {
+    const cat = categoryTreeData.value.find(c => c.id === id);
+    if (!cat) return;
+
+    isEditing.value = true;
+    form.value = {
+        id: cat.id,
+        name: cat.name,
+        parent_id: cat.parent_id ?? "",
+        description: cat.description ?? "",
+        icon: cat.icon ?? "fas fa-tag",
+        color: cat.color ?? "#0d6efd",
+        display_order: cat.display_order ?? 0,
+        is_visible: cat.is_visible === true
+    };
+    showModal.value = true;
+}
+
+async function saveCategory() {
+    const formData = new FormData();
+    Object.keys(form.value).forEach(key => {
+        let value = form.value[key];
+        if (typeof value === 'boolean') value = value ? 1 : 0;
+        formData.append(key, value);
+    });
+
+    try {
+        if (isEditing.value) {
+            await categoryStore.updateCategory(form.value.id, formData);
+            $toast.success('Cập nhật thành công!');
+        } else {
+            await categoryStore.createCategory(formData);
+            $toast.success('Thêm danh mục thành công!');
+        }
+        showModal.value = false;
+    } catch (error) {
+        $toast.error('Có lỗi xảy ra, vui lòng kiểm tra thông tin!');
+        console.log('Backend error:', categoryStore.submissionError);
+    }
+}
+
+
+async function confirmDeleteCategory() {
+    isDeleting.value = true;
+    try {
+        await categoryStore.deleteCategory(deletingCategoryId.value);
+        showDeleteModal.value = false;
+        deletingCategoryId.value = null;
+        await categoryStore.fetchCategories(true);
+        $toast.success('Xóa danh mục thành công!');
+    } catch (error) {
+        $toast.error(submissionError.value.general[0]);
+    } finally {
+        isDeleting.value = false;
+    }
+}
+
 </script>
 
 <template>
@@ -54,7 +156,7 @@ function selectCategory(id) {
                 <h2 class="mb-0">Quản lý danh mục sản phẩm</h2>
                 <p class="text-muted mb-0">Tổ chức và quản lý danh mục theo cấp độ</p>
             </div>
-            <button class="btn btn-primary" @click="props.onAddCategory">
+            <button class="btn btn-primary" @click="openAddModal()">
                 <fa :icon="['fas', 'plus']" class="me-2" />Thêm danh mục
             </button>
         </div>
@@ -109,19 +211,18 @@ function selectCategory(id) {
                                 </div>
                                 <div class="category-actions">
                                     <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-primary"
-                                            @click.stop="props.onEditCategory(category.id)" title="Chỉnh sửa">
+                                        <button class="btn btn-outline-primary" @click.stop="openEditModal(category.id)"
+                                            title="Chỉnh sửa">
                                             <fa :icon="['fas', 'edit']" />
                                         </button>
                                         <template v-if="category.level === 1">
                                             <button class="btn btn-outline-success"
-                                                @click.stop="props.onAddSubCategory(category.id)"
-                                                title="Thêm danh mục con">
+                                                @click.stop="openAddModal(category.id)" title="Thêm danh mục con">
                                                 <fa :icon="['fas', 'plus']" />
                                             </button>
                                         </template>
                                         <button class="btn btn-outline-danger"
-                                            @click.stop="props.onDeleteCategory(category.id)" title="Xóa">
+                                            @click.stop="openDeleteModal(category.id)" title="Xóa">
                                             <fa :icon="['fas', 'trash']" />
                                         </button>
                                     </div>
@@ -146,7 +247,7 @@ function selectCategory(id) {
                     <template v-if="selectedCategoryInfo">
                         <div class="text-center mb-3 border-bottom pb-3">
                             <fa :icon="selectedCategoryInfo.icon" class="fa-3x mb-2"
-                                :style="{ color:selectedCategoryInfo.color }" />
+                                :style="{ color: selectedCategoryInfo.color }" />
 
                             <h5>{{ selectedCategoryInfo.name }}</h5>
 
@@ -181,8 +282,7 @@ function selectCategory(id) {
                         </div>
 
                         <div class="d-grid gap-2 border-top pt-3">
-                            <button class="btn btn-primary btn-sm"
-                                @click="props.onEditCategory(selectedCategoryInfo.id)">
+                            <button class="btn btn-primary btn-sm" @click="openEditModal(selectedCategoryInfo.id)">
                                 <fa :icon="['fas', 'edit']" class="me-2" />
                                 Chỉnh sửa
                             </button>
@@ -211,6 +311,121 @@ function selectCategory(id) {
             </div>
         </div>
     </div>
+    <!-- CATEGORY MODAL -->
+    <div v-if="showModal" class="modal fade show" style="display: block;" aria-modal="true" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        {{ isEditing ? 'Chỉnh sửa danh mục' : 'Thêm danh mục' }}
+                    </h5>
+                    <button type="button" class="btn-close" @click="showModal = false"></button>
+                </div>
+
+                <form @submit.prevent="saveCategory">
+                    <div class="modal-body">
+
+                        <!-- NAME -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Tên danh mục <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" v-model="form.name" />
+                            <div v-if="submissionError?.name" class="text-danger mt-1">
+                                {{ submissionError.name[0] }}
+                            </div>
+                        </div>
+                        <!-- PARENT -->
+                        <div class="mb-3">
+                            <label class="form-label">Danh mục cha</label>
+                            <select class="form-select" v-model="form.parent_id">
+                                <option value="">-- Danh mục gốc (Cấp 1) --</option>
+                                <option v-for="c in level1Categories" :key="c.id" :value="c.id">
+                                    {{ c.name }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- DESCRIPTION -->
+                        <div class="mb-3">
+                            <label class="form-label">Mô tả</label>
+                            <textarea class="form-control" rows="3" v-model="form.description"></textarea>
+                        </div>
+
+                        <!-- ICON -->
+                        <div class="mb-3">
+                            <label class="form-label">Icon</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i :class="form.icon"></i>
+                                </span>
+                                <input type="text" class="form-control" placeholder="fas fa-tag" v-model="form.icon">
+                            </div>
+                            <small class="text-muted">FontAwesome (vd: fas fa-book, fas fa-laptop)</small>
+                        </div>
+
+                        <!-- COLOR -->
+                        <div class="mb-3">
+                            <label class="form-label">Màu sắc</label>
+                            <input type="color" class="form-control form-control-color" v-model="form.color">
+                        </div>
+
+                        <!-- ORDER -->
+                        <div class="mb-3">
+                            <label class="form-label">Thứ tự hiển thị</label>
+                            <input type="number" class="form-control" v-model="form.display_order" min="0">
+                        </div>
+
+                        <!-- ACTIVE -->
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" v-model="form.is_visible">
+                            <label class="form-check-label">Kích hoạt danh mục</label>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @click="showModal = false">Hủy</button>
+                        <button type="submit" class="btn btn-primary"
+                            :class="{ 'btn-loading': isCreating || isUpdating }" :disabled="isCreating || isUpdating">
+                            <i v-if="!(isCreating || isUpdating)" class="fas fa-save me-2"></i>
+                            <span v-if="!(isCreating || isUpdating)">Lưu danh mục</span>
+                            <span v-else class="spinner"></span>
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+    <div v-if="showDeleteModal" class="modal fade show" style="display: block;" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Xác nhận xóa</h5>
+                    <button type="button" class="btn-close" @click="showDeleteModal = false"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn xóa danh mục này không?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @click="showDeleteModal = false">Hủy</button>
+                    <button type="button" class="btn btn-danger" @click="confirmDeleteCategory"
+                        :class="{ 'btn-loading': isDeleting }" :disabled="isDeleting">
+                        <i v-if="!(isDeleting)" class="fas fa-save me-2"></i>
+                        <span v-if="!(isDeleting)">Xóa</span>
+                        <span v-else class="spinner"></span>
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <div v-if="showDeleteModal" class="modal-backdrop fade show"></div>
+
+    <!-- BACKDROP -->
+    <div v-if="showModal" class="modal-backdrop fade show"></div>
+
 </template>
 
 <style scoped>
@@ -295,5 +510,36 @@ function selectCategory(id) {
     background: none;
     line-height: 1;
     margin-top: 2px;
+}
+/* Hiệu ứng loading */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.9;
+}
+
+/* Spinner nằm trong nút */
+.btn-loading .spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    margin-right: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #fff; /* màu xoay */
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+}
+
+/* Text mờ nhẹ khi loading */
+.btn-loading .btn-text {
+    opacity: 0.6;
+}
+
+/* Animation */
+@keyframes spin {
+    100% {
+        transform: rotate(360deg);
+    }
 }
 </style>

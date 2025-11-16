@@ -1,6 +1,8 @@
 // stores/categoryStore.js
 import { defineStore } from 'pinia';
 import axios from 'axios';
+import { useAuthStore } from './auth';
+
 
 
 // Hàm đệ quy để làm phẳng cây danh mục
@@ -56,15 +58,16 @@ export const useCategoryStore = defineStore('category', {
             hasImages: false,
             verified: false
         },
+        isCreating: false,
+        isUpdating: false,
+        isDeleting: false,
+        submissionError: null,
 
     }),
     actions: {
         async fetchCategories(isTree = false) { // Sử dụng một action chung với cờ isTree
             // Sử dụng categoriesTree để cache data lớn nhất
             this.expandedCategories = [];
-            if (this.categoriesTree.length > 0) {
-                return;
-            }
 
             this.isLoading = true;
             this.error = null;
@@ -140,34 +143,151 @@ export const useCategoryStore = defineStore('category', {
                 this.isLoading = false;
             }
         },
-        selectCategory(id){
+        async createCategory(formData) {
+            this.isCreating = true;
+            this.submissionError = null;
+            const authStore = useAuthStore();
+            const token = authStore.token;
+
+            if (!token) {
+                this.isCreating = false;
+                this.submissionError = { general: ['Phiên đăng nhập hết hạn.'] };
+                throw new Error('Unauthorized');
+            }
+
+            try {
+                const res = await axios.post(
+                    'http://127.0.0.1:8000/api/categories',
+                    formData,
+                    {
+                        headers: { Authorization: `Bearer ${token}` }
+                    }
+                );
+                await this.fetchCategories(true);
+                this.isCreating = false;
+                return res.data.data;
+
+            } catch (error) {
+                this.isCreating = false;
+                this.handleBackendError(error, authStore);
+                throw error; 
+            }
+        },
+        async updateCategory(id, formData) {
+            this.isUpdating = true;
+            this.submissionError = null;
+            const authStore = useAuthStore();
+            const token = authStore.token;
+
+            if (!token) {
+                this.isUpdating = false;
+                this.submissionError = { general: ['Phiên đăng nhập hết hạn.'] };
+                throw new Error('Unauthorized');
+            }
+
+            // Laravel PUT qua POST
+            formData.append('_method', 'PUT');
+
+            try {
+                const res = await axios.post(
+                    `http://127.0.0.1:8000/api/categories/${id}`,
+                    formData,
+                    {
+                        headers: { Authorization: `Bearer ${token}` }
+                    }
+                );
+                await this.fetchCategories(true);
+                this.isUpdating = false;
+                return res.data.data;
+
+            } catch (error) {
+                this.isUpdating = false;
+                this.handleBackendError(error, authStore);
+                throw error; 
+            }
+        },
+        async deleteCategory(categoryId) {
+            this.isDeleting = true;
+            this.submissionError = null;
+
+            const authStore = useAuthStore();
+            const token = authStore.token;
+
+            if (!token) {
+                this.isDeleting = false;
+                this.submissionError = { general: ['Phiên làm việc đã hết hạn.'] };
+                throw new Error('Unauthorized');
+            }
+
+            try {
+                const url = `http://127.0.0.1:8000/api/categories/${categoryId}`;
+                await axios.delete(url, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                this.isDeleting = false;
+                // Remove khỏi categoriesTree
+                this.categoriesTree = this.categoriesTree.filter(c => c.id !== categoryId);
+
+            } catch (error) {
+                this.isDeleting = false;
+                if (error.response) {
+                    if (error.response.status === 401) {
+                        authStore.logout();
+                        throw new Error('Unauthorized');
+                    }
+                    if (error.response.status === 422) {
+                        this.submissionError = error.response.data.errors;
+                        throw new Error('Validation Failed');
+                    }
+                }
+                this.submissionError = { general: [error.response?.data?.message || 'Lỗi hệ thống'] };
+                throw new Error('System Error');
+            }
+        },
+        handleBackendError(error, authStore) {
+            if (error.response) {
+                // Backend trả về lỗi validation
+                const data = error.response.data;
+                if (data.errors) {
+                    this.submissionError = data.errors;
+                } else if (data.message) {
+                    this.submissionError = { general: [data.message] };
+                }
+            } else {
+                this.submissionError = { general: ['Lỗi kết nối hoặc không xác định'] };
+            }
+        
+            console.error('Backend error:', error.response?.data || error);
+        },
+        selectCategory(id) {
             this.selectedCategoryId = id;
         },
-        toggleExpand(id){
-            if(!this.expandedCategories) this.expandedCategories = [];
-            if(this.expandedCategories.includes(id)){
-                this.expandedCategories = this.expandedCategories.filter(x=>x!==id);
-            }else{
+        toggleExpand(id) {
+            if (!this.expandedCategories) this.expandedCategories = [];
+            if (this.expandedCategories.includes(id)) {
+                this.expandedCategories = this.expandedCategories.filter(x => x !== id);
+            } else {
                 this.expandedCategories.push(id);
             }
         },
         expandAll() {
             const expanded = [];
             const expand = (cats) => {
-              cats.forEach(c => {
-                if(c.children && c.children.length > 0){
-                  expanded.push(c.id);
-                  expand(c.children);
-                }
-              });
+                cats.forEach(c => {
+                    if (c.children && c.children.length > 0) {
+                        expanded.push(c.id);
+                        expand(c.children);
+                    }
+                });
             };
             expand(this.categoriesTree);
             this.expandedCategories = expanded;
-          },                    
-        collapseAll(){
+        },
+        collapseAll() {
             this.expandedCategories = [];
         },
-        hasSubCategories(id){
+        hasSubCategories(id) {
             const category = this.categoriesTree.find(c => c.id === id);
             return category && category.children && category.children.length > 0;
         }
@@ -185,10 +305,10 @@ export const useCategoryStore = defineStore('category', {
             // Nếu categoriesTree đã flatten
             const level1Categories = state.categoriesTree.filter(c => c.level === 1);
             const level2Categories = state.categoriesTree.filter(c => c.level === 2);
-        
+
             // Tổng sản phẩm, bao gồm tất cả category (có product_count)
             const totalProducts = state.categoriesTree.reduce((sum, c) => sum + (c.product_count || 0), 0);
-        
+
             return {
                 totalCategories: state.categoriesTree.length,
                 level1Categories: level1Categories.length,
@@ -196,12 +316,12 @@ export const useCategoryStore = defineStore('category', {
                 totalProducts: totalProducts, // raw number
                 totalProductsFormatted: totalProducts.toLocaleString('en-US') // hiển thị
             };
-        },        
+        },
         categoryTreeData: (state) => {
             const flat = [];
 
             const expanded = state.expandedCategories || [];
-    
+
             const flatten = (cats, level = 1, parentId = null) => {
                 cats.forEach(cat => {
                     const newCat = {
@@ -210,38 +330,38 @@ export const useCategoryStore = defineStore('category', {
                         parent_id: parentId,
                     };
                     flat.push(newCat);
-    
+
                     // Nếu category có children và đang mở rộng
-                    if(cat.children && cat.children.length > 0 && expanded.includes(cat.id)){
+                    if (cat.children && cat.children.length > 0 && expanded.includes(cat.id)) {
                         flatten(cat.children, level + 1, cat.id);
                     }
                 });
             };
-    
+
             flatten(state.categoriesTree);
-    
+
             return flat;
         }
         ,
         selectedCategoryInfo: (state) => {
             if (!state.selectedCategoryId) return null;
-        
+
             const flat = state.categoryTreeData; // dùng dữ liệu flatten
-        
+
             const category = flat.find(c => c.id === state.selectedCategoryId);
             if (!category) return null;
-        
+
             const parentCategory = category.parent_id
                 ? flat.find(c => c.id === category.parent_id)
                 : null;
-        
+
             const subCategories = flat.filter(c => c.parent_id === category.id);
-        
+
             return {
                 ...category,
                 parentCategory,
                 subCategories
             };
-        }        
+        }
     }
 });
