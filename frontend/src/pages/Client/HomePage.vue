@@ -146,14 +146,14 @@ const formatNumber = (number) => {
                     <h3 class="font-semibold text-gray-900 mb-1">{{ category.name }}</h3>
                     <p class="text-sm text-gray-500">{{ category.count }} sản phẩm</p>
                 </router-link>
-                <router-link href="#"
+                <!-- <router-link href="#"
                     class="group bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 text-center">
                     <div 
                         class="w-12 bg-gray-500 h-12 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
                         <fa :icon="['fas', 'ellipsis']" class="text-white text-lg" />
                     </div>
                     <h3 class="font-semibold text-gray-900 mb-1">Khác</h3>
-                </router-link>
+                </router-link> -->
             </div>
         </section>
 

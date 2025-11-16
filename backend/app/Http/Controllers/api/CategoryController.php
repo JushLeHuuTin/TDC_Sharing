@@ -44,7 +44,7 @@ class CategoryController extends Controller
             $slug = $this->generateUniqueSlug($request->name);
             $category = DB::transaction(function () use ($validatedData, $slug) {
                 $dataToCreate = $validatedData;
-                $dataToCreate['slug'] = $slug; // <-- Gán slug vào mảng data
+                $dataToCreate['slug'] = $slug; 
 
                 return Category::create($dataToCreate);
             });
