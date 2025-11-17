@@ -52,6 +52,12 @@ const router = createRouter({
       component: CategoriesFilterPage, // ⬅️ Dùng chung component
       meta: { title: 'Khám phá Sản phẩm' }
     },
+    {
+      path: '/yeu-thich',
+      name: 'favorites.index',
+      component: import('@/pages/Client/favorite/index.vue'),
+      meta: { title: 'Sản phẩm yêu thích' }
+    },
     // Truy cập trang admin
     {
       path: '/login',

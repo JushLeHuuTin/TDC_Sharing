@@ -135,9 +135,9 @@ const getRoute = (name) => {
                         </div>
 
                         <!-- Favorites -->
-                        <a href="#" class="p-2 text-gray-600 hover:text-blue-600">
+                        <router-link to='/yeu-thich' href="#" class="p-2 text-gray-600 hover:text-blue-600">
                             <fa :icon="['fas', 'heart']" class="text-lg" />
-                        </a>
+                        </router-link>
                         <!-- cart -->
                         <a href="#" class="relative p-2 text-gray-600 hover:text-blue-600">
                             <fa :icon="['fas', 'shopping-cart']" class="text-lg" />

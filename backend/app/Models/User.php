@@ -8,7 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable; // Thêm nếu dùng Notifications
 use Laravel\Sanctum\HasApiTokens;       // Thêm để dùng Sanctum
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class User extends Authenticatable
 {
@@ -19,8 +19,13 @@ class User extends Authenticatable
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-        'email', 'password', 'phone', 'full_name',
-        'status', 'role', 'username'
+        'email',
+        'password',
+        'phone',
+        'full_name',
+        'status',
+        'role',
+        'username'
     ];
 
     /**
@@ -59,4 +64,29 @@ class User extends Authenticatable
         return $this->hasMany(Product::class, 'user_id');
     }
 
+    public function cart()
+    {
+        return $this->hasOne(Cart::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function wishlists()
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+    public function favorites(): BelongsToMany
+    {
+        // Định nghĩa quan hệ nhiều-nhiều với Product
+        // 'wishlist' là tên bảng trung gian trong DB của bạn
+        return $this->belongsToMany(Product::class, 'wishlists', 'user_id', 'product_id')
+            ->withTimestamps(); // Lấy cả thời gian yêu thích
+    }
 }
