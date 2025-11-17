@@ -58,6 +58,16 @@ const router = createRouter({
       }
     },
     {
+      path: '/orders',
+      name: 'orders.view', // ⬅️ Tên route bạn sử dụng trong code
+      component: () => import('@/pages/Client/orders/MySellerOrders.vue'),
+      meta: { 
+          title: 'Đăng bán sản phẩm',
+          requiresAuth: true, 
+          roles: ['customer', 'admin'] 
+      }
+    },
+    {
       path: '/admin',
       component: AdminLayout,
       // Đặt tên cho route chính (sử dụng trong watch của AdminLayout)
