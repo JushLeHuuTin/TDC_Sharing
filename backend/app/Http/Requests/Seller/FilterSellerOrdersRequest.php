@@ -17,31 +17,29 @@ class FilterSellerOrdersRequest extends FormRequest
         return true; // Phân quyền sẽ được xử lý trong Controller/Policy
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     */
-    public function rules(): array
+     public function rules(): array
     {
         return [
-            'status'    => ['nullable', 'string', Rule::in(['processing', 'delivering', 'delivered', 'cancelled'])],
+            // SỬA LỖI: Cập nhật các giá trị Rule::in cho đúng với ENUM trong database
+            'status'    => ['nullable', 'string', Rule::in(['pending', 'processing', 'shipped', 'delivered', 'cancelled'])],
             'from_date' => ['nullable', 'date', 'date_format:Y-m-d'],
             'to_date'   => ['nullable', 'date', 'date_format:Y-m-d', 'after_or_equal:from_date'],
         ];
     }
 
-    /**
+
+     /**
      * Get custom messages for validator errors.
      */
     public function messages(): array
     {
         return [
-            'status.in' => 'Vui lòng chọn trạng thái hợp lệ.',
+            'status.in' => 'Vui lòng chọn trạng thái hợp lệ. (pending, processing, shipped, delivered, cancelled)',
             'from_date.date_format' => 'Ngày bắt đầu phải có định dạng Y-m-d.',
             'to_date.date_format' => 'Ngày kết thúc phải có định dạng Y-m-d.',
             'to_date.after_or_equal' => 'Ngày kết thúc không được nhỏ hơn ngày bắt đầu.',
         ];
     }
-
     /**
      * Handle a failed validation attempt.
      */
