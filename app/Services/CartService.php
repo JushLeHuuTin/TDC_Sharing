@@ -122,7 +122,7 @@ class CartService
     }
     public function handleAddItem(User $user, int $productId, int $quantity): void
     {
-        DB::beginTransaction();
+        // DB::beginTransaction();
         try {
             // Lấy sản phẩm và lock hàng (để tránh race condition khi kiểm tra tồn kho)
             $product = Product::lockForUpdate()->find($productId);
@@ -179,6 +179,24 @@ class CartService
         } catch (\Throwable $e) {
             DB::rollBack(); // Hoàn tác nếu có lỗi
             throw $e; // Ném lại ngoại lệ để Controller xử lý
+        }
+    }
+    public function handleDeleteItem(CartItem $cartItem): void
+    {
+        DB::beginTransaction();
+        try {
+            // 1. Thực hiện xóa 
+            $cartItem->delete();
+            
+            // 2. Kiểm tra nếu Cart (nhóm giỏ hàng) này không còn CartItem nào nữa thì xóa luôn Cart đó
+            if ($cartItem->cart->items()->count() === 0) {
+                $cartItem->cart->delete();
+            }
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
         }
     }
 }

@@ -63,6 +63,43 @@ class CartController extends Controller
             return response()->json(['message' => 'Đã có lỗi xảy ra, vui lòng thử lại sau.' . $e->getMessage()], 500); // Internal Server Error
         }
     }
+    public function deleteItem(int $cartItemId)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['message' => 'Người dùng chưa đăng nhập.'], 401);
+        }
+        // Lấy CartItem để kiểm tra quyền và truyền vào Service
+        $cartItem = CartItem::find($cartItemId);
+
+        if (!$cartItem) {
+            // Lỗi 4. Sản phẩm đã bị xóa trước đó (hoặc không tồn tại)
+            return response()->json(['message' => 'Mục giỏ hàng không tồn tại.'], 404);
+        }
+
+        // --- 1. SỬ DỤNG POLICY: Đảm bảo CartItem này thuộc về User hiện tại ---
+        // Controller gọi Policy để ủy quyền.
+
+        try {
+            // Giả sử Policy cho CartItem có tên là 'delete'
+            $this->authorize('delete', $cartItem); 
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return response()->json(['message' => 'Bạn không có quyền xóa mục giỏ hàng này.'], 403);
+        }
+
+        // --- 2. GỌI SERVICE XỬ LÝ LOGIC XÓA ---
+        try {
+            $this->cartService->handleDeleteItem($cartItem);
+
+            // Xử lý hoàn tất
+            return response()->json(['message' => 'Sản phẩm đã được xóa khỏi giỏ hàng thành công.'], 200);
+
+        } catch (\Throwable $e) {
+            Log::error('Lỗi khi xóa sản phẩm khỏi giỏ hàng: ' . $e->getMessage());
+            // Lỗi 4. Lỗi DB/timeout
+            return response()->json(['message' => 'Không thể xóa sản phẩm, vui lòng thử lại.'], 500);
+        }
+    }
     public function index(CartService $cartService): JsonResponse
     {
         // Ràng buộc 10: Bảo mật - Lấy user hiện tại
