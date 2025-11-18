@@ -1,4 +1,5 @@
 /backend/storage/logs/
+/backend/.env
 /backend/storage/*.log
 # Bỏ qua file cache và log của Laravel
 /bootstrap/cache/

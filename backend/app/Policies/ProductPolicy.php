@@ -75,4 +75,10 @@ class ProductPolicy
     {
         return false;
     }
+    public function buySelf(User $user, Product $product): bool
+    {
+        // Trả về FALSE nếu user_id của sản phẩm bằng user_id của người dùng hiện tại
+        // Gate::denies('buySelf', $product) sẽ trả về TRUE nếu user_id khớp.
+        return $product->user_id !== $user->id;
+    }
 }

@@ -15,7 +15,6 @@ class CartItemSeeder extends Seeder
         $cartItems = [
             // Cart của user 2
             [
-                'cart_item_id' => 'CART-' . strtoupper(Str::random(10)),
                 'cart_id' => 1,
                 'product_id' => 1, // iPhone 15 Pro Max
                 'quantity' => 1,
@@ -24,7 +23,6 @@ class CartItemSeeder extends Seeder
                 'added_at' => Carbon::now()->subDays(2)
             ],
             [
-                'cart_item_id' => 'CART-' . strtoupper(Str::random(10)),
                 'cart_id' => 1,
                 'product_id' => 9, // AirPods Pro
                 'quantity' => 2,
@@ -35,7 +33,6 @@ class CartItemSeeder extends Seeder
             
             // Cart của user 3
             [
-                'cart_item_id' => 'CART-' . strtoupper(Str::random(10)),
                 'cart_id' => 2,
                 'product_id' => 5, // MacBook Pro
                 'quantity' => 1,
@@ -44,7 +41,6 @@ class CartItemSeeder extends Seeder
                 'added_at' => Carbon::now()->subHours(12)
             ],
             [
-                'cart_item_id' => 'CART-' . strtoupper(Str::random(10)),
                 'cart_id' => 2,
                 'product_id' => 11, // Anker PowerCore
                 'quantity' => 3,
@@ -55,7 +51,6 @@ class CartItemSeeder extends Seeder
             
             // Cart của user 4
             [
-                'cart_item_id' => 'CART-' . strtoupper(Str::random(10)),
                 'cart_id' => 3,
                 'product_id' => 7, // iPad Pro
                 'quantity' => 1,
