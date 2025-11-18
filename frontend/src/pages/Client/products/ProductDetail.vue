@@ -6,6 +6,7 @@ import { useDetailProductStore } from "@/stores/detailProductStore";
 import AppLayout from "@/Layouts/AppLayout.vue";
 import { useReviewStore } from "@/stores/reviewStore";
 import { useCartStore } from "@/stores/cartStore";
+import CartNotification from "@/components/CartNotification.vue";
 const route = useRoute();
 
 const detailProductStore = useDetailProductStore();
@@ -36,6 +37,7 @@ watch(
 <template>
   <div v-if="product">
     <AppLayout>
+      <CartNotification />
       <div class="max-w-7xl mx-auto">
         <!-- Breadcrumb -->
         <nav class="flex mb-6 sm:mb-0 mb-2" aria-label="Breadcrumb">
@@ -125,7 +127,7 @@ watch(
                 <button
                   class="absolute top-16 right-4 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors"
                 >
-                  <i class="fas fa-share-alt text-gray-600"></i>
+                  <fa :icon="['fas', 'share-alt']"/>
                 </button>
               </div>
 
@@ -275,7 +277,7 @@ watch(
                   class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg transition-all font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   <span v-if="cartStore.loading" class="animate-spin mr-2">
-                    <i class="fas fa-spinner"></i>
+                    <fa :icon="['fas', 'spinner']" />
                   </span>
 
                   <fa :icon="['fas', 'shopping-basket']" class="text-white fa-sm mr-2" />
@@ -303,14 +305,14 @@ watch(
                   <button
                     class="flex-1 border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    <i class="fas fa-share-alt mr-2"></i>Chia sẻ
+                  <fa :icon="['fas', 'share-alt']" class="mr-2" />Chia sẻ
                   </button>
                 </div>
               </div>
               <!-- Safety Tips -->
               <div class="mt-6 p-4 bg-yellow-50 rounded-lg">
                 <h5 class="font-medium text-yellow-800 mb-2">
-                  <i class="fas fa-shield-alt mr-2"></i>Mẹo an toàn
+                  <fa :icon="['fas', 'shield-alt']" class="mr-2" />Mẹo an toàn
                 </h5>
                 <ul class="text-sm text-yellow-700 space-y-1">
                   <li>• Gặp mặt tại nơi công cộng</li>

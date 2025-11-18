@@ -4,18 +4,16 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCartRequest;
-use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
 use App\Services\CartService;
 use App\Exceptions\ConflictException;
 use Illuminate\Http\JsonResponse;
+use Throwable;
 
 class CartController extends Controller
 {
@@ -24,40 +22,44 @@ class CartController extends Controller
     {
         $this->cartService = $cartService;
     }
-public function addItem(StoreCartRequest $request)
+    public function addItem(StoreCartRequest $request)
 {
     $productId = $request->input('product_id');
     $quantity = $request->input('quantity', 1);
     $user = Auth::user();
 
-    // Authentication check should ideally be handled by middleware (auth:sanctum), 
-    // but keeping your explicit check here for context.
+    // 1. Authentication check (Middleware is better, but this works)
     if (!$user) {
-        return response()->json(['message' => 'Người dùng chưa đăng nhập.'], 401); 
+        return response()->json(['message' => 'Người dùng chưa đăng nhập.'], 401);
     }
-    
+
     // Bắt đầu Transaction
     DB::beginTransaction();
 
     try {
         $product = Product::find($productId);
-        
+
+        // **DANGER: Double-check logic, Product lookup without lockForUpdate**
+        // The service layer should handle product finding with the lock
+        // To prevent bugs, keep product finding inside the transaction block 
+        // in the service layer, as you already did in handleAddItem.
+
         // 1. Ràng buộc: Người bán không thể tự mua sản phẩm của mình
-        // Giữ nguyên logic Authorization ở đây, nhưng đơn giản hóa response
         try {
+            // Note: If $product is null, authorize will fail here.
+            // But we trust the Service handles null product now.
             $this->authorize('buySelf', $product);
-        } catch (\Exception $e) {
-            DB::rollBack(); // Rollback transaction nếu có lỗi Authorization
+        } catch (Throwable $e) { // Catch Throwable to handle AuthorizationException
+            DB::rollBack();
+            // Assuming the AuthorizationException message is sufficient for the client
             return response()->json([
                 'success' => false,
                 'message' => "Bạn không thể thêm sản phẩm của chính mình"
-            ], 403); // Hoặc 403 Forbidden/Unauthorized
+            ], 403); 
         }
 
-        // Loại bỏ check stock cũ, để logic đó cho Service và Transaction lock
-
         // --- XỬ LÝ LOGIC CHÍNH: Gọi Service Layer ---
-        // Service sẽ ném ra ConflictException nếu stock không đủ
+        // Service handles product lock, stock check, and item creation/update.
         $cartItem = $this->cartService->handleAddItem($user, $productId, $quantity);
     
         
@@ -69,17 +71,25 @@ public function addItem(StoreCartRequest $request)
             'cart_item' => $cartItem
         ], 200);
 
-    } catch (ConflictException $e) { // <-- Bắt lỗi ConflictException cụ thể
-        DB::rollBack(); // Rollback do Conflict
+    } catch (ConflictException $e) { 
+        // 2. Bắt lỗi ConflictException (stock limit)
+        DB::rollBack(); 
         // Trả về HTTP 409 Conflict với message từ Service
         return response()->json(['message' => $e->getMessage()], 409); 
 
-    } catch (\Throwable $e) { // <-- Bắt các lỗi khác (ví dụ: Product not found, DB errors, etc.)
+    } catch (Throwable $e) { 
+        // 3. Bắt các lỗi khác (ví dụ: Product not found, database errors, etc.)
         DB::rollBack(); 
-        Log::error('Lỗi khi thêm sản phẩm vào giỏ hàng: ' . $e->getMessage());
+        
+        // Cải thiện log message và response cho lỗi chung
+        $errorMessage = $e->getMessage() === 'Product not found.' 
+            ? 'Sản phẩm không tồn tại.' 
+            : 'Đã có lỗi xảy ra, vui lòng thử lại sau.';
+            
+        Log::error('Lỗi khi thêm sản phẩm vào giỏ hàng: ' . $e->getMessage(), ['exception' => $e]);
 
         // Trả về Internal Server Error 500
-        return response()->json(['message' => 'Đã có lỗi xảy ra, vui lòng thử lại sau.'], 500); 
+        return response()->json(['message' => $errorMessage], 500); 
     }
 }
     public function deleteItem(int $cartItemId)
@@ -101,7 +111,7 @@ public function addItem(StoreCartRequest $request)
 
         try {
             // Giả sử Policy cho CartItem có tên là 'delete'
-            $this->authorize('delete', $cartItem); 
+            $this->authorize('delete', $cartItem);
         } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
             return response()->json(['message' => 'Bạn không có quyền xóa mục giỏ hàng này.'], 403);
         }
@@ -112,7 +122,6 @@ public function addItem(StoreCartRequest $request)
 
             // Xử lý hoàn tất
             return response()->json(['message' => 'Sản phẩm đã được xóa khỏi giỏ hàng thành công.'], 200);
-
         } catch (\Throwable $e) {
             Log::error('Lỗi khi xóa sản phẩm khỏi giỏ hàng: ' . $e->getMessage());
             // Lỗi 4. Lỗi DB/timeout
@@ -127,7 +136,7 @@ public function addItem(StoreCartRequest $request)
             // Controller chỉ chịu trách nhiệm xác thực cơ bản
             return response()->json(['message' => 'Người dùng chưa đăng nhập.'], 401);
         }
-        
+
         // 3. Gọi Service: Controller chuyển giao nhiệm vụ xử lý nghiệp vụ phức tạp cho Service
         $cartData = $cartService->getFormattedCartData($user);
         // die('alo');
