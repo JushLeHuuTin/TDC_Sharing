@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\PromotionController;
 use App\Http\Controllers\Api\Seller\OrderController as SellerOrderController;
 use App\Http\Controllers\Api\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Api\Admin\orderController as AdminOrderController;
@@ -31,6 +32,8 @@ Route::get('/categories/top-five', [CategoryController::class, 'topFive']);
 // Các route yêu cầu phải đăng nhập thì cho vào group này
 Route::middleware('auth:sanctum')->group(function () {
 Route::get('/user/products/counts', [ProductController::class, 'getMyProductStatusCounts']);
+
+Route::get('/promotions/student', [PromotionController::class, 'studentPromotions']);
 
     // 1.1.TIN add product   
     Route::post('/products', [ProductController::class, 'store']);
