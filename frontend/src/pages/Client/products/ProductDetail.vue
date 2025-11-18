@@ -127,7 +127,7 @@ watch(
                 <button
                   class="absolute top-16 right-4 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors"
                 >
-                  <fa :icon="['fas', 'share-alt']" />
+                  <fa :icon="['fas', 'share-alt']"/>
                 </button>
               </div>
 
@@ -283,6 +283,13 @@ watch(
                   <fa :icon="['fas', 'shopping-basket']" class="text-white fa-sm mr-2" />
                   <span>Thêm vào giỏ hàng</span>
                 </button>
+                <div
+                  v-if="cartStore.successMessage"
+                  class="mt-3 p-3 bg-green-100 text-green-700 rounded-lg text-center animate-fade"
+                >
+                  {{ cartStore.successMessage }}
+                </div>
+
                 <button
                   class="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
                 >
@@ -298,7 +305,7 @@ watch(
                   <button
                     class="flex-1 border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    <fa :icon="['fas', 'share-alt']" class="mr-2" />Chia sẻ
+                  <fa :icon="['fas', 'share-alt']" class="mr-2" />Chia sẻ
                   </button>
                 </div>
               </div>

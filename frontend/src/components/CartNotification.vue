@@ -27,7 +27,7 @@ const formatPrice = (price) => {
             role="alert"
         >
             <div class="flex items-center space-x-3">
-               <fa :icon="['fas', 'check-circle']" class="text-green-500 text-xl" />
+                <i class="fas fa-check-circle text-green-500 text-xl"></i>
                 <h4 class="font-bold text-green-700 text-lg">{{ successMessage }}</h4>
             </div>
 
