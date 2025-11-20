@@ -18,32 +18,22 @@ class CartService
 {
     public function getFormattedCartData(User $user): array
     {
-        // die('serveice');
-        // 1. Giao tiếp với Model: Service gọi Model để lấy dữ liệu thô
         $carts = $this->fetchCartsWithRelations($user);
-
-        // 2. Khởi tạo các biến tổng quát cho toàn bộ giỏ hàng
         $shops = [];
         $overallSubtotal = 0;
         $overallShippingFee = 0;
         $overallDiscount = 0;
         $overallTotal = 0;
-
-        // Bắt đầu vòng lặp để xử lý từng nhóm giỏ hàng (từng Shop)
         foreach ($carts as $cart) {
-            // 3. Xử lý Logic Nghiệp vụ: Tính toán tổng tiền, phí vận chuyển (logic phức tạp)
             $shopCalculations = $this->calculateShopSummary($cart);
-
             // Cập nhật tổng quát
             $overallSubtotal += $shopCalculations['subtotal'];
             $overallShippingFee += $shopCalculations['shipping_fee'];
             $overallDiscount += $shopCalculations['discount'];
             $overallTotal += $shopCalculations['total'];
-
             // 4. Định dạng dữ liệu cho Frontend (Đây cũng là trách nhiệm của Service)
             $shops[] = $this->formatShopData($cart, $shopCalculations);
         }
-
         return [
             'shops' => $shops,
             'overall_summary' => [
@@ -75,11 +65,8 @@ class CartService
     {
         // 1. Tính tổng phụ (Subtotal) - Dựa vào phương thức Model
         $shopSubtotal = $cart->getTotalPrice();
-
         // 2. Tính Phí Vận chuyển (LOGIC GIẢ ĐỊNH - Vận chuyển là nghiệp vụ phức tạp)
-        // Đây là lý do chính cần Service: xử lý logic ngoài luồng DB.
         $shopShippingFee = $shopSubtotal > 100000 ? 10000 : 20000;
-
         $shopDiscount = 0; // Giả định: Áp dụng voucher/giảm giá cấp Shop
         $shopTotal = $shopSubtotal + $shopShippingFee - $shopDiscount;
 
@@ -108,7 +95,7 @@ class CartService
                     'image_url' => $imageUrl,
                     'subtotal' => ($item->product->price ?? 0) * $item->quantity,
                     // Ràng buộc 8: Có thể chọn item để checkout
-                    'is_selected' => true,
+                    'is_selected' => $item->is_selected === 1 ? true : false,
                 ];
             })->toArray(),
 
@@ -128,7 +115,6 @@ class CartService
         $product = Product::lockForUpdate()->find($productId);
 
         if (!$product) {
-            // Sử dụng NotFoundException nếu cần, nhưng Exception cơ bản cũng được
             throw new \Exception("Product not found.", 404);
         }
 
@@ -197,5 +183,32 @@ class CartService
             DB::rollBack();
             throw $e;
         }
+    }
+    public function handleToggleItem(CartItem $cartItem, bool $isSelected): array
+    {
+        $cartItem->lockForUpdate();
+        $isSelected ? 1 : 0;
+        $cartItem->update(['is_selected' => $isSelected]);
+        $user = $cartItem->cart->user;
+        $fullCartData = $this->getFormattedCartData($user);
+
+        return $fullCartData;
+    }
+    public function handleUpdateQuantity(CartItem $cartItem, int $newQuantity): array
+    {
+        $product = Product::lockForUpdate()->find($cartItem->product_id);
+        if (!$product) {
+            throw new NotFoundException("Sản phẩm không còn tồn tại.");
+        }
+        if ($product->stocks < $newQuantity) {
+            throw new ConflictException('Số lượng mới vượt quá số lượng tồn kho: ' . $product->stocks);
+        }
+        $cartItem->update([
+            'quantity' => $newQuantity,
+            'price' => $product->price
+        ]);
+        $user = $cartItem->cart->user;
+        $fullCartData = $this->getFormattedCartData($user);
+        return $fullCartData;
     }
 }

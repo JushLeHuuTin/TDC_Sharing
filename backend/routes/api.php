@@ -33,14 +33,19 @@ Route::get('/categories/{category:slug}/products', [CategoryController::class, '
 Route::get('/products/{product:slug}', [ProductController::class, 'show']);
 // 1.14.TIN display category for home page
 Route::get('/categories/top-five', [CategoryController::class, 'topFive']);
-    // 3.5 Checkout online
+// 3.5 Checkout online
 Route::post('/payment/momo-callback', [OrderController::class, 'handleMomoCallback']);
 // Các route yêu cầu phải đăng nhập thì cho vào group này
 Route::middleware('auth:sanctum')->group(function () {
     // 3.1 Dong add product to cart
     Route::post('/cart/add', [CartController::class, 'addItem'])->name('cart.add');
     // 3.2 Dong delete product from cart
-    Route::delete('/cart/{cartItem}', [CartController::class, 'deleteItem']);
+    Route::delete('/cart/item/{cartItem}', [CartController::class, 'deleteItem']);
+    // Dùng route::patch hoặc route::put cho hành động cập nhật
+    Route::put('/cart/item/{cartItem}/toggle', [CartController::class, 'toggleItemSelection'])
+        ->name('cart.toggle');
+    Route::put('/cart/item/{cartItem}', [CartController::class, 'updateItemQuantity'])
+        ->name('cart.update_quantity');
     // 3.3 Dong display cart
     Route::get('/cart', [CartController::class, 'index']);
     // 3.4 Dong creat order
@@ -54,16 +59,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/vouchers/{id}', [VoucherController::class, 'update']);
     // 3.9 Dong delete voucher
     Route::delete('/vouchers/{voucher}', [VoucherController::class, 'destroy'])
-         ->middleware('can:delete,voucher'); // 'voucher' là tham số model binding
+        ->middleware('can:delete,voucher'); // 'voucher' là tham số model binding
     // 3.10 Dong add promotion
     Route::post('/promotions', [PromotionController::class, 'store']);
     // 3.11 Dong display list promotions
-    Route::get('/vouchers/{id}', [VoucherController::class, 'show']); 
+    Route::get('/vouchers/{id}', [VoucherController::class, 'show']);
     // Route::get('/orders/{id}', [OrderController::class, 'show']); 
     Route::get('/checkout', [CheckoutController::class, 'index']);
     // API Lấy thông tin voucher (trước khi sửa)
-    Route::get('/vouchers/{id}', [VoucherController::class, 'show']); 
-    
+    Route::get('/vouchers/{id}', [VoucherController::class, 'show']);
+
     // API CẬP NHẬT voucher (sử dụng phương thức PUT/PATCH theo chuẩn RESTful)
     Route::put('/vouchers/{id}', [VoucherController::class, 'update']);
 

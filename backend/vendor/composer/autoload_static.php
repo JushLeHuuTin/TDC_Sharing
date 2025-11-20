@@ -557,6 +557,7 @@ class ComposerStaticInitfa5739a68a391a79456428bed2f94df4
         'App\\Actions\\FixCode' => __DIR__ . '/..' . '/laravel/pint/app/Actions/FixCode.php',
         'App\\Commands\\DefaultCommand' => __DIR__ . '/..' . '/laravel/pint/app/Commands/DefaultCommand.php',
         'App\\Contracts\\PathsRepository' => __DIR__ . '/..' . '/laravel/pint/app/Contracts/PathsRepository.php',
+        'App\\Exceptions\\ConflictException' => __DIR__ . '/../..' . '/app/Exceptions/ConflictException.php',
         'App\\Exceptions\\HandleExceptions' => __DIR__ . '/..' . '/laravel/pint/app/Exceptions/HandleExceptions.php',
         'App\\Exceptions\\Handler' => __DIR__ . '/../..' . '/app/Exceptions/Handler.php',
         'App\\Factories\\ConfigurationFactory' => __DIR__ . '/..' . '/laravel/pint/app/Factories/ConfigurationFactory.php',

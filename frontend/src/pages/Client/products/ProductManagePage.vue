@@ -153,21 +153,6 @@ const cancelEdit = (id) => {
 
 const saveProduct = async (id) => {
     const product = myProducts.value.find(p => p.id === id);
-
-    if (!product || editForm.id !== id) return showToast('Lỗi: Phiên chỉnh sửa không hợp lệ!', 'error');
-
-    if (!editForm.title || editForm.price < 1000) {
-        showToast('Tiêu đề hoặc Giá bán không hợp lệ!', 'error');
-        return;
-    }
-    if (!product) return showToast('Sản phẩm không tồn tại!', 'error');
-
-    // 1. Client-side Validation Tối thiểu
-    if (!product.title || product.price < 1000) {
-        showToast('Tiêu đề và Giá bán không hợp lệ!', 'error');
-        return;
-    }
-
     // 2. 🎯 TẠO FORMDATA CHO VIỆC CẬP NHẬT
     const formData = new FormData();
     formData.append('title', editForm.title);

@@ -40,7 +40,7 @@ class Cart extends Model
         // Quan hệ với User (người mua)
         return $this->belongsTo(User::class, 'user_id');
     }
-    
+
     // --- QUAN HỆ VỚI NGƯỜI BÁN ---
     public function seller(): BelongsTo
     {
@@ -58,10 +58,11 @@ class Cart extends Model
     // Phương thức tính tổng giá (Tạm thời. Cần Product Price từ CartItem)
     public function getTotalPrice(): float
     {
-        // Lưu ý: Giá trị giá (price) phải được lấy từ quan hệ Product trong CartItem.
         return $this->items->sum(function ($item) {
-            // Cần đảm bảo $item có quan hệ product để lấy price
-            return ($item->product->price ?? 0) * $item->quantity;
+            if ($item->is_selected == 1) {
+                return floatval($item->product->price ?? 0) * $item->quantity;
+            }
+            return 0;
         });
     }
 }

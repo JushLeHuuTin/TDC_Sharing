@@ -23,6 +23,7 @@ import NotificationsPage from '@/components/Admin/Components/NotificationsPage.v
 import ProductCreatePage from '@/pages/Client/products/ProductCreatePage.vue';
 import ProductManagePage from '@/pages/Client/products/ProductManagePage.vue';
 import CategoriesFilterPage from '@/pages/Client/products/CategoriesFilterPage.vue';
+import CartView from '@/pages/Client/cart/CartView.vue';
 // Cần import các Page khác ở đây khi chuyển đổi chúng (ví dụ: ProductView, AdminDashboard,...)
 
 const router = createRouter({
@@ -45,10 +46,10 @@ const router = createRouter({
       name: 'category.products',
       component: CategoriesFilterPage,
       meta: { title: 'Sản phẩm theo Danh mục' }
-    },  
+    },
     {
       path: '/sanpham',
-      name: 'products.index', 
+      name: 'products.index',
       component: CategoriesFilterPage, // ⬅️ Dùng chung component
       meta: { title: 'Khám phá Sản phẩm' }
     },
@@ -68,6 +69,12 @@ const router = createRouter({
         requiresAuth: true,
         roles: ['customer', 'admin']
       }
+    },
+    {
+      path: '/cart',
+      name: 'cart',
+      component: CartView,
+      meta: { requiresAuth: true }
     },
     {
       path: '/products/my',

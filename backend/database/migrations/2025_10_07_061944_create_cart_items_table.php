@@ -18,9 +18,10 @@ return new class extends Migration
             $table->integer('quantity')->default(1);
             $table->decimal('price', 10, 2);
             $table->text('note')->nullable();
+            $table->boolean('is_selected')->default(true);
             $table->timestamp('added_at')->nullable();
             $table->timestamps();
-            
+
             $table->index('cart_id');
             $table->index('product_id');
         });

@@ -10,6 +10,7 @@ return array(
     'App\\Actions\\FixCode' => $vendorDir . '/laravel/pint/app/Actions/FixCode.php',
     'App\\Commands\\DefaultCommand' => $vendorDir . '/laravel/pint/app/Commands/DefaultCommand.php',
     'App\\Contracts\\PathsRepository' => $vendorDir . '/laravel/pint/app/Contracts/PathsRepository.php',
+    'App\\Exceptions\\ConflictException' => $baseDir . '/app/Exceptions/ConflictException.php',
     'App\\Exceptions\\HandleExceptions' => $vendorDir . '/laravel/pint/app/Exceptions/HandleExceptions.php',
     'App\\Exceptions\\Handler' => $baseDir . '/app/Exceptions/Handler.php',
     'App\\Factories\\ConfigurationFactory' => $vendorDir . '/laravel/pint/app/Factories/ConfigurationFactory.php',
