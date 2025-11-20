@@ -5,7 +5,12 @@ namespace App\Models;
 use App\Http\Requests\ProcessOrderRequest;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+<<<<<<< HEAD
 use Illuminate\Database\Eloquent\Builder;
+=======
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+>>>>>>> dong/f2/delete-product
 
 /**
  * @property int $id
@@ -28,24 +33,47 @@ class Cart extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id'];
+    /**
+     * user_id: Người mua (Buyer)
+     * seller_id: Người bán (Vendor/Shop)
+     */
+    protected $fillable = ['user_id', 'seller_id'];
 
-    public function user()
+    // --- QUAN HỆ VỚI NGƯỜI MUA ---
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        // Quan hệ với User (người mua)
+        return $this->belongsTo(User::class, 'user_id');
+    }
+    
+    // --- QUAN HỆ VỚI NGƯỜI BÁN ---
+    public function seller(): BelongsTo
+    {
+        // Quan hệ với User (người bán - vì bảng Product dùng user_id làm seller_id)
+        // Đây là cách Eloquent hiểu ai là người bán của nhóm giỏ hàng này.
+        return $this->belongsTo(User::class, 'seller_id');
     }
 
+<<<<<<< HEAD
     public function cartItems()
+=======
+    // --- QUAN HỆ VỚI CÁC MỤC TRONG GIỎ HÀNG ---
+    public function items(): HasMany
+>>>>>>> dong/f2/delete-product
     {
-        return $this->hasMany(CartItem::class);
+        return $this->hasMany(CartItem::class, 'cart_id');
     }
 
-    public function getTotalPrice()
+    // Phương thức tính tổng giá (Tạm thời. Cần Product Price từ CartItem)
+    public function getTotalPrice(): float
     {
+        // Lưu ý: Giá trị giá (price) phải được lấy từ quan hệ Product trong CartItem.
         return $this->items->sum(function ($item) {
-            return $item->price * $item->quantity;
+            // Cần đảm bảo $item có quan hệ product để lấy price
+            return ($item->product->price ?? 0) * $item->quantity;
         });
     }
+<<<<<<< HEAD
     public function scopeForUserWithDetails(Builder $query, int $userId): void
     {
         $query->where('user_id', $userId)
@@ -60,4 +88,6 @@ class Cart extends Model
     {
         return $this->exists && $this->cartItems()->exists();
     }
+=======
+>>>>>>> dong/f2/delete-product
 }
