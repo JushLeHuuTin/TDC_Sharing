@@ -33,7 +33,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'home',
+      name: 'home.index',
       component: HomePage,
       meta: { title: 'TDC_Sharing - Chợ Sinh Viên' }
     },
@@ -93,6 +93,16 @@ const router = createRouter({
       meta: {
         progress: 3
       }
+    },
+    {
+        path: '/checkout/success',
+        name: 'checkout-success', 
+        component: () => import('@/pages/Client/checkout/CheckoutSuccess.vue'),
+    },
+    {
+        path: '/checkout/fail',
+        name: 'checkout-fail',
+        component: () => import('@/pages/Client/checkout/CheckoutFail.vue'),
     },
     {
       path: '/products/my',

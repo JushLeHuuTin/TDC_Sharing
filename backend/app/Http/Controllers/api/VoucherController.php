@@ -10,8 +10,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\UpdateVoucherRequest;
+use App\Http\Requests\ValidateVoucherRequest;
 use App\Http\Requests\VoucherIndexRequest;
 use Carbon\Carbon;
+use App\Models\Cart;
 use Illuminate\Auth\Access\AuthorizationException;
 
 
@@ -23,6 +25,68 @@ class VoucherController extends Controller
      * @param StoreVoucherRequest $request
      * @return JsonResponse
      */
+    public function validateVoucher(ValidateVoucherRequest $request): JsonResponse
+    {
+        $buyerId = Auth::id();
+        $voucherCode = $request->voucher_code;
+
+        // 1. Lấy Cart Items hiện tại của người dùng
+        $selectedCarts = Cart::getSelectedItemsByBuyer($buyerId)->get();
+        $selectedCartItems = $selectedCarts->pluck('cartItems')->flatten(1);
+
+        if ($selectedCartItems->isEmpty()) {
+            return response()->json(['message' => 'Giỏ hàng trống.'], 400);
+        }
+
+        $groupedCartItems = $selectedCartItems->groupBy('product.user_id');
+
+        $overallSubtotal = 0.00;
+        foreach ($groupedCartItems as $cartItemsForSeller) {
+            foreach ($cartItemsForSeller as $item) {
+                $overallSubtotal += $item->product->price * $item->quantity;
+            }
+        }
+
+        // 3. Tìm ID Voucher
+        $voucherId = \App\Models\Voucher::IdFromCode($voucherCode)->value('id');
+
+        // 4. KIỂM TRA TÍNH HỢP LỆ (Dùng lại logic kiểm tra)
+        $voucher = \App\Models\Voucher::isActive()->find($voucherId);
+
+        if (!$voucher) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Mã giảm giá không tồn tại hoặc đã hết hạn.'
+            ]);
+        }
+
+        // 5. Kiểm tra điều kiện Min Purchase (trên tổng giỏ hàng)
+        if ($overallSubtotal < $voucher->min_purchase) {
+            $missingAmount = $voucher->min_purchase - $overallSubtotal;
+            return response()->json([
+                'valid' => false,
+                'message' => 'Đơn hàng chưa đạt mức tối thiểu. Thiếu ' . number_format($missingAmount) . ' VNĐ.'
+            ]);
+        }
+
+        // 6. Tính toán mức chiết khấu ước tính (chỉ cần mức giảm)
+        $estimatedDiscount = 0;
+        if ($voucher->discount_type === 'percentage') {
+            $discount = $overallSubtotal * ($voucher->discount_value / 100.00);
+            // Nếu có max_discount, áp dụng ở đây
+            $estimatedDiscount = $discount;
+        } elseif ($voucher->discount_type === 'fixed') {
+            $estimatedDiscount = $voucher->discount_value;
+        }
+
+        // 7. Trả về kết quả thành công
+        return response()->json([
+            'valid' => true,
+            'message' => 'Áp dụng mã giảm giá thành công!',
+            'discount_amount' => round($estimatedDiscount, 0),
+            'voucher_code' => $voucherCode,
+        ]);
+    }
     public function store(StoreVoucherRequest $request): JsonResponse
     {
         // 16. Bảo mật: Việc kiểm tra Auth và Role đã được thực hiện trong StoreVoucherRequest::authorize().
@@ -261,14 +325,14 @@ class VoucherController extends Controller
         try {
             // Ràng buộc 6: Kiểm tra Policy (Auth::user() có quyền xóa voucher này không)
             $this->authorize('delete', $voucher);
-            
+
             // Ràng buộc 3: Bắt đầu Transaction để đảm bảo tính toàn vẹn
             DB::beginTransaction();
 
             // Kiểm tra ràng buộc ngoại lệ: Voucher đã được sử dụng trong Order chưa
             // Giả định bạn có mối quan hệ voucherUsages (hoặc orderItems)
             if ($voucher->usage_count > 0) {
-                 // Nếu voucher đã được sử dụng (Ràng buộc 3: Lỗi do ràng buộc FK)
+                // Nếu voucher đã được sử dụng (Ràng buộc 3: Lỗi do ràng buộc FK)
                 DB::rollBack();
                 return response()->json([
                     'message' => 'Không thể xóa voucher đang áp dụng cho các đơn hàng đã tạo.',
@@ -278,15 +342,14 @@ class VoucherController extends Controller
 
             // Thực hiện xóa mềm (soft delete) hoặc xóa cứng (force delete)
             // Nếu Model Voucher có SoftDeletes, hãy dùng $voucher->delete() để xóa mềm.
-            $voucher->delete(); 
-            
+            $voucher->delete();
+
             DB::commit();
 
             // Ràng buộc 4: Thông báo thành công
             return response()->json([
                 'message' => "Xóa voucher {$voucher->code} thành công.",
             ], 200);
-
         } catch (AuthorizationException $e) {
             // Lỗi Policy (Ràng buộc 6: Không có quyền)
             DB::rollBack();

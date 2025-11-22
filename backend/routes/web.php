@@ -12,6 +12,8 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\MomoCallbackController;
 use App\Http\Controllers\Api\ProductController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,7 +22,9 @@ use Illuminate\Support\Facades\Route;
 | Web Routes
 |--------------------------------------------------------------------------
 */
-
+Route::get('/checkout/momo/return', [MomoCallbackController::class, 'handleReturn'])->name('checkout.momo_return');
+// Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout-success');
+// Route::get('/checkout/fail', [CheckoutController::class, 'fail'])->name('checkout-fail');
 // // ===== PUBLIC ROUTES =====
 // Route::get('/', [HomeController::class, 'index'])->name('home');
 

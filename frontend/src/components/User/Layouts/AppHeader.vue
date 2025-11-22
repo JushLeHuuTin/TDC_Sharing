@@ -1,7 +1,13 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useAuthStore } from "@/stores/auth";
+// Cần import useRoute và useRouter để xử lý logic Logo phức tạp (nếu cần)
+import { useRouter } from "vue-router"; 
 import logo from "@/assets/logo.png";
+// Giả định v-click-away đã được đăng ký toàn cục (hoặc import tại đây)
+// import { vClickAway } from '@vueuse/components'; // ví dụ
+
+const router = useRouter(); // Khai báo Router
 const authStore = useAuthStore();
 
 function handleLogout() {
@@ -9,24 +15,21 @@ function handleLogout() {
 }
 
 // 1. IMPORT COMPONENT
-// Giả định component SearchBar nằm trong src/components/
 import SearchBar from "@/components/search-bar.vue";
 const user = computed(() => authStore.user);
 const isLoggedIn = computed(() => !!authStore.user);
-// --- PROPS ---
 
-// --- STATE CỤC BỘ THAY THẾ ALPINE.JS ---
+// --- STATE CỤC BỘ ---
 const isNotificationsOpen = ref(false);
 const isUserMenuOpen = ref(false);
 
-// Hàm đóng tất cả menu khi click ra ngoài (được gọi từ template)
+// Hàm đóng tất cả menu khi click ra ngoài
 const closeAllMenus = () => {
   isNotificationsOpen.value = false;
   isUserMenuOpen.value = false;
 };
 
 // --- DỮ LIỆU GIẢ/MOCK DATA CHO NOTIFICATIONS ---
-// Trong ứng dụng thực tế, dữ liệu này sẽ được lấy từ API
 const userNotifications = ref([
   {
     id: 1,
@@ -46,17 +49,21 @@ const unreadNotificationsCount = computed(() => {
   return userNotifications.value.filter((n) => !n.isRead).length;
 });
 
-// --- XỬ LÝ ĐỊNH TUYẾN ---
-const getRoute = (name) => {
-  // Thay thế bằng logic Vue Router (ví dụ: router.push({ name: name }))
-  const routes = {
-    "home.index": "/",
-    "auth.login": "/login",
-    "auth.register": "/register",
-    // Thêm các routes khác
-  };
-  return routes[name] || "#";
+// --- XỬ LÝ ĐỊNH TUYẾN LOGO (Giải quyết vấn đề Ngrok/Dev Host) ---
+const navigateToHome = (event) => {
+    // Ngăn chặn hành vi mặc định của thẻ <a> (nếu đây là <a>)
+    event.preventDefault(); 
+    
+    // Kiểm tra Host hiện tại có phải là Host Dev Server không
+    if (window.location.host !== 'localhost:5173' && window.location.host !== '127.0.0.1:5173') {
+        // Nếu đang ở Ngrok/URL công khai, buộc chuyển về Host Dev Server
+        window.location.href = 'http://localhost:5173/';
+    } else {
+        // Nếu đã ở Dev Server, dùng Vue Router để điều hướng về trang chủ
+        router.push({ name: 'home.index' });
+    }
 };
+
 </script>
 
 <template>
@@ -65,11 +72,13 @@ const getRoute = (name) => {
       <div class="flex justify-between items-center h-16">
         <!-- Logo -->
         <div class="flex items-center">
-          <a :href="getRoute('home.index')" class="flex items-center">
+          <!-- SỬA: Dùng @click để kiểm soát lỗi chuyển Host -->
+          <a href="#" @click="navigateToHome" class="flex items-center">
             <div
               class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3"
             >
-              <img :src="logo" alt="Vue Logo" />
+              <!-- Giả định logo là một biến string/object đã import -->
+              <img :src="logo" alt="Vue Logo" /> 
             </div>
             <span class="text-xl font-bold text-blue-600 hidden sm:block"
               >TDC_Sharing</span
@@ -78,25 +87,21 @@ const getRoute = (name) => {
         </div>
 
         <!-- Search Bar -->
-        <!-- Thay thế @include('components.search-bar') bằng component SearchBar -->
         <div class="flex-1 max-w-2xl mx-8">
           <SearchBar />
         </div>
 
         <!-- Navigation -->
         <nav class="flex items-center space-x-4">
-          <!-- Logic @auth / @else được thay bằng v-if / v-else -->
           <template v-if="!isLoggedIn">
             <!-- Hiển thị khi CHƯA ĐĂNG NHẬP -->
             <router-link
-              :user="user"
               to="/login"
               class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
             >
               Đăng nhập
             </router-link>
             <router-link
-              :user="user"
               to="/register"
               class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium"
             >
@@ -108,7 +113,8 @@ const getRoute = (name) => {
             <!-- Hiển thị khi ĐÃ ĐĂNG NHẬP -->
 
             <!-- Notifications -->
-            <div class="relative" v-click-away="closeAllMenus">
+            <!-- Giả định v-click-away đã được đăng ký và hoạt động -->
+            <div class="relative" v-click-away="closeAllMenus"> 
               <button
                 @click="
                   isNotificationsOpen = !isNotificationsOpen;
@@ -163,8 +169,11 @@ const getRoute = (name) => {
               <fa :icon="['fas', 'heart']" class="text-lg" />
             </a>
             <!-- cart -->
-           <router-link :to="{ name: 'cart' }" class="relative p-2 text-gray-600 hover:text-blue-600">
-            <fa :icon="['fas', 'shopping-cart']" class="text-lg" />
+            <router-link
+              :to="{ name: 'cart' }"
+              class="relative p-2 text-gray-600 hover:text-blue-600"
+            >
+              <fa :icon="['fas', 'shopping-cart']" class="text-lg" />
             </router-link>
 
             <!-- User Menu -->
@@ -198,7 +207,7 @@ const getRoute = (name) => {
                   <fa :icon="['fas', 'user']" class="mr-2" />Hồ sơ
                 </a>
                 <router-link
-                  to="/products/my"
+                  :to="{ name: 'products.my' }"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
                   <fa :icon="['fas', 'box']" class="mr-2" />Sản phẩm của tôi
@@ -216,7 +225,7 @@ const getRoute = (name) => {
                   <fa :icon="['fas', 'cog']" class="mr-2" />Cài đặt
                 </a>
                 <div class="border-t border-gray-100"></div>
-                <!-- Thay thế form POST bằng hàm Vue handleLogout -->
+                <!-- Sử dụng @click.prevent để ngăn chặn hành vi mặc định của form/a -->
                 <button
                   @click.prevent="handleLogout"
                   type="submit"
@@ -232,7 +241,3 @@ const getRoute = (name) => {
     </div>
   </header>
 </template>
-
-<style scoped>
-/* Không cần style bổ sung nếu chỉ dùng Tailwind CSS */
-</style>

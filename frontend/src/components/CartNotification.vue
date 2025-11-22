@@ -1,7 +1,9 @@
 <script setup>
 import { useCartStore } from '@/stores/cartStore';
 import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const cartStore = useCartStore();
 const { successMessage, errorMessage, lastAddedItem } = storeToRefs(cartStore);
 
@@ -46,7 +48,8 @@ const formatPrice = (price) => {
             
             <button 
                 class="w-full bg-green-500 text-white text-sm font-medium py-2 rounded-lg hover:bg-green-600 transition-colors"
-                @click="successMessage = ''; lastAddedItem = null;"
+
+                @click="router.push({ name: 'cart' })"
             >
                 Xem Giỏ Hàng
             </button>

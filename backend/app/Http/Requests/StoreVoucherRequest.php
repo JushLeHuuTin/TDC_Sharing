@@ -33,7 +33,7 @@ class StoreVoucherRequest extends FormRequest
             'code' => [
                 'required',
                 'string',
-                'max:255',
+                'max:50',
                 Rule::unique('vouchers', 'code'), // Check trùng trong bảng 'vouchers'
             ],            
             // 3. Mô tả voucher: Nullable

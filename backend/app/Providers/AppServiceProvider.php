@@ -27,7 +27,7 @@ class AppServiceProvider extends ServiceProvider
             if (app()->isLocal()) {
                 // Tìm một user để đăng nhập, ví dụ user có id = 1
                 if (Schema::hasTable('users')) {
-                    $user = User::find(2);
+                    $user = User::find(3);
                 }
                 // Hoặc $user = User::where('email', 'admin@example.com')->first();
     

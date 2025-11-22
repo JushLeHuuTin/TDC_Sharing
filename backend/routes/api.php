@@ -15,7 +15,8 @@ use App\Http\Controllers\Api\Admin\NotificationController as AdminNotificationCo
 use App\Http\Controllers\Api\Admin\orderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Api\UserController;
-use App\Models\Category;
+use App\Http\Controllers\Api\AddressController;
+use App\Http\Controllers\Api\MomoCallbackController;
 
 Route::get('/products/create', [ProductController::class, function () {
     return view('page.products.create');
@@ -35,6 +36,8 @@ Route::get('/products/{product:slug}', [ProductController::class, 'show']);
 Route::get('/categories/top-five', [CategoryController::class, 'topFive']);
 // 3.5 Checkout online
 Route::post('/payment/momo-callback', [OrderController::class, 'handleMomoCallback']);
+Route::post('/payment/momo', [CheckoutController::class, 'momoPay']);
+Route::post('/momo/ipn', [MomoCallbackController::class, 'handleIpn'])->name('checkout.momo_ipn');
 // Các route yêu cầu phải đăng nhập thì cho vào group này
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/profile', [UserController::class, 'getProfile'])->name('user.profile');
@@ -49,8 +52,13 @@ Route::middleware('auth:sanctum')->group(function () {
         ->name('cart.update_quantity');
     // 3.3 Dong display cart
     Route::get('/cart', [CartController::class, 'index']);
+    Route::delete('/cart', [CartController::class, 'destroy']);
     // 3.4 Dong creat order
     Route::post('/orders', [OrderController::class, 'store']);
+    // Route::post('/checkout/validate-voucher', [VoucherController::class, 'validateVoucher']);
+    Route::get('/user/addresses', [AddressController::class, 'index']);
+    // Route::post('/orders', [OrderController::class, 'store']);
+    Route::post('/momo/ipn', [MomoCallbackController::class, 'handleIpn']);
     // Route::post('/orders', [OrderController::class, 'store']);
     // 3.6 Dong add voucher
     Route::post('/vouchers', [VoucherController::class, 'store']);

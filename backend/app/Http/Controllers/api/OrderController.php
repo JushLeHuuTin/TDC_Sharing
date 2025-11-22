@@ -7,6 +7,7 @@ use App\Http\Requests\ProcessOrderRequest;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Cart;
+use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\Voucher;
@@ -14,8 +15,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
-use SebastianBergmann\Environment\Console;
+use Illuminate\Support\Collection;
+use App\Services\MomoPaymentService;
 use Str;
+
+use function Laravel\Prompts\alert;
 
 class OrderController extends Controller
 {
@@ -29,100 +33,171 @@ class OrderController extends Controller
     {
         $buyerId = Auth::id();
         $voucherCode = $request->voucher_code;
-        // 1. Lấy Cart: Sử dụng Local Scope của Model Cart
-        $cart = Cart::activeUserWithDetails($buyerId)->first();
-        if (!$cart || !$cart->isAvailableForCheckout()) {
-            return response()->json(['message' => 'Giỏ hàng của bạn đang trống.'], 400);
+        $addressId = $request->address_id;
+        $paymentMethod = $request->payment_method;
+        $createdOrders = [];
+        $totalPaymentAmount = 0.00;
+        $selectedCarts = Cart::getSelectedItemsByBuyer($buyerId)->get();
+        $selectedCartItems = $selectedCarts->pluck('cartItems')->flatten(1);
+        if ($selectedCartItems->isEmpty()) {
+            return response()->json(['message' => 'Vui lòng chọn sản phẩm để thanh toán.'], 400);
         }
 
-        // 2. Lấy Voucher ID: Sử dụng Local Scope của Model Voucher
-        $voucherId = Voucher::IdFromCode($voucherCode)->value('id');
-        // Lưu ý: Validation Form Request đã kiểm tra existence, nhưng không tìm ra ID.
+        // 2. Nhóm các Cart Items theo Seller ID (product_user_id)
+        $groupedCartItems = $selectedCartItems->groupBy('product.user_id');
 
-        // 3. Tính toán các giá trị tài chính (Giả định hàm này nằm trong service hoặc trait)
-        $calculation = $this->calculateOrderTotals($cart, $voucherId);
-        // 4. Chuẩn bị dữ liệu Order
-        $orderData = [
-            'user_id'           => $buyerId,
-            'address_id'        => $request->address_id,
-            'payment_method'    => $request->payment_method,
-            'voucher_id'        => $voucherId, // Đã có ID
-            'status'            => 'pending',
-            'total_amount'      => $calculation['total_amount'],
-        ];
+        // 3. Lấy Voucher ID (áp dụng cho toàn bộ giao dịch, nếu có)
+        if (empty($voucherCode)) {
+            $voucherId = null;
+        } else {
+            $voucherId = Voucher::IdFromCode($voucherCode)->value('id') ?? null;
+        }
         DB::beginTransaction();
         try {
-            // A. TẠO ĐƠN HÀNG (Order)
-            $order = Order::create($orderData);
-            die('a');
-            // B. TẠO CHI TIẾT ĐƠN HÀNG (Order_Items) & CẬP NHẬT KHO
-            $this->createOrderItemsAndUpdateStock($order, $cart, $request->address_id);
+            foreach ($groupedCartItems as $sellerId => $cartItems) {
+                $calculation = $this->calculateOrderTotals($cartItems, $voucherId, $paymentMethod);
+                $appliedVoucherId = ($calculation['discount_amount'] > 0) ? $voucherId : null;
+                // b. Chuẩn bị dữ liệu Order cho Seller hiện tại
+                $orderData = [
+                    'user_id' => $buyerId,
+                    'seller_id' => $sellerId,
+                    'address_id' => $addressId,
+                    'payment_method' => $paymentMethod,
+                    'voucher_id' => $appliedVoucherId,
+                    'status' => 'pending',
+                    'total_amount' => $calculation['total_amount'],
+                ];
 
-            // C. XÓA GIỎ HÀNG
-            $cart->delete();
+                // c. TẠO ĐƠN HÀNG (Order)
+                $order = Order::create($orderData);
 
+                // d. TẠO CHI TIẾT ĐƠN HÀNG (Order_Items) & CẬP NHẬT KHO
+                $this->createOrderItemsAndUpdateStock($order, $cartItems, $addressId);
+
+                // e. LƯU LẠI ĐƠN HÀNG ĐÃ TẠO
+                $createdOrders[] = $order;
+                $totalPaymentAmount += $calculation['total_amount'];
+            }
+            CartItem::deleteSelectedItems($buyerId);
+            Cart::cleanupEmptyCarts($buyerId);
+            if ($paymentMethod === 'momo') {
+                // Gọi service Momo để tạo yêu cầu thanh toán
+                $momoData = $this->createMomoPayment($createdOrders, $totalPaymentAmount, $addressId);
+
+                // Commit Transaction để lưu Orders trạng thái 'pending'
+                DB::commit();
+
+                // Trả về URL chuyển hướng cho Frontend
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Đang chuyển hướng thanh toán Momo...',
+                    'redirect_url' => $momoData['payUrl'],
+                    'data' => [
+                        'order_ids' => collect($createdOrders)->pluck('id'),
+                    ],
+                ], 200);
+            }
             DB::commit();
-            $order->load('user.addresses', 'items.product.user');
-            $seller = $order->seller;
-            $buyerAddress = $order->address;
+
+            // 6. Trả về phản hồi: Thông báo đã tạo N đơn hàng thành công
             return response()->json([
                 'success' => true,
-                'message' => 'Thanh toán thành công! Đơn hàng của bạn đã được xác nhận.',
+                'message' => "Thanh toán công! Đã tạo " . count($createdOrders) . " đơn hàng.",
                 'data' => [
-                    'order_id' => $order->order_id, // ORD2024001234
-                    'order_time' => $order->created_at->format('H:i:s d/m/Y'),
-                    'status' => 'Chờ người bán xác nhận',
-
-                    'buyer_info' => [
-                        // Lấy thông tin người mua (User Model)
-                        'full_name' => $order->user->full_name,
-                        'email' => $order->user->email,
-                        'phone' => $buyerAddress->phone, // Lấy số điện thoại từ địa chỉ nhận
-                    ],
-
-                    'seller_info' => [
-                        // Lấy thông tin người bán (Seller của item đầu tiên)
-                        'full_name' => $seller->full_name ?? 'N/A',
-                        'email' => $seller->email ?? 'N/A',
-                        'rating' => $seller->average_rating ?? '4.8 (127 đánh giá)', // Giả định
-                        'contact' => [
-                            'phone' => $seller->phone ?? '0912345678', // Giả định
-                            'zalo' => $seller->phone ?? '0912345678', // Giả định
-                        ]
-                    ],
+                    // Trả về danh sách Order ID hoặc thông tin tóm tắt
+                    'order_ids' => collect($createdOrders)->pluck('id'),
                 ]
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Lỗi tạo đơn hàng cho User {$buyerId}: " . $e->getMessage());
+            // Ghi log lỗi chi tiết hơn     
+            Log::error("Lỗi tạo đơn hàng Multi-Seller cho User {$buyerId}: " . $e->getMessage());
 
             return response()->json([
                 'success' => false,
                 'message' => 'Đặt hàng thất bại, vui lòng thử lại.',
+                'error_detail' => $e->getMessage()
             ], 500);
         }
     }
-    private function calculateOrderTotals(Cart $cart, ?int $voucherId): array
+    // Trong OrderController.php
+
+    protected function createMomoPayment(array $createdOrders, float $totalAmount, int $addressId): array
     {
-        $totalAmount = 0;
-        foreach ($cart->cartItems as $item) {
-            // Giả định product đã được load sẵn nhờ scope ActiveUserWithDetails
-            $totalAmount += $item->product->price * $item->quantity;
+        $momoService = new MomoPaymentService();
+        $orderIds = collect($createdOrders)->pluck('id')->toArray(); // Lấy mảng IDs
+        $orderIdsString = implode(',', $orderIds); // Chuỗi IDs cho orderInfo
+
+        // Cần URL returnUrl và ipnUrl hợp lệ
+        $baseUrl = 'https://loise-unpirated-pseudoangelically.ngrok-free.dev';
+
+        $returnUrl = $baseUrl . '/checkout/momo/return';
+        $notifyUrl = $baseUrl . '/api/momo/ipn';
+
+        // 1. Gọi Service tạo yêu cầu thanh toán
+        $response = $momoService->createPaymentUrl(
+            $totalAmount,
+            "Thanh toan don hang #{$orderIdsString}",
+            $returnUrl,
+            $notifyUrl
+        );
+
+        // 2. LƯU THÔNG TIN GIAO DỊCH TẠM THỜI (QUAN TRỌNG)
+        // Lưu các Order IDs liên quan và Mã Momo Order ID để dùng trong Callback
+        $momoService->storeTransactionData(
+            $response['orderId'], // Mã Order ID từ Momo
+            $response['requestId'], // Mã Request ID từ Momo
+            $orderIds,              // Mảng các Order ID của ứng dụng
+            $totalAmount,
+            'momo'
+        );
+
+        return $response; // Trả về payUrl
+    }
+    protected function calculateOrderTotals(Collection $cartItems, ?int $voucherId, string $paymentMethod): array
+    {
+        $subtotal = 0.00;
+
+        // 1. TÍNH SUBTOTAL
+        foreach ($cartItems as $item) {
+            $subtotal += $item->product->price * $item->quantity;
         }
 
         $discountAmount = 0.00;
 
+        // 2. TÍNH DISCOUNT & KIỂM TRA VOUCHER HỢP LỆ
         if ($voucherId) {
-            $discountAmount = $totalAmount * 0.10;
+            // Sử dụng query builder và Scope IsActive để đảm bảo voucher hợp lệ
+            $voucher = Voucher::isActive()->find($voucherId);
+            if ($voucher) {
+                // Kiểm tra giá trị tối thiểu
+                if ($subtotal >= $voucher->min_purchase) {
+                    if ($voucher->discount_type === 'percentage') {
+                        $discount = $subtotal * ($voucher->discount_value / 100.00);
+                        $discountAmount = $discount;
+                        // Nếu có cột max_discount, áp dụng: min($discount, $voucher->max_discount)
+                    } elseif ($voucher->discount_type === 'fixed') {
+                        $discountAmount = $voucher->discount_value;
+                    }
+
+                    $discountAmount = min($discountAmount, $subtotal);
+                }
+            }
         }
 
-        $finalAmount = $totalAmount - $discountAmount;
+        $shippingFee = 0.00; // Giả định
+        if ($subtotal > 500000) {
+            $shippingFee = 0; // Miễn phí vận chuyển
+        } else {
+            $shippingFee = 20000;
+        }
+        $finalAmount = $subtotal - $discountAmount + $shippingFee;
 
-        // $shippingFee = $this->calculateShippingFee();
-        // $finalAmount += $shippingFee;
         return [
-            'total_amount'      => $finalAmount,
-            'voucher_id'        => $voucherId,
+            'sub_total'      => round($subtotal, 2),
+            'discount_amount' => round($discountAmount, 2),
+            'total_amount'   => round($finalAmount, 2),
+            'voucher_id'     => $voucherId,
         ];
     }
 
@@ -148,34 +223,45 @@ class OrderController extends Controller
      * @param array $orderItemsData
      * @return void
      */
-    private function createOrderItemsAndUpdateStock(Order $order, Cart $cart, int $addressId): void
+    protected function createOrderItemsAndUpdateStock(Order $order, Collection $cartItems, int $addressId): void
     {
-        die('alo');
-        $orderItems = [];
-        foreach ($cart->cartItems as $cartItem) {
-            $product = $cartItem->product;
+        $orderItemsData = [];
+        $productsToUpdate = collect();
 
-            if ($product->stocks < $cartItem->quantity) {
-                // Đảm bảo rollback transaction ở tầng cao hơn (hàm store)
-                throw new \Exception("Sản phẩm '{$product->title}' chỉ còn {$product->stocks} sản phẩm.");
+        foreach ($cartItems as $item) {
+            $product = $item->product; 
+            $quantity = $item->quantity;
+            // 1. Kiểm tra tồn kho trước khi trừ
+            if ($product->stocks < $quantity) {
+                throw new \Exception("Sản phẩm '{$product->name}' không đủ tồn kho (còn {$product->stocks}).");
             }
 
-            // Tạo mảng dữ liệu cho OrderItem (sử dụng insert mass insert để tối ưu)
-            $orderItems[] = [
-                'order_id'      => $order->id,
-                'product_id'    => $product->id,
-                'price'         => $product->price,
-                'quantity'      => $cartItem->quantity,
-                'subtotal'         => $product->price * $cartItem->quantity,
-                'created_at'    => now(),
-                'updated_at'    => now(),
+            // Chuẩn bị dữ liệu cho Order Item
+            $orderItemsData[] = [
+                'product_id' => $product->id,
+                'price' => $product->price, // Lưu giá tại thời điểm checkout
+                'quantity' => $quantity,
+                'subtotal' => $product->price * $quantity,
+                'created_at' => now(),
+                'updated_at' => now(),
             ];
-            // Cập nhật tồn kho (Sử dụng Model để tương tác với DB)
-            // $product->decrement('stocks', $cartItem->quantity);
+
+            // Chuẩn bị cập nhật tồn kho (để tránh nhiều lần query)
+            $productsToUpdate->push([
+                'id' => $product->id,
+                'new_stock' => $product->stocks - $quantity,
+            ]);
         }
-        // die("");
-        // die("$product->id");
-        // Thực hiện mass insert (tạo nhiều OrderItem cùng lúc)
-        OrderItem::insert($orderItems);
+
+        // 2. TẠO CHI TIẾT ĐƠN HÀNG (Order Items)
+        // Sử dụng quan hệ để tự động gán order_id
+        $order->items()->createMany($orderItemsData);
+
+        // 3. CẬP NHẬT KHO HÀNG (Sử dụng Transaction an toàn)
+        // Tối ưu hóa bằng cách dùng DB::update hoặc sử dụng Model::whereIn + update
+        foreach ($productsToUpdate as $updateData) {
+            Product::where('id', $updateData['id'])
+                ->update(['stocks' => $updateData['new_stock']]);
+        }
     }
 }

@@ -12,8 +12,15 @@ class Voucher extends Model
     use HasFactory;
 
     protected $fillable = [
-        'code', 'description', 'discount_type', 'discount_value',
-        'min_purchase', 'start_date', 'end_date', 'usage_limit', 'used_count'
+        'code',
+        'description',
+        'discount_type',
+        'discount_value',
+        'min_purchase',
+        'start_date',
+        'end_date',
+        'usage_limit',
+        'used_count'
     ];
 
     protected $casts = [
@@ -31,18 +38,35 @@ class Voucher extends Model
     public function isValid()
     {
         $now = now();
-        return $this->start_date <= $now 
-            && $this->end_date >= $now 
+        return $this->start_date <= $now
+            && $this->end_date >= $now
             && ($this->usage_limit === null || $this->used_count < $this->usage_limit);
     }
-     public function scopeIdFromCode(Builder $query, ?string $code): Builder
+    public function scopeIsActive(Builder $query): Builder
     {
-        if (empty($code)) {
-            die("$query");
-            return $query;
+        $now = now();
+        return $query
+            // 1. Kiểm tra ngày bắt đầu (start_date)
+            ->where(function ($q) use ($now) {
+                $q->whereNull('start_date')
+                    ->orWhere('start_date', '<=', $now);
+            })
+            // 2. Kiểm tra ngày kết thúc (end_date)
+            ->where(function ($q) use ($now) {
+                $q->whereNull('end_date')
+                    ->orWhere('end_date', '>=', $now);
+            })
+            // 3. Kiểm tra giới hạn sử dụng (usage_limit)
+            ->where(function ($q) {
+                $q->whereNull('usage_limit')
+                    ->orWhereColumn('used_count', '<', 'usage_limit');
+            });
+    }
+    public function scopeIdFromCode(Builder $query, ?string $code): Builder
+    {
+        if (!empty($code)) {
+            $query->where('code', $code);
         }
-        
-        // Tìm voucher bằng code, chỉ lấy cột id
-        return $query->where('code', $code)->select('id');
+        return $query;
     }
 }

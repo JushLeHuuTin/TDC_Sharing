@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -63,7 +64,7 @@ class CartItem extends Model
             ->where('product_id', $productId)
             ->first();
     }
-    
+
     public function product()
     {
         return $this->belongsTo(Product::class);
@@ -72,5 +73,17 @@ class CartItem extends Model
     public function getSubtotal()
     {
         return $this->price * $this->quantity;
+    }
+    public static function deleteSelectedItems(int $buyerId): int
+    {
+        // Bắt đầu truy vấn trên bảng cart_items
+        $deletedCount = self::query()
+            ->where('is_selected', 1)
+            ->whereHas('cart', function (Builder $query) use ($buyerId) {
+                $query->where('user_id', $buyerId);
+            })
+            ->delete();
+
+        return $deletedCount;
     }
 }

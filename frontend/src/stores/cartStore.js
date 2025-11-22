@@ -58,7 +58,6 @@ export const useCartStore = defineStore("cartStore", {
 
         // Cập nhật state với dữ liệu API
         this.cartData = response.data.data;
-        console.log(this.cartData);
       } catch (error) {
         this.errorMessage = "Không thể lấy dữ liệu giỏ hàng. Vui lòng thử lại.";
         console.error("Lỗi Fetch Cart:", error);

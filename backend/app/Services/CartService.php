@@ -66,7 +66,7 @@ class CartService
         // 1. Tính tổng phụ (Subtotal) - Dựa vào phương thức Model
         $shopSubtotal = $cart->getTotalPrice();
         // 2. Tính Phí Vận chuyển (LOGIC GIẢ ĐỊNH - Vận chuyển là nghiệp vụ phức tạp)
-        $shopShippingFee = $shopSubtotal > 100000 ? 10000 : 20000;
+        $shopShippingFee = $shopSubtotal > 500000 ? 0 : 20000;
         $shopDiscount = 0; // Giả định: Áp dụng voucher/giảm giá cấp Shop
         $shopTotal = $shopSubtotal + $shopShippingFee - $shopDiscount;
 

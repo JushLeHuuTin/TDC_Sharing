@@ -38,9 +38,9 @@ class Category extends Model
     }
 
     public function products()
-{
-    return $this->hasMany(Product::class)->where('is_visible', '1')->where('status','active');
-}
+    {
+        return $this->hasMany(Product::class)->where('is_visible', '1')->where('status', 'active');
+    }
 
     public function attributes()
     {
@@ -89,21 +89,21 @@ class Category extends Model
      */
     private static function buildTree(Collection $categories, Collection $allGrouped)
     {
-        foreach ($categories as $category) {
-            $children = $allGrouped->get($category->id, collect());
-            $category->children = $children; // Gán collection con vào thuộc tính 'children'
-
-            // Nếu có danh mục con, tiếp tục xây dựng cây cho chúng
-            if ($children->isNotEmpty()) {
-                self::buildTree($children, $allGrouped);
-            }
+     foreach ($categories as $category) {
+        $children = $allGrouped->get($category->id, collect());
+        if ($children->isNotEmpty()) {
         }
+        $category->children = $children; 
+        if ($children->isNotEmpty()) {
+            self::buildTree($children, $allGrouped);
+        }
+    }
     }
     public function scopeTopFive(Builder $query): Builder
     {
         return $query->where('is_visible', true) // Chỉ lấy các danh mục đang được kích hoạt
-        ->whereNotNull('parent_id')    
-        ->withCount('products')
+            ->whereNotNull('parent_id')
+            ->withCount('products')
             ->orderBy('display_order', 'asc') // Sắp xếp theo thứ tự hiển thị
             ->orderBy('id', 'asc') // Thêm sắp xếp phụ để đảm bảo thứ tự nhất quán khi display_order trùng nhau
             ->take(5); // Giới hạn chỉ lấy 5 danh mục
@@ -112,7 +112,7 @@ class Category extends Model
     {
         $total = $this->products()->count();
 
-        foreach($this->children as $child) {
+        foreach ($this->children as $child) {
             $total += $child->total_products; // đệ quy
         }
 

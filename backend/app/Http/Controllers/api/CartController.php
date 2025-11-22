@@ -14,6 +14,7 @@ use App\Services\CartService;
 use App\Exceptions\ConflictException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Models\Cart;
 use Throwable;
 
 class CartController extends Controller
@@ -220,5 +221,19 @@ class CartController extends Controller
     {
         // Hiện tại trả về phí mặc định của phương thức Tiêu chuẩn (25000)
         return 25000.00;
+    }
+    public function destroy(Request $request): JsonResponse
+    {
+        $buyerId = Auth::id();
+        CartItem::query()
+            ->whereHas('cart', function ($query) use ($buyerId) {
+                $query->where('user_id', $buyerId);
+            })
+            ->delete();
+        Cart::query()
+            ->where('user_id', $buyerId)
+            ->delete();
+
+        return response()->json(['message' => 'Giỏ hàng đã được xóa hoàn toàn.'], 200);
     }
 }

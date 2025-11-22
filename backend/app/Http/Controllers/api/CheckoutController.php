@@ -5,9 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Address;
 use App\Models\CartItem;
+use App\Models\Order;
 use App\Models\PaymentMethod;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use App\Models\Cart;
 
 class CheckoutController extends Controller
 {
@@ -25,7 +29,7 @@ class CheckoutController extends Controller
 
         // --- Ràng buộc 1 & 2: Thông tin giao hàng ---
         $defaultAddress = $this->getDefaultShippingAddress($user->id);
-        
+
         if (!$defaultAddress) {
             return response()->json([
                 'message' => 'Chưa có địa chỉ giao hàng. Vui lòng thêm mới.',
@@ -38,7 +42,7 @@ class CheckoutController extends Controller
 
         // --- Ràng buộc 4, 5, 6: Chi tiết đơn hàng và tính toán tổng ---
         $cartData = $this->calculateOrderDetails($user->id);
-        
+
         if (empty($cartData['shops'])) {
             return response()->json(['message' => 'Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm.'], 400);
         }
@@ -47,16 +51,16 @@ class CheckoutController extends Controller
             'message' => 'Lấy dữ liệu Checkout thành công.',
             'data' => [
                 // Ràng buộc 1: Địa chỉ giao hàng
-                'shipping_address' => $defaultAddress, 
+                'shipping_address' => $defaultAddress,
                 // Ràng buộc 3: Phương thức thanh toán
-                'payment_methods' => $paymentMethods, 
+                'payment_methods' => $paymentMethods,
                 // Ràng buộc 4, 5, 6: Chi tiết và tổng tiền
                 'order_details' => $cartData['shops'],
                 'overall_summary' => $cartData['overall_summary'],
             ]
         ], 200);
     }
-    
+
     /**
      * Lấy địa chỉ giao hàng mặc định của người dùng
      * Ràng buộc 1
@@ -64,9 +68,9 @@ class CheckoutController extends Controller
     private function getDefaultShippingAddress(int $userId): ?array
     {
         $address = Address::where('user_id', $userId)
-                          ->where('is_default', true)
-                          ->first();
-                          
+            ->where('is_default', true)
+            ->first();
+
         // Nếu không có địa chỉ mặc định, lấy địa chỉ đầu tiên
         if (!$address) {
             $address = Address::where('user_id', $userId)->first();
@@ -84,7 +88,7 @@ class CheckoutController extends Controller
         // Giả sử có bảng PaymentMethod hoặc hardcode
         return PaymentMethod::where('is_active', true)->get(['id', 'name', 'code'])->toArray();
     }
-    
+
     /**
      * Tái tính toán chi tiết đơn hàng từ giỏ hàng (tương tự CartController)
      * Ràng buộc 4, 5, 6
@@ -93,8 +97,8 @@ class CheckoutController extends Controller
     {
         // Lấy dữ liệu Giỏ hàng đã được xử lý (Sử dụng lại logic từ CartController)
         $cartItems = CartItem::with(['product:id,name,price,user_id', 'product.seller:id,full_name'])
-                             ->where('user_id', $userId)
-                             ->get();
+            ->where('user_id', $userId)
+            ->get();
 
         if ($cartItems->isEmpty()) {
             return ['shops' => [], 'overall_summary' => []];
@@ -112,13 +116,13 @@ class CheckoutController extends Controller
             $shopSubtotal = $items->sum(function ($item) {
                 return ($item->product->price ?? 0) * ($item->quantity > 0 ? $item->quantity : 1);
             });
-            
+
             // Phí vận chuyển và Giảm giá (Ràng buộc 5)
             $shippingFee = 30000; // Giả lập phí cố định cho Checkout
             $discount = 0;        // Giảm giá (Nếu voucher đã được áp dụng ở bước trước, sẽ load ở đây)
 
             $shopTotal = $shopSubtotal + $shippingFee - $discount;
-            
+
             $overallSubtotal += $shopSubtotal;
             $overallShippingFee += $shippingFee;
             $overallDiscount += $discount;
@@ -135,7 +139,7 @@ class CheckoutController extends Controller
         }
 
         $overallTotal = $overallSubtotal + $overallShippingFee - $overallDiscount;
-        
+
         return [
             'shops' => $shops,
             'overall_summary' => [
@@ -146,4 +150,90 @@ class CheckoutController extends Controller
             ]
         ];
     }
+    function execPostRequest($url, $data)
+    {
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt(
+            $ch,
+            CURLOPT_HTTPHEADER,
+            array(
+                'Content-Type: application/json',
+                'Content-Length: ' . strlen($data)
+            )
+        );
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        //execute post
+        $result = curl_exec($ch);
+        //close connection
+        curl_close($ch);
+        return $result;
+    }
+    public function momoPay(Request $request)
+    {
+        $endpoint = "https://test-payment.momo.vn/v2/gateway/api/create";
+
+        $partnerCode = 'MOMOBKUN20180529';
+        $accessKey   = 'klm05TvNBzhg7h7j';
+        $secretKey   = 'at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa';
+
+        $orderId = time() . "";
+        $requestId = time() . "";
+        $orderInfo = "Thanh toán đơn hàng #" . $orderId;
+        $amount = $request->amount;
+        $redirectUrl = "https://webhook.site/b3088a6a-2d17-4f8d-a383-71389a6c600b";
+        $ipnUrl = "https://webhook.site/b3088a6a-2d17-4f8d-a383-71389a6c600b";            // IPN tạm
+        $extraData = "";
+
+        $requestType = "captureWallet";
+
+        // Tạo chữ ký
+        $rawHash = "accessKey=$accessKey&amount=$amount&extraData=$extraData&ipnUrl=$ipnUrl&orderId=$orderId&orderInfo=$orderInfo&partnerCode=$partnerCode&redirectUrl=$redirectUrl&requestId=$requestId&requestType=$requestType";
+        $signature = hash_hmac("sha256", $rawHash, $secretKey);
+
+        $data = [
+            'partnerCode' => $partnerCode,
+            'partnerName' => "Laravel Shop",
+            'storeId' => "MomoTestStore",
+            'requestId' => $requestId,
+            'amount' => $amount,
+            'orderId' => $orderId,
+            'orderInfo' => $orderInfo,
+            'redirectUrl' => $redirectUrl,
+            'ipnUrl' => $ipnUrl,
+            'lang' => 'vi',
+            'extraData' => "",
+            'requestType' => $requestType,
+            'signature' => $signature
+        ];
+
+        $response = Http::post($endpoint, $data)->json();
+
+        return response()->json([
+            'payUrl' => $response['payUrl']
+        ]);
+    }
+    public function momoIpn(Request $request)
+    {
+        if ($request->resultCode == 0) {
+            // Thanh toán thành công
+            Order::where('order_id', $request->orderId)
+                ->update(['status' => 'paid']);
+        }
+
+        return response()->json(['message' => 'ok']);
+    }
+    public function success(Request $request)
+    {
+        return view('app'); 
+    }
+
+    public function fail(Request $request)
+    {
+        return view('app'); 
+    }
+ 
 }

@@ -14,7 +14,8 @@ class OrderSeeder extends Seeder
         $orders = [
             [
                 'user_id' => 2,
-                'payment_method' => 'bank_transfer',
+                'seller_id' => 1,
+                'payment_method' => 'momo',
                 'address_id' => 1,
                 'voucher_id' => 1,
                 'status' => 'delivered',
@@ -22,7 +23,8 @@ class OrderSeeder extends Seeder
             ],
             [
                 'user_id' => 3,
-                'payment_method' => 'credit_card',
+                'seller_id' => 1,
+                'payment_method' => 'momo',
                 'address_id' => 3,
                 'voucher_id' => 2,
                 'status' => 'shipped',
@@ -30,7 +32,8 @@ class OrderSeeder extends Seeder
             ],
             [
                 'user_id' => 2,
-                'payment_method' => 'cod',
+                'seller_id' => 1,
+                'payment_method' => 'momo',
                 'address_id' => 2,
                 'voucher_id' => null,
                 'status' => 'processing',
@@ -38,7 +41,8 @@ class OrderSeeder extends Seeder
             ],
             [
                 'user_id' => 4,
-                'payment_method' => 'e_wallet',
+                'seller_id' => 1,
+                'payment_method' => 'momo',
                 'address_id' => 4,
                 'voucher_id' => 3,
                 'status' => 'pending',
@@ -46,7 +50,8 @@ class OrderSeeder extends Seeder
             ],
             [
                 'user_id' => 3,
-                'payment_method' => 'bank_transfer',
+                'seller_id' => 1,
+                'payment_method' => 'momo',
                 'address_id' => 3,
                 'voucher_id' => null,
                 'status' => 'cancelled',

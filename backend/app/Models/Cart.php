@@ -8,23 +8,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 
-/**
- * @property int $id
- * @property int $user_id
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\CartItem> $items
- * @property-read int|null $items_count
- * @property-read \App\Models\User $user
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Cart newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Cart newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Cart query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Cart whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Cart whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Cart whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Cart whereUserId($value)
- * @mixin \Eloquent
- */
 class Cart extends Model
 {
     use HasFactory;
@@ -82,5 +65,28 @@ class Cart extends Model
     public function isAvailableForCheckout(): bool
     {
         return $this->exists && $this->cartItems()->exists();
+    }
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
+    public function scopeGetSelectedItemsByBuyer(Builder $query, int $buyerId): Builder
+    {
+        return $query
+            ->where('user_id', $buyerId)
+            ->whereHas('cartItems', function (Builder $itemQuery) {
+                $itemQuery->where('is_selected', 1);
+            })
+            ->with(['cartItems' => function ($itemQuery) {
+                $itemQuery->where('is_selected', 1)
+                    ->with('product');
+            }]);
+    }
+    public static function cleanupEmptyCarts(int $buyerId): int
+    {
+        return self::query()
+            ->where('user_id', $buyerId)
+            ->doesntHave('cartItems')
+            ->delete();
     }
 }

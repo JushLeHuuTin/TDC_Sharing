@@ -89,7 +89,7 @@ onMounted(async () => {
   <AppLayout>
     <div class="max-w-7xl mx-auto py-8">
       <div class="grid grid-cols-12 gap-8">
-       <div class="col-span-12 lg:col-span-8">
+        <div class="col-span-12 lg:col-span-8">
           <div class="flex justify-between items-center mb-6 text-center">
             <div class="flex-1 text-gray-500">
               <div
@@ -118,6 +118,95 @@ onMounted(async () => {
               <p class="text-sm">Thanh toán</p>
             </div>
           </div>
+
+          <h2 class="text-2xl font-bold text-gray-900 mb-6">Thông tin giao hàng</h2>
+
+          <div class="bg-white rounded-lg shadow-sm p-6 space-y-6">
+            <h3 class="font-semibold text-gray-900 mb-4">Địa chỉ giao hàng</h3>
+
+            <div>
+              <label for="fullName" class="block text-sm font-medium text-gray-700"
+                >Họ và tên</label
+              >
+              <input
+                type="text"
+                id="fullName"
+                v-model="formData.fullName"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="Nguyễn Văn A"
+              />
+            </div>
+
+            <div>
+              <label for="phoneNumber" class="block text-sm font-medium text-gray-700"
+                >Số điện thoại</label
+              >
+              <input
+                type="tel"
+                id="phoneNumber"
+                v-model="formData.phoneNumber"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="09xxxxxxxx"
+              />
+            </div>
+
+            <div>
+              <label for="address" class="block text-sm font-medium text-gray-700"
+                >Địa chỉ</label
+              >
+              <input
+                type="text"
+                id="address"
+                v-model="formData.address"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố"
+              />
+            </div>
+
+            <div>
+              <label for="note" class="block text-sm font-medium text-gray-700"
+                >Ghi chú (tùy chọn)</label
+              >
+              <textarea
+                id="note"
+                v-model="formData.note"
+                rows="3"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="Ví dụ: Giao hàng giờ hành chính..."
+              ></textarea>
+            </div>
+
+            <h3 class="font-semibold text-gray-900 mt-8 mb-4">Thông tin thêm</h3>
+            <div>
+              <label for="invoice" class="flex items-center">
+                <input
+                  type="checkbox"
+                  id="invoice"
+                  class="rounded text-blue-600 focus:ring-blue-500"
+                />
+                <span class="ml-2 text-sm text-gray-700">Yêu cầu xuất hóa đơn VAT</span>
+              </label>
+            </div>
+
+            <div class="flex justify-between mt-8">
+              <button
+                @click="router.push({ name: 'cart' })"
+                class="bg-gray-200 text-gray-700 hover:bg-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all"
+              >
+                <fa :icon="['fas', 'arrow-left']" class="mr-2 fa-sm" /> Quay lại giỏ hàng
+              </button>
+              <button
+                @click="router.push({ name: 'checkout-payment' })"
+                class="bg-blue-600 text-white py-3 px-4 rounded-lg transition-all font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Tiếp tục đến thanh toán
+                <fa :icon="['fas', 'arrow-right']" class="ml-2 fa-sm" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-span-12 lg:col-span-8">
           <h2 class="text-2xl font-bold text-gray-900 mb-6">Thông tin giao hàng</h2>
 
           <div class="bg-white rounded-lg shadow-sm p-6 space-y-6">
@@ -140,8 +229,8 @@ onMounted(async () => {
                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               >
                 <option v-for="addr in userAddresses" :key="addr.id" :value="addr.id">
-                  {{ addr.full_name }} | {{ addr.phone }} | {{ addr.ward }},
-                  {{ addr.province }}
+                  {{ addr.full_name }} | {{ addr.phone }} | {{ addr.street_address }},
+                  {{ addr.city }}
                 </option>
               </select>
 
@@ -166,9 +255,9 @@ onMounted(async () => {
                 {{ selectedAddressDetails.phone }}
               </p>
               <p class="text-sm text-gray-600">
-                {{ selectedAddressDetails.detail }},
-                {{ selectedAddressDetails.ward }}, {{ selectedAddressDetails.province }},
-                <!-- {{ selectedAddressDetails.city }} -->
+                {{ selectedAddressDetails.street_address }},
+                {{ selectedAddressDetails.ward }}, {{ selectedAddressDetails.district }},
+                {{ selectedAddressDetails.city }}
               </p>
             </div>
             <div
@@ -218,74 +307,6 @@ onMounted(async () => {
                 Tiếp tục đến thanh toán
                 <fa :icon="['fas', 'arrow-right']" class="ml-2 fa-sm" />
               </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-span-12 lg:col-span-4 sticky top-24 space-y-6">
-          <div class="bg-white rounded-lg shadow-sm p-6">
-            <h3 class="text-xl font-bold text-gray-900 mb-4">Tổng đơn hàng</h3>
-            <div class="space-y-2 text-sm text-gray-600 border-b pb-3">
-              <div class="flex justify-between">
-                <span>Tạm tính ({{ totalSelected }} sản phẩm):</span>
-                <span class="font-medium text-gray-900">
-                  {{ formatPrice(overallSummary.subtotal) }}
-                </span>
-              </div>
-
-              <div class="flex justify-between">
-                <span>Phí vận chuyển:</span>
-                <span class="font-medium text-gray-900">
-                  {{ formatPrice(overallSummary.shipping_fee) }}
-                </span>
-              </div>
-
-              <div class="flex justify-between">
-                <span>Giảm giá:</span>
-                <span class="font-medium text-red-600">
-                  - {{ formatPrice(overallSummary.discount) }}
-                </span>
-              </div>
-            </div>
-
-            <div class="flex justify-between items-center text-lg font-bold pt-3">
-              <span>Tổng cộng:</span>
-              <span class="text-red-600">
-                {{ formatPrice(overallSummary.total) }}
-              </span>
-            </div>
-
-          </div>
-          <div class="bg-white rounded-lg shadow-sm p-6">
-            <h3 class="font-semibold text-gray-900 mb-4">
-              Sản phẩm đã chọn ({{ totalSelected }})
-            </h3>
-
-            <div v-if="selectedItems.length === 0" class="text-gray-500 text-sm">
-              Bạn chưa chọn sản phẩm nào.
-            </div>
-
-            <div
-              v-for="item in selectedItems"
-              :key="item.cart_item_id"
-              class="flex items-center space-x-3 mb-3 border-b pb-3 last:border-b-0"
-            >
-              <img
-                :src="item.image_url"
-                :alt="item.title"
-                class="w-12 h-12 object-cover rounded border"
-              />
-
-              <div class="flex-1">
-                <p class="text-sm font-medium text-gray-900 line-clamp-1">
-                  {{ item.title }}
-                </p>
-                <p class="text-xs text-gray-500">x {{ item.quantity }}</p>
-              </div>
-
-              <span class="text-sm font-semibold text-gray-900">
-                {{ formatPrice(item.price * item.quantity) }}
-              </span>
             </div>
           </div>
         </div>
