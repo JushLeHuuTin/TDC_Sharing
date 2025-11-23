@@ -17,7 +17,7 @@ const props = defineProps({
 // --- STATE ---
 const filters = ref({ status: '', from_date: '', to_date: '', search: '' });
 const showModal = ref(false); // Modal Xác nhận
-const showDetailModal = ref(false); // Modal Chi tiết (QUAN TRỌNG)
+const showDetailModal = ref(false); // Modal Chi tiết
 const selectedOrder = ref(null);
 const modalAction = ref(''); 
 
@@ -25,6 +25,7 @@ const modalAction = ref('');
 const filteredOrders = computed(() => {
     const apiFilteredList = orders.value || [];
     if (!filters.value.search) return apiFilteredList;
+
     const searchTerm = filters.value.search.toLowerCase().trim();
     return apiFilteredList.filter(order => {
         const code = String(order.order_code || '').toLowerCase();
@@ -47,7 +48,7 @@ function handleApplyFilters() {
     orderStore.fetchOrders(activeFilters);
 }
 
-// Modal Xác nhận (Duyệt/Từ chối)
+// Modal Xác nhận
 function openConfirmationModal(action, order) {
     selectedOrder.value = order;
     modalAction.value = action;
@@ -77,17 +78,15 @@ async function handleConfirmAction() {
     closeModal();
 }
 
-// --- XỬ LÝ NÚT XEM (MỞ MODAL CHI TIẾT) ---
+// --- XỬ LÝ NÚT XEM (MỞ MODAL) ---
 async function handleViewOrder(orderId) {
-    // 1. Mở modal (hiện loading)
     showDetailModal.value = true;
-    // 2. Gọi API lấy chi tiết (đảm bảo store đã có hàm này)
     await orderStore.fetchOrderDetail(orderId);
 }
 
 function closeDetailModal() {
     showDetailModal.value = false;
-    orderStore.currentOrder = null; // Reset dữ liệu
+    orderStore.currentOrder = null;
 }
 
 // --- HELPER ---
@@ -104,7 +103,13 @@ function getStatusBadgeClass(status) {
 <template>
     <AppLayout>
         <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-            <!-- 1. BỘ LỌC TÌM KIẾM -->
+            
+            <!-- Lời chào Seller -->
+            <div class="mb-8">
+                <SellerWelcome />
+            </div>
+
+            <!-- BỘ LỌC TÌM KIẾM -->
             <div class="filter-card rounded-lg p-6 mb-8 table-shadow">
                  <h3 class="text-lg font-semibold text-gray-900 mb-4">Bộ lọc tìm kiếm</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -140,7 +145,7 @@ function getStatusBadgeClass(status) {
                  <div v-if="error" class="text-red-600 mt-4">{{ error }}</div>
             </div>
     
-            <!-- 2. BẢNG DỮ LIỆU -->
+            <!-- BẢNG DỮ LIỆU -->
             <div class="bg-white rounded-lg table-shadow overflow-hidden">
                 <div class="overflow-x-auto custom-scrollbar">
                     <table class="min-w-full divide-y divide-gray-200">
@@ -193,8 +198,6 @@ function getStatusBadgeClass(status) {
                                                 Từ chối
                                             </button>
                                         </template>
-                                        
-                                        <!-- NÚT XEM: Gọi hàm handleViewOrder, truyền ID -->
                                         <button @click="handleViewOrder(order.id || order.order_code)" class="action-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md">
                                             Xem
                                         </button>
@@ -207,29 +210,61 @@ function getStatusBadgeClass(status) {
             </div>
         </main>
     
-        <!-- 1. MODAL XÁC NHẬN -->
-        <div v-if="showModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
-                <div class="flex items-center mb-4">
-                    <h3 class="text-lg font-medium text-gray-900">Xác nhận hành động</h3>
-                </div>
-                <p class="text-sm text-gray-500 mb-6">
-                    Bạn có chắc chắn muốn 
-                    <strong v-if="modalAction === 'approve'" class="text-green-600">duyệt</strong>
-                    <strong v-if="modalAction === 'reject'" class="text-red-600">từ chối</strong>
-                    đơn hàng #{{ selectedOrder.order_code }}?
-                </p>
-                <div class="flex justify-end space-x-3">
-                    <button @click="closeModal" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-                        Hủy
-                    </button>
-                    <button @click="handleConfirmAction" 
-                            :class="[
-                                'px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md',
-                                modalAction === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'
-                            ]">
-                        Xác nhận
-                    </button>
+        <!-- 1. MODAL XÁC NHẬN (GIAO DIỆN ĐẸP - GIỐNG ẢNH) -->
+        <div v-if="showModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all scale-100">
+                <div class="p-6 text-center">
+                    <!-- Icon -->
+                    <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full mb-5"
+                         :class="modalAction === 'approve' ? 'bg-green-100' : 'bg-red-100'">
+                        <fa v-if="modalAction === 'approve'" :icon="['fas', 'check']" class="h-8 w-8 text-green-600" />
+                        <fa v-else :icon="['fas', 'times']" class="h-8 w-8 text-red-600" />
+                    </div>
+                    
+                    <!-- Tiêu đề -->
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">
+                        {{ modalAction === 'approve' ? 'Xác nhận đơn hàng' : 'Từ chối đơn hàng' }}
+                    </h3>
+                    
+                    <!-- Mô tả -->
+                    <p class="text-gray-500 mb-6">
+                        Bạn có chắc chắn muốn 
+                        <strong :class="modalAction === 'approve' ? 'text-green-600' : 'text-red-600'">
+                            {{ modalAction === 'approve' ? 'xác nhận' : 'từ chối' }}
+                        </strong> 
+                        đơn hàng này không?
+                    </p>
+
+                    <!-- Box thông tin đơn hàng -->
+                    <div class="bg-gray-50 rounded-lg p-4 text-left mb-6 border border-gray-100">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-gray-500 text-sm">Mã đơn hàng:</span>
+                            <span class="font-bold text-gray-800">#{{ selectedOrder.order_code }}</span>
+                        </div>
+                        <div class="flex justify-between mb-2">
+                            <span class="text-gray-500 text-sm">Khách hàng:</span>
+                            <span class="font-bold text-gray-800">{{ selectedOrder.customer_name }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500 text-sm">Giá trị:</span>
+                            <span class="font-bold text-blue-600">{{ selectedOrder.final_amount || selectedOrder.total_amount }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Nút bấm -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <button @click="closeModal" 
+                                class="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors">
+                            Hủy
+                        </button>
+                        <button @click="handleConfirmAction" 
+                                :class="[
+                                    'w-full py-3 px-4 text-white font-bold rounded-lg transition-colors shadow-md',
+                                    modalAction === 'approve' ? 'bg-green-600 hover:bg-green-700 shadow-green-200' : 'bg-red-600 hover:bg-red-700 shadow-red-200'
+                                ]">
+                            {{ modalAction === 'approve' ? 'Xác nhận' : 'Từ chối' }}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -237,12 +272,12 @@ function getStatusBadgeClass(status) {
         <!-- 2. MODAL CHI TIẾT ĐƠN HÀNG (GIAO DIỆN ĐẸP) -->
         <div v-if="showDetailModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
             <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
-                
+                <!-- ... (Giữ nguyên code modal chi tiết của bạn) ... -->
                 <!-- Header Modal -->
                 <div class="flex justify-between items-center px-6 py-4 border-b bg-white">
                     <h3 class="text-lg font-bold text-gray-800 flex items-center">
                         <fa :icon="['fas', 'file-invoice']" class="mr-2 text-gray-600" />
-                        Chi tiết đơn hàng #{{ currentOrder?.order_code }}
+                        Chi tiết đơn hàng {{ currentOrder?.order_code }}
                     </h3>
                     <button @click="closeDetailModal" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
                 </div>
@@ -291,7 +326,7 @@ function getStatusBadgeClass(status) {
                             <table class="w-full text-sm text-left">
                                 <thead class="bg-gray-50 text-gray-600 font-medium border-b">
                                     <tr>
-                                        <th class="p-3">Sản phẩm</th>
+                                        <th class="p-3 text-left">Sản phẩm</th>
                                         <th class="p-3 text-center">Số lượng</th>
                                         <th class="p-3 text-right">Đơn giá</th>
                                         <th class="p-3 text-right">Thành tiền</th>
@@ -305,27 +340,24 @@ function getStatusBadgeClass(status) {
                                         <td class="p-3 text-right font-bold text-gray-900">{{ item.subtotal }}</td>
                                     </tr>
                                 </tbody>
+                                <tfoot>
+                                    <tr class="bg-gray-50 font-bold">
+                                        <td colspan="3" class="p-3 text-right">Tổng cộng:</td>
+                                        <td class="p-3 text-right text-red-600 text-lg">{{ currentOrder.total_amount }}</td>
+                                    </tr>
+                                </tfoot>
                             </table>
-                        </div>
-
-                        <!-- Tổng tiền -->
-                        <div class="flex justify-end items-center pt-4 border-t border-gray-200">
-                            <span class="text-lg font-bold text-gray-700 mr-4">Tổng cộng:</span>
-                            <span class="text-2xl font-bold text-red-600">{{ currentOrder.total_amount }}</span>
                         </div>
                     </div>
                     
-                    <div v-else class="text-center py-10 text-red-500">
+                    <div v-else class="text-center text-red-500 py-10">
                         Không tìm thấy thông tin chi tiết.
                     </div>
                 </div>
 
                 <!-- Footer Modal -->
-                <div class="px-6 py-4 bg-gray-100 border-t flex justify-end space-x-3">
-                    <button @click="closeDetailModal" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 font-medium">Đóng</button>
-                    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium flex items-center">
-                        <fa :icon="['fas', 'print']" class="mr-2" /> In đơn hàng
-                    </button>
+                <div class="p-4 border-t bg-white text-right">
+                    <button @click="closeDetailModal" class="bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-700">Đóng</button>
                 </div>
             </div>
         </div>
@@ -333,7 +365,7 @@ function getStatusBadgeClass(status) {
 </template>
 
 <style scoped>
-/* Style như cũ */
+/* CSS giữ nguyên */
 .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
