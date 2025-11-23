@@ -176,11 +176,11 @@ router.beforeEach((to, from, next) => {
     const userIsLoggedIn = authStore.isLoggedIn;
     
     // --- BƯỚC 1: Xử lý Route Bắt buộc đăng nhập ---
-    // if (to.meta.requiresAuth && !userIsLoggedIn) {
-    //     // Nếu chưa đăng nhập, chuyển hướng đến trang Login
-    //     next({ name: 'login', query: { redirect: to.fullPath } });
-    //     return;
-    // }
+     if (to.meta.requiresAuth && !userIsLoggedIn) {
+         // Nếu chưa đăng nhập, chuyển hướng đến trang Login
+        next({ name: 'login', query: { redirect: to.fullPath } });
+         return;
+     }
     const requiredRoles = to.meta.roles;
 
     if (requiredRoles && userIsLoggedIn) {

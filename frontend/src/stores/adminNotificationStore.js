@@ -13,9 +13,6 @@ export const useAdminNotificationStore = defineStore('adminNotification', {
     }),
 
     actions: {
-        /**
-         * Lấy danh sách Thông báo (Tính năng 8)
-         */
         async fetchNotifications(filters = {}) {
             this.isLoading = true;
             this.error = null;
@@ -47,9 +44,6 @@ export const useAdminNotificationStore = defineStore('adminNotification', {
             }
         },
 
-        /**
-         * Xóa Thông báo (Tính năng 9)
-         */
         async deleteNotification(id) {
             this.isLoading = true;
             this.error = null;
@@ -60,7 +54,6 @@ export const useAdminNotificationStore = defineStore('adminNotification', {
                 const config = { headers: { 'Authorization': `Bearer ${token}` } };
                 await axios.delete(`${API_URL}/${id}`, config);
                 
-                // Xóa khỏi state (Nhanh hơn fetch)
                 this.notifications = this.notifications.filter(noti => noti.id !== id);
                 return true;
                 
@@ -73,10 +66,6 @@ export const useAdminNotificationStore = defineStore('adminNotification', {
             }
         },
 
-        /**
-         * Tạo Thông báo mới (Tính năng 6)
-         * SỬA LỖI: Tải lại danh sách sau khi tạo
-         */
         async createNotification(data) {
             this.isLoading = true;
             this.error = null;
@@ -88,7 +77,7 @@ export const useAdminNotificationStore = defineStore('adminNotification', {
                 const response = await axios.post(API_URL, data, config);
 
                 if (response.data && response.data.success) {
-                    // SỬA LỖI: Tải lại toàn bộ danh sách
+                    // Tạo xong thì tải lại danh sách ngay
                     await this.fetchNotifications(); 
                     return true;
                 } else {
@@ -97,7 +86,7 @@ export const useAdminNotificationStore = defineStore('adminNotification', {
                 }
             } catch (err) {
                 if (err.response && err.response.status === 422) {
-                    this.error = "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại (ví dụ: User ID có tồn tại?).";
+                    this.error = "Dữ liệu không hợp lệ (ID người dùng không tồn tại?).";
                 } else {
                     this.error = 'Lỗi khi tạo thông báo.';
                 }
@@ -108,10 +97,6 @@ export const useAdminNotificationStore = defineStore('adminNotification', {
             }
         },
 
-        /**
-         * Cập nhật Thông báo (Tính năng 7)
-         * SỬA LỖI: Tải lại danh sách sau khi sửa
-         */
         async updateNotification(id, data) {
             this.isLoading = true;
             this.error = null;
@@ -123,7 +108,7 @@ export const useAdminNotificationStore = defineStore('adminNotification', {
                 const response = await axios.put(`${API_URL}/${id}`, data, config);
 
                 if (response.data && response.data.success) {
-                    // SỬA LỖI: Tải lại toàn bộ danh sách
+                    // Sửa xong thì tải lại danh sách ngay
                     await this.fetchNotifications();
                     return true;
                 } else {
