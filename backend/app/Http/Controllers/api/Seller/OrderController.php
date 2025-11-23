@@ -84,18 +84,27 @@ class OrderController extends Controller
     /**
      * Reject an order.
      */
+   /**
+     * Reject an order.
+     * API để Seller từ chối đơn hàng.
+     */
     public function reject(Order $order): JsonResponse
     {
+        // 1. Kiểm tra quyền hạn (Gọi hàm reject trong Policy)
         $this->authorize('reject', $order);
 
         try {
+            // 2. Cập nhật trạng thái thành 'cancelled' (hoặc 'rejected' tùy ENUM của bạn)
             $order->status = 'cancelled';
             $order->save();
+
+            // 3. Tải lại thông tin để trả về
+            $freshOrder = $order->fresh()->load(['buyer', 'address', 'items.product']);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Đã từ chối đơn hàng thành công.',
-                'data'    => new OrderDetailResource($order->fresh())
+                'data'    => new OrderDetailResource($freshOrder)
             ]);
 
         } catch (\Exception $e) {

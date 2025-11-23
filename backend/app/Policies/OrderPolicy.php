@@ -54,18 +54,20 @@ class OrderPolicy
         })->exists();
         return $isOrderProcessing && $isSellerOfOrder;
     }
-
-    /**
-     * Determine whether the user can reject the model.
+/**
+     * Determine whether the user can reject the order.
      */
     public function reject(User $user, Order $order): bool
     {
-        // Logic tương tự như duyệt đơn
-        $isOrderProcessing = $order->status === 'processing';
+        // Điều kiện: Đơn hàng phải đang 'processing' hoặc 'pending'
+         $isOrderCancellable = in_array($order->status, ['processing', 'pending']);
+
+        // Điều kiện: Phải là người bán của đơn hàng đó
         $isSellerOfOrder = $order->items()->whereHas('product', function ($query) use ($user) {
             $query->where('user_id', $user->id);
         })->exists();
-        return $isOrderProcessing && $isSellerOfOrder;
+
+        return $isOrderCancellable && $isSellerOfOrder;
     }
 }
 
