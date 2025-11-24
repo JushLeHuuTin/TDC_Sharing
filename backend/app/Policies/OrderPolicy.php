@@ -47,7 +47,7 @@ class OrderPolicy
      */
     public function approve(User $user, Order $order): bool
     {
-        $isOrderProcessing = $order->status === 'processing';
+        $isOrderProcessing = $order->status === 'pending';
         $isSellerOfOrder = $order->items()->whereHas('product', function ($query) use ($user) {
             $query->where('user_id', $user->id);
         })->exists();

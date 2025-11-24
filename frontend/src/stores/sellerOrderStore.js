@@ -54,9 +54,7 @@ export const useSellerOrderStore = defineStore('sellerOrder', {
             try {
                 const config = { headers: { 'Authorization': `Bearer ${token}` } };
                 await axios.put(`${API_URL}/${orderId}/approve`, {}, config);
-                
-                const index = this.orders.findIndex(o => o.id == orderId || o.order_code == orderId);
-                if (index !== -1) this.orders[index].status = 'shipped'; 
+                this.fetchOrders(); 
                 return true;
             } catch (err) { return false; }
         },

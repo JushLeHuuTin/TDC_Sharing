@@ -59,11 +59,11 @@ class OrderController extends Controller
         $this->authorize('approve', $order);
 
         try {
-            $order->status = 'shipped'; // Giá trị hợp lệ trong DB của bạn
+            $order->status = 'processing';
             $order->save();
 
             // SỬA LỖI: Tải lại các mối quan hệ cần thiết cho OrderDetailResource
-            $freshOrder = $order->fresh()->load(['buyer', 'address', 'items.product']);
+            $freshOrder = $order->fresh()->load(['user', 'address', 'items.product']);
 
             return response()->json([
                 'success' => true,

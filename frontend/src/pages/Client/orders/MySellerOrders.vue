@@ -91,11 +91,11 @@ function closeDetailModal() {
 
 // --- HELPER ---
 function getStatusText(status) {
-    const statusMap = { 'pending': 'Chờ duyệt', 'processing': 'Chờ duyệt', 'approved': 'Đã duyệt', 'shipped': 'Đang giao', 'delivered': 'Đã giao', 'rejected': 'Đã hủy', 'cancelled': 'Đã hủy' };
+    const statusMap = { 'pending': 'Chờ duyệt', 'processing': 'Đã duyệt', 'shipped': 'Đang giao', 'delivered': 'Đã giao', 'rejected': 'Đã hủy', 'cancelled': 'Đã hủy' };
     return statusMap[status] || status;
 }
 function getStatusBadgeClass(status) {
-    const statusClassMap = { 'pending': 'status-pending', 'processing': 'status-pending', 'approved': 'status-approved', 'shipped': 'status-processing', 'delivered': 'status-approved', 'rejected': 'status-rejected', 'cancelled': 'status-rejected' };
+    const statusClassMap = { 'pending': 'status-pending', 'processing': 'status-approved', 'shipped': 'status-processing', 'delivered': 'status-approved', 'rejected': 'status-rejected', 'cancelled': 'status-rejected' };
     return statusClassMap[status] || 'bg-gray-200 text-gray-800';
 }
 </script>
@@ -190,7 +190,7 @@ function getStatusBadgeClass(status) {
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div class="flex space-x-2">
-                                        <template v-if="order.status === 'processing'">
+                                        <template v-if="order.status === 'pending'">
                                             <button @click="openConfirmationModal('approve', order)" class="action-btn bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md">
                                                 Duyệt
                                             </button>
