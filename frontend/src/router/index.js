@@ -10,7 +10,7 @@ import CategoriesPage from '@/components/Admin/Components/CategoriesPage.vue';
 import DevelopingPage from '@/components/Admin/Components/DevelopingPage.vue';
 import UsersPage from '@/components/Admin/Components/UsersPage.vue';
 import ProductsPage from '@/components/Admin/Components/ProductsPage.vue';
-import OrdersPage from '@/components/Admin/Components/OrdersPage.vue';
+import OrdersPage from '@/components/Admin/Components/OrdersPage.vue'; // (Import này đã có sẵn, rất tốt)
 // import BlogPage from '@/components/Admin/Components/BlogPage.vue';
 // import ReportsPage from '@/components/Admin/Components/ReportsPage.vue';
 import ReviewsPage from '@/components/Admin/Components/ReviewsPage.vue';
@@ -89,20 +89,20 @@ const router = createRouter({
     {
       path: '/checkout/payment',
       name: 'checkout-payment',
-      component: PaymentView, 
+      component: PaymentView,
       meta: {
         progress: 3
       }
     },
     {
-        path: '/checkout/success',
-        name: 'checkout-success', 
-        component: () => import('@/pages/Client/checkout/CheckoutSuccess.vue'),
+      path: '/checkout/success',
+      name: 'checkout-success',
+      component: () => import('@/pages/Client/checkout/CheckoutSuccess.vue'),
     },
     {
-        path: '/checkout/fail',
-        name: 'checkout-fail',
-        component: () => import('@/pages/Client/checkout/CheckoutFail.vue'),
+      path: '/checkout/fail',
+      name: 'checkout-fail',
+      component: () => import('@/pages/Client/checkout/CheckoutFail.vue'),
     },
     {
       path: '/products/my',
@@ -155,7 +155,7 @@ const router = createRouter({
         {
           path: 'orders',
           name: 'admin.orders',
-          component: DevelopingPage
+          component: OrdersPage // <--- TÔI ĐÃ SỬA DÒNG NÀY CHO BẠN
         },
 
         // Quản lý blog
@@ -209,8 +209,46 @@ const router = createRouter({
           name: 'admin.profile',
           component: DevelopingPage
         },
+        // Truy cập trang admin
+        // {
+        //   path: '/login',
+        //   name: 'login',
+        //   component: () => import('@/pages/Client/LoginPage.vue'),
+        //   meta: { title: 'admin' }
+        // },
+        // {
+        //   path: '/products/create',
+        //   name: 'products.create', // ⬅️ Tên route bạn sử dụng trong code
+        //   component: ProductCreatePage,
+        //   meta: {
+        //     title: 'Đăng bán sản phẩm',
+        //     requiresAuth: true,
+        //     roles: ['customer', 'admin']
+        //   }
+        // },
+       
+
       ]
-    }
+    },
+     {
+          path: '/orders',
+          name: 'orders.view', // ⬅️ Tên route bạn sử dụng trong code
+          component: () => import('@/pages/Client/orders/MySellerOrders.vue'),
+          meta: {
+            title: 'Đăng bán sản phẩm',
+            requiresAuth: true,
+            roles: ['customer', 'admin']
+          }
+        },
+    // {
+    //   path: '/admin',
+    //   component: AdminLayout,
+    //   // Đặt tên cho route chính (sử dụng trong watch của AdminLayout)
+    //   name: 'admin',
+    //   redirect: '/admin/dashboard',
+    //   meta: { requiresAuth: true, roles: ['admin', 'super_admin'] },
+
+    // }
   ]
 })
 
@@ -246,6 +284,37 @@ router.beforeEach((to, from, next) => {
     return;
   }
   next();
+
+  //     document.title = to.meta.title || 'StudentMarket';
+
+  //     const authStore = useAuthStore();
+  //     const userRole = authStore.user?.role; // Lấy role hiện tại
+  //     const userIsLoggedIn = authStore.isLoggedIn;
+  //     
+  //     // --- BƯỚC 1: Xử lý Route Bắt buộc đăng nhập ---
+  //      if (to.meta.requiresAuth && !userIsLoggedIn) {
+  //          // Nếu chưa đăng nhập, chuyển hướng đến trang Login
+  //         next({ name: 'login', query: { redirect: to.fullPath } });
+  //          return;
+  //      }
+  //     const requiredRoles = to.meta.roles;
+
+  //     if (requiredRoles && userIsLoggedIn) {
+  //         if (!requiredRoles.includes(userRole)) {
+  //           
+  //             next({ name: 'home' }); 
+  //             return;
+  //         }
+  //     }
+  //     if ((to.name === 'login' || to.name === 'register') && userIsLoggedIn) {
+  //         if (userRole === 'admin' || userRole === 'super_admin') {
+  //             next({ name: 'admin.dashboard' }); 
+  //         } else {
+  //             next({ name: 'home' }); 
+  //         }
+  //         return;
+  //     }
+  //     next();
 });
 
 export default router;

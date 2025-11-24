@@ -19,7 +19,6 @@ class OrderPolicy
      */
     public function viewAnySeller(User $user): bool
     {
-        // Logic cho C2C: "Người bán" là người dùng đã đăng ít nhất một sản phẩm.
         return $user->products()->exists();
     }
 
@@ -32,24 +31,26 @@ class OrderPolicy
      */
     public function approve(User $user, Order $order): bool
     {
-        $isOrderProcessing = $order->status === 'processing';
+        $isOrderProcessing = $order->status === 'pending';
         $isSellerOfOrder = $order->items()->whereHas('product', function ($query) use ($user) {
             $query->where('user_id', $user->id);
         })->exists();
         return $isOrderProcessing && $isSellerOfOrder;
     }
-
-    /**
-     * Determine whether the user can reject the model.
+/**
+     * Determine whether the user can reject the order.
      */
     public function reject(User $user, Order $order): bool
     {
-        // Logic tương tự như duyệt đơn
-        $isOrderProcessing = $order->status === 'processing';
+        // Điều kiện: Đơn hàng phải đang 'processing' hoặc 'pending'
+         $isOrderCancellable = in_array($order->status, ['processing', 'pending']);
+
+        // Điều kiện: Phải là người bán của đơn hàng đó
         $isSellerOfOrder = $order->items()->whereHas('product', function ($query) use ($user) {
             $query->where('user_id', $user->id);
         })->exists();
-        return $isOrderProcessing && $isSellerOfOrder;
+
+        return $isOrderCancellable && $isSellerOfOrder;
     }
     public function view(User $user, Order $order): Response // Thay đổi kiểu trả về thành Response
     {
@@ -77,7 +78,7 @@ class OrderPolicy
     }
     public function viewAny(User $user): bool
     {
-        return $user->role === 'customer' || $user->role === 'seller';
+        return $user->role === 'customer' || $user->role === 'admin';
     }
     public function create(User $user): bool
     {

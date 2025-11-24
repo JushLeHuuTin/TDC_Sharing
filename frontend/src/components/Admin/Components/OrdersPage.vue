@@ -1,287 +1,235 @@
 <script setup>
-import { computed } from 'vue';
-import { RouterLink } from 'vue-router'; 
+import { ref, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useAdminOrderStore } from '@/stores/adminOrderStore'; 
+import { useRouter } from 'vue-router';
 
-// Props nhận từ RouterView trong AdminLayout
-const props = defineProps({
-    categories: Array,
-    getFaIconArray: Function,
-    showToast: Function,
+// --- 1. KHỞI TẠO STORE & ROUTER ---
+const orderStore = useAdminOrderStore();
+const { orders, isLoading, error, paginationData } = storeToRefs(orderStore);
+const router = useRouter();
+
+// --- 2. STATE CỤC BỘ (BỘ LỌC) ---
+const filters = ref({
+    status: '',
+    from_date: '',
+    to_date: '',
+    page: 1
 });
 
-// --- COMPUTED PROPERTIES ---
-
-const categoryStats = computed(() => {
-    const categoriesArray = props.categories || [];
-    const level1Count = categoriesArray.filter(c => c.level === 1).length;
-    const level2Count = categoriesArray.filter(c => c.level === 2).length;
-    const totalProducts = categoriesArray.reduce((sum, c) => sum + c.product_count, 0);
-    return {
-        totalCategories: categoriesArray.length,
-        level1Categories: level1Count,
-        level2Categories: level2Count,
-        activeProducts: totalProducts.toLocaleString('en-US')
-    };
+// --- 3. LIFECYCLE ---
+onMounted(() => {
+    orderStore.fetchOrders();
 });
 
-const categoryTreeData = computed(() => {
-    const categoriesArray = props.categories || []; ``
-    const level1Categories = categoriesArray.filter(c => c.level === 1).sort((a, b) => a.order - b.order);
-    const tree = [];
-    level1Categories.forEach(category => {
-        tree.push(category);
-        categoriesArray
-            .filter(c => c.parent_id === category.id)
-            .sort((a, b) => a.order - b.order)
-            .forEach(subCategory => {
-                tree.push(subCategory);
-            });
-    });
-    return tree;
-});
-
-const selectedCategoryInfo = computed(() => {
-    if (!props.selectedCategoryId) return null;
-    const category = categoriesArray.find(c => c.id === props.selectedCategoryId);
-    if (!category) return null;
-
-    const parentCategory = category.parent_id ? categoriesArray.find(c => c.id === category.parent_id) : null;
-    const subCategories = categoriesArray.filter(c => c.parent_id === category.id);
+// --- 4. METHODS (XỬ LÝ LOGIC) ---
+function handleApplyFilters() {
+    filters.value.page = 1; 
+    const activeFilters = {};
+    if (filters.value.status) activeFilters.status = filters.value.status;
+    if (filters.value.from_date) activeFilters.from_date = filters.value.from_date;
+    if (filters.value.to_date) activeFilters.to_date = filters.value.to_date;
     
-    return { ...category, parentCategory, subCategories };
-});
-
-// --- HANDLERS DUMMY (Sử dụng showToast) ---
-function expandAll() { props.showToast('Đã mở rộng tất cả danh mục!', 'info'); }
-function collapseAll() { props.showToast('Đã thu gọn tất cả danh mục!', 'info'); }
-function importCategories() { props.showToast('Tính năng import đang được phát triển!', 'info'); }
-function exportCategories() { props.showToast('Đã xuất danh sách danh mục!', 'success'); }
-function viewProducts(id) { 
-    const category = categoriesArray.find(c => c.id === id);
-    props.showToast(`Chuyển đến sản phẩm của "${category.name}"...`, 'info'); 
+    orderStore.fetchOrders(activeFilters);
 }
 
+// Nút placeholder
+function handleViewOrder(orderId) {
+    alert(`(Chưa code) Xem chi tiết đơn hàng ID: ${orderId}`);
+}
+
+// Nút placeholder
+function handleEditOrder(orderId) {
+    alert(`(Chưa code) Sửa đơn hàng ID: ${orderId}`);
+}
+
+// Nút placeholder
+function handleDeleteOrder(orderId) {
+    alert(`(Chưa code) Xóa đơn hàng ID: ${orderId}`);
+}
+
+function changePage(page) {
+    if (!paginationData.value || page < 1 || page > paginationData.value.last_page) return;
+    filters.value.page = page;
+    orderStore.fetchOrders(filters.value);
+}
+
+// --- 5. HELPER FUNCTIONS ---
+function getStatusText(status) {
+    const statusMap = {
+        'pending': 'Chờ duyệt',
+        'processing': 'Chờ duyệt',
+        'approved': 'Đã duyệt',
+        'shipped': 'Đang giao',
+        'delivered': 'Đã giao',
+        'rejected': 'Đã hủy',
+        'cancelled': 'Đã hủy'
+    };
+    return statusMap[status] || status;
+}
+
+function getStatusBadgeClass(status) {
+    const statusClassMap = {
+        'pending': 'status-pending',
+        'processing': 'status-pending',
+        'approved': 'status-approved',
+        'shipped': 'status-processing',
+        'delivered': 'status-approved',
+        'rejected': 'status-rejected',
+        'cancelled': 'status-rejected'
+    };
+    return statusClassMap[status] || 'bg-gray-200 text-gray-800';
+}
 </script>
 
 <template>
-    <div class="page-header">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><RouterLink to="/admin/dashboard">Dashboard</RouterLink></li>
-                        <li class="breadcrumb-item active" aria-current="page">Quản lý danh mục</li>
-                    </ol>
+    <div class="page-container p-6"> 
+        <h2 class="text-2xl font-semibold text-gray-800 mb-6">Quản lý Đơn hàng (Admin)</h2>
+
+        <div class="filter-card rounded-lg p-6 mb-8 table-shadow">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Bộ lọc</h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label> 
+                    <select v-model="filters.status" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Tất cả</option>
+                        <option value="processing">Chờ duyệt</option>
+                        <option value="pending">Chờ duyệt (Pending)</option>
+                        <option value="shipped">Đang giao</option>
+                        <option value="delivered">Đã giao</option>
+                        <option value="cancelled">Đã hủy</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Từ ngày</label> 
+                    <input v-model="filters.from_date" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Đến ngày</label> 
+                    <input v-model="filters.to_date" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex items-end">
+                    <button @click="handleApplyFilters" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200 ease-in-out">
+                        <span v-if="isLoading">Đang tải...</span>
+                        <span v-else>Áp dụng</span>
+                    </button>
+                </div>
+            </div>
+            <div v-if="error" class="text-red-600 mt-4">{{ error }}</div>
+        </div>
+
+        <div class="bg-white rounded-lg table-shadow overflow-hidden">
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mã đơn</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Khách hàng</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Seller</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tổng tiền</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày tạo</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr v-if="isLoading">
+                            <td colspan="7" class="p-6 text-center text-gray-500">Đang tải dữ liệu...</td>
+                        </tr>
+                        <tr v-else-if="!orders || orders.length === 0">
+                            <td colspan="7" class="p-6 text-center text-gray-500">Không tìm thấy đơn hàng nào.</td>
+                        </tr>
+                        
+                        <tr v-for="order in orders" :key="order.order_id" class="table-row">
+                            <td class="px-6 py-4">
+                                <div class="text-sm font-medium text-gray-900">#{{ order.order_id }}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900">{{ order.customer_name || 'N/A' }}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900">{{ order.seller_name || 'N/A' }}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm font-semibold text-gray-900">{{ order.total_price }}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="status-badge" :class="getStatusBadgeClass(order.status)">
+                                    {{ getStatusText(order.status) }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-500">{{ order.order_date }}</div>
+                            </td>
+                            <td class="px-6 py-4 text-sm font-medium">
+                                <div class="flex space-x-2">
+                                    <button @click="handleViewOrder(order.order_id)" class="action-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md">
+                                        Xem
+                                    </button>
+                                    <button @click="handleEditOrder(order.order_id)" class="action-btn bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-md">
+                                        Sửa
+                                    </button>
+                                    <button @click="handleDeleteOrder(order.order_id)" class="action-btn bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md">
+                                        Xóa
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="bg-white px-6 py-3 border-t border-gray-200" v-if="!isLoading && paginationData && paginationData.last_page > 1">
+                 <nav class="flex justify-center">
+                    <ul class="flex items-center -space-x-px h-8 text-sm">
+                        </ul>
                 </nav>
-                <h2 class="mb-0">Quản lý danh mục sản phẩm</h2>
-                <p class="text-muted mb-0">Tổ chức và quản lý danh mục theo cấp độ</p>
-            </div>
-            <button class="btn btn-primary" @click="props.onAddCategory">
-                <fa :icon="['fas', 'plus']" class="me-2" />Thêm danh mục
-            </button>
-        </div>
-    </div>
-
-    <div class="row mb-4">
-        <div class="col-md-3 mb-3">
-            <div class="card stats-card bg-primary text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div><h3 class="mb-1">{{ categoryStats.totalCategories }}</h3><p class="mb-0 opacity-75">Tổng danh mục</p></div>
-                        <fa :icon="['fas', 'tags']" class="fa-2x opacity-75" />
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card stats-card bg-success text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div><h3 class="mb-1">{{ categoryStats.level1Categories }}</h3><p class="mb-0 opacity-75">Danh mục cấp 1</p></div>
-                        <fa :icon="['fas', 'layer-group']" class="fa-2x opacity-75" />
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card stats-card bg-info text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div><h3 class="mb-1">{{ categoryStats.level2Categories }}</h3><p class="mb-0 opacity-75">Danh mục cấp 2</p></div>
-                        <fa :icon="['fas', 'sitemap']" class="fa-2x opacity-75" />
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card stats-card bg-warning text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div><h3 class="mb-1">{{ categoryStats.activeProducts }}</h3><p class="mb-0 opacity-75">Sản phẩm đang bán</p></div>
-                        <fa :icon="['fas', 'box']" class="fa-2x opacity-75" />
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-8">
-            <div class="category-tree">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="mb-0">Cây danh mục</h5>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-outline-primary btn-sm" @click="expandAll">
-                            <fa :icon="['fas', 'expand-alt']" class="me-1" />Mở rộng tất cả
-                        </button>
-                        <button class="btn btn-outline-secondary btn-sm" @click="collapseAll">
-                            <fa :icon="['fas', 'compress-alt']" class="me-1" />Thu gọn tất cả
-                        </button>
-                    </div>
-                </div>
-                
-                <div id="categoryTree">
-                    <div 
-                        v-for="category in categoryTreeData" 
-                        :key="category.id"
-                        :class="['category-item', `category-level-${category.level}`, { 'border-primary bg-light': selectedCategoryId === category.id }]" 
-                        @click="props.onSelectCategory(category.id)"
-                    >
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center">
-                                <fa :icon="props.getFaIconArray(category.icon)" class="me-3" :style="{ color: category.color }" />
-                                <div>
-                                    <h6 class="mb-1">{{ category.name }}</h6>
-                                    <small class="text-muted">
-                                        {{ category.product_count }} sản phẩm
-                                        <template v-if="!category.active"> • <span class="text-danger">Đã tắt</span></template>
-                                    </small>
-                                </div>
-                            </div>
-                            
-                            <div class="category-actions">
-                                <div class="btn-group btn-group-sm">
-                                    <button class="btn btn-outline-primary" @click.stop="props.onEditCategory(category.id)" title="Chỉnh sửa">
-                                        <fa :icon="['fas', 'edit']" />
-                                    </button>
-                                    <template v-if="category.level === 1">
-                                        <button class="btn btn-outline-success" @click.stop="props.onAddSubCategory(category.id)" title="Thêm danh mục con">
-                                            <fa :icon="['fas', 'plus']" />
-                                        </button>
-                                    </template>
-                                    <button class="btn btn-outline-danger" @click.stop="props.onDeleteCategory(category.id)" title="Xóa">
-                                        <fa :icon="['fas', 'trash']" />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">Thông tin danh mục</h6>
-                </div>
-                <div class="card-body" id="categoryInfo">
-                    <template v-if="selectedCategoryInfo">
-                        <div class="text-center mb-3">
-                            <fa :icon="props.getFaIconArray(selectedCategoryInfo.icon)" class="fa-3x mb-2" :style="{ color: selectedCategoryInfo.color }" />
-                            <h5>{{ selectedCategoryInfo.name }}</h5>
-                            <span class="badge" :class="selectedCategoryInfo.active ? 'bg-success' : 'bg-secondary'">
-                                {{ selectedCategoryInfo.active ? 'Đang hoạt động' : 'Đã tắt' }}
-                            </span>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <strong>Mô tả:</strong>
-                            <p class="text-muted mb-0">{{ selectedCategoryInfo.description || 'Chưa có mô tả' }}</p>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-6">
-                                <strong>Cấp độ:</strong>
-                                <p class="mb-0">Cấp {{ selectedCategoryInfo.level }}</p>
-                            </div>
-                            <div class="col-6">
-                                <strong>Thứ tự:</strong>
-                                <p class="mb-0">{{ selectedCategoryInfo.order }}</p>
-                            </div>
-                        </div>
-                        <template v-if="selectedCategoryInfo.parentCategory">
-                            <div class="mb-3">
-                                <strong>Danh mục cha:</strong>
-                                <p class="mb-0">
-                                    <fa :icon="getFaIconArray(selectedCategoryInfo.parentCategory.icon)" class="me-1" />
-                                    {{ selectedCategoryInfo.parentCategory.name }}
-                                </p>
-                            </div>
-                        </template>
-                        <div class="mb-3">
-                            <strong>Số sản phẩm:</strong>
-                            <p class="mb-0 text-primary fw-bold">{{ selectedCategoryInfo.product_count }} sản phẩm</p>
-                        </div>
-                        
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-primary btn-sm" @click="props.onEditCategory(selectedCategoryInfo.id)">
-                                <fa :icon="['fas', 'edit']" class="me-2" />Chỉnh sửa
-                            </button>
-                            <template v-if="selectedCategoryInfo.level === 1">
-                                <button class="btn btn-success btn-sm" @click="props.onAddSubCategory(selectedCategoryInfo.id)">
-                                    <fa :icon="['fas', 'plus']" class="me-2" />Thêm danh mục con
-                                </button>
-                            </template>
-                            <button class="btn btn-outline-info btn-sm" @click="viewProducts(selectedCategoryInfo.id)">
-                                <fa :icon="['fas', 'box']" class="me-2" />Xem sản phẩm
-                            </button>
-                        </div>
-                    </template>
-                    <div v-else class="text-center text-muted py-4">
-                        <fa :icon="['fas', 'info-circle']" class="fa-3x mb-3" />
-                        <p>Chọn một danh mục để xem thông tin chi tiết</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h6 class="mb-0">Thao tác nhanh</h6>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-primary" @click="props.onAddCategory">
-                            <fa :icon="['fas', 'plus']" class="me-2" />Thêm danh mục mới
-                        </button>
-                        <button class="btn btn-outline-info" @click="importCategories">
-                            <fa :icon="['fas', 'file-import']" class="me-2" />Import danh mục
-                        </button>
-                        <button class="btn btn-outline-success" @click="exportCategories">
-                            <fa :icon="['fas', 'file-export']" class="me-2" />Export danh mục
-                        </button>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 </template>
 
 <style scoped>
-/* (Giữ lại CSS cho các thành phần quản lý danh mục) */
-.category-tree {
-    background: white;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+/* (Giữ nguyên CSS của bạn) */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px; height: 8px;
 }
-.category-item {
-    padding: 10px 15px;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    margin-bottom: 8px;
-    background: white;
-    transition: all 0.3s ease;
-    cursor: pointer;
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f5f9; border-radius: 4px;
 }
-/* ... (Các style khác: .category-level-1, .category-actions) ... */
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1; border-radius: 4px;
+}
+.table-shadow {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+.filter-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid #e2e8f0;
+}
+.status-badge {
+    font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.75rem;
+    border-radius: 9999px; text-transform: uppercase;
+}
+.status-pending {
+    background-color: #fef3c7; color: #92400e;
+}
+.status-approved {
+    background-color: #d1fae5; color: #065f46;
+}
+.status-rejected {
+    background-color: #fee2e2; color: #991b1b;
+}
+.status-processing {
+    background-color: #dbeafe; color: #1e40af;
+}
+.action-btn {
+    transition: all 0.2s ease-in-out; font-weight: 500; font-size: 0.875rem;
+}
+.action-btn:hover {
+    transform: translateY(-1px);
+}
+.table-row:hover {
+    background-color: #f8fafc;
+}
 </style>

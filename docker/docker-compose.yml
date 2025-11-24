@@ -11,10 +11,8 @@ services:
       - ../backend:/var/www/html
     ports:
       - "8000:80"
-    # SỬA LỖI: Dùng cú pháp array đơn giản (để tránh lỗi invalid type)
     depends_on:
       - db
-    # THÊM: command để chờ database khởi động (thay thế condition: service_healthy)
     command: ["/bin/bash", "-c", "sleep 30 && apache2-foreground"]
     networks:
       - laravel_net

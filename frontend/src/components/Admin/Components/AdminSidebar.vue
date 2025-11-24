@@ -1,9 +1,6 @@
 <script setup>
-import { RouterLink, useRoute } from 'vue-router'; // ⬅️ Import RouterLink và useRoute
+import { RouterLink, useRoute } from 'vue-router'; // ⬅️ Chỉ cần 2 cái này
 
-// const emit = defineEmits(['navigate']);
-
-// Dữ liệu menuItems (Đã chuyển thành route paths)
 const menuItems = [
     { name: 'Dashboard', route: '/admin', page: 'dashboard', icon: ['fas', 'tachometer-alt'] },
     { name: 'Quản lý người dùng', route: '/admin/users', page: 'users', icon: ['fas', 'users'] },
@@ -21,10 +18,7 @@ const menuItems = [
     { name: 'Đăng xuất', route: '/logout', page: 'logout', icon: ['fas', 'sign-out-alt'], class: 'text-danger' },
 ];
 
-// const handleClick = (pageName) => {
-//     emit('navigate', pageName); 
-// };
-
+// Đã xóa hàm handleClick và emit bị comment
 </script>
 
 <template>
@@ -42,13 +36,14 @@ const menuItems = [
             
             <ul class="nav flex-column flex-grow-1">
                 <li v-for="item in menuItems" :key="item.page" class="nav-item">
+                    
                     <RouterLink 
                         :to="item.route" 
                         :class="['nav-link', item.class]" 
-                        @click="handleClick(item.page)"
                     >
                         <fa :icon="item.icon" />{{ item.name }}
                     </RouterLink>
+                    
                 </li>
             </ul>
         </div>
@@ -56,9 +51,7 @@ const menuItems = [
 </template>
 
 <style scoped>
-/* ... (CSS Sidebar từ AdminLayout gốc) ... */
-
-/* Thêm lại các CSS đã chuyển từ AdminLayout */
+/* GIỮ NGUYÊN 100% CSS CỦA BẠN */
 .sidebar {
     position: fixed;
     top: 0;
@@ -85,7 +78,6 @@ const menuItems = [
     transform: translateX(5px);
 }
 
-/* Kích hoạt class active bằng Vue Router's 'router-link-active' */
 .sidebar .nav-link.router-link-active {
     background-color: rgba(255, 255, 255, 0.2);
     color: white;

@@ -21,7 +21,7 @@ class OrderController extends Controller
 
         // 2. Eager load các mối quan hệ để tối ưu query
         // Lấy đơn hàng kèm thông tin: người mua, các mục trong đơn, sản phẩm và người bán sản phẩm đó
-        $ordersQuery = Order::with(['buyer', 'items.product.seller'])->latest();
+        $ordersQuery = Order::with(['user', 'items.product.seller'])->latest();
 
         // 3. Phân trang kết quả
         $orders = $ordersQuery->paginate(15);

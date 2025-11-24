@@ -32,10 +32,10 @@ class OrderResource extends JsonResource
 
         return [
             'order_id'      => $this->id,
-            'customer_name' => $this->whenLoaded('buyer', $this->buyer->full_name ?? 'Khách hàng không xác định'),
-            'seller_name'   => $sellerNames,
+            'customer_name' => $this->whenLoaded('user', $this->user->full_name ?? 'Khách hàng không xác định'),
+            'seller_name'   => $this->whenLoaded('seller', $this->seller->full_name ?? 'Khách hàng không xác định'),
             'products'      => $productNames,
-            'total_price'   => number_format($this->final_amount, 0, ',', '.') . ' đ',
+            'total_price'   => number_format($this->total_amount, 0, ',', '.') . ' đ',
             'status'        => $this->status,
             'order_date'    => $this->created_at ? $this->created_at->format('d/m/Y H:i') : '--',
         ];

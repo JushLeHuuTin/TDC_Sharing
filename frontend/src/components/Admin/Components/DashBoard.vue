@@ -1,27 +1,23 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { RouterLink } from 'vue-router'; 
+import { ref, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useDashboardStore } from '@/stores/dashboardStore';
 
-// --- PROPS VÀ UTILITY ---
+// --- 1. KHỞI TẠO STORE ---
+const dashboardStore = useDashboardStore();
+const { stats, isLoading } = storeToRefs(dashboardStore);
+
+// --- PROPS ---
 const props = defineProps({
     showToast: Function,
 });
 
-// --- STATE CỤC BỘ ---
-const stats = ref({
-    totalUsers: '1,234',
-    totalProducts: '5,678',
-    totalOrders: '892',
-    revenue: '45.2M'
-});
+// --- 2. DỮ LIỆU GIẢ (Cho biểu đồ & bảng) ---
 const recentOrders = ref([]);
 const newUsers = ref([]);
 const chartData = ref(null);
 
-// --- DỮ LIỆU MẪU VÀ LOGIC LOAD ---
-
 function loadRecentOrders() {
-    // Logic giả định tải dữ liệu đơn hàng gần đây
     recentOrders.value = [
         { id: 1001, customer: 'Minh Anh', total: '150,000', status: 'Delivered' },
         { id: 1002, customer: 'Văn Bình', total: '45,000', status: 'Processing' },
@@ -30,20 +26,16 @@ function loadRecentOrders() {
 }
 
 function loadNewUsers() {
-    // Logic giả định tải dữ liệu người dùng mới
     newUsers.value = [
         { id: 10, name: 'Nguyễn B', joinDate: '2025-10-30', university: 'ĐH Quốc gia', avatar: 'https://ui-avatars.io/api/?name=Nguyen+B&background=0d6efd&color=fff' },
         { id: 11, name: 'Trần C', joinDate: '2025-10-30', university: 'ĐH Bách Khoa', avatar: 'https://ui-avatars.io/api/?name=Tran+C&background=198754&color=fff' },
-        { id: 12, name: 'Lý D', joinDate: '2025-10-29', university: 'ĐH Kinh tế', avatar: 'https://ui-avatars.io/api/?name=Ly+D&background=fd7e14&color=fff' },
     ];
 }
 
 function createRevenueChart() {
-    // Khởi tạo biểu đồ (Cần thư viện Chart.js được import global)
-    const ctx = document.getElementById('revenueChart');
+     const ctx = document.getElementById('revenueChart');
     if (!ctx) return;
     
-    // Giả định Chart.js đã được tải global
     if (window.Chart) {
         chartData.value = new window.Chart(ctx, {
             type: 'line',
@@ -68,30 +60,24 @@ function createRevenueChart() {
     }
 }
 
-function loadDashboard() {
+function loadLocalData() {
     loadRecentOrders();
     loadNewUsers();
-    
-    // Phải chờ DOM load xong mới tạo chart
-    setTimeout(createRevenueChart, 100); 
-    props.showToast('Dashboard đã được tải.', 'info');
+    setTimeout(createRevenueChart, 100);
 }
 
-// --- ACTION HANDLERS ---
+// --- 3. CÁC HÀM XỬ LÝ SỰ KIỆN ---
 function refreshDashboard() {
-    // Hủy biểu đồ cũ nếu tồn tại
-    if (chartData.value) {
-        chartData.value.destroy();
-    }
-    loadDashboard();
-    props.showToast('Đang làm mới dữ liệu...', 'info');
+    if (chartData.value) chartData.value.destroy();
+    dashboardStore.fetchDashboardStats();
+    loadLocalData();
+    // props.showToast('Đang làm mới dữ liệu...', 'info'); // Tạm thời comment nếu props.showToast bị null
 }
 
 function exportReport() {
-    props.showToast('Xuất báo cáo đang được tiến hành...', 'success');
+    // props.showToast('Xuất báo cáo đang được tiến hành...', 'success'); // Tạm thời comment nếu props.showToast bị null
 }
 
-// Hàm helper để định dạng trạng thái
 function getStatusBadge(status) {
     switch (status) {
         case 'Delivered': return 'bg-success';
@@ -101,9 +87,10 @@ function getStatusBadge(status) {
     }
 }
 
-// --- LIFECYCLE ---
+// --- 4. LIFECYCLE ---
 onMounted(() => {
-    loadDashboard();
+    dashboardStore.fetchDashboardStats();
+    loadLocalData();
 });
 </script>
 
@@ -131,51 +118,49 @@ onMounted(() => {
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h3 class="mb-1">{{ stats.totalUsers }}</h3>
+                            <h3 class="mb-1">{{ stats.total_users }}</h3>
                             <p class="mb-0 opacity-75">Tổng người dùng</p>
-                            <small class="opacity-75">+12% so với tháng trước</small>
                         </div>
                         <fa :icon="['fas', 'users']" class="fa-2x opacity-75" />
                     </div>
                 </div>
             </div>
         </div>
+        
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card stats-card bg-success text-white">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h3 class="mb-1">{{ stats.totalProducts }}</h3>
+                            <h3 class="mb-1">{{ stats.total_products }}</h3>
                             <p class="mb-0 opacity-75">Tổng sản phẩm</p>
-                            <small class="opacity-75">+8% so với tháng trước</small>
                         </div>
                         <fa :icon="['fas', 'box']" class="fa-2x opacity-75" />
                     </div>
                 </div>
             </div>
         </div>
+        
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card stats-card bg-warning text-white">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h3 class="mb-1">{{ stats.totalOrders }}</h3>
+                            <h3 class="mb-1">{{ stats.total_orders }}</h3>
                             <p class="mb-0 opacity-75">Đơn hàng tháng này</p>
-                            <small class="opacity-75">+15% so với tháng trước</small>
                         </div>
                         <fa :icon="['fas', 'shopping-cart']" class="fa-2x opacity-75" />
                     </div>
                 </div>
             </div>
         </div>
+        
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card stats-card bg-info text-white">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h3 class="mb-1">{{ stats.revenue }}</h3>
-                            <p class="mb-0 opacity-75">Doanh thu (VNĐ)</p>
-                            <small class="opacity-75">+22% so với tháng trước</small>
+                            <h3 class="mb-1">45.2M</h3> <p class="mb-0 opacity-75">Doanh thu (VNĐ)</p>
                         </div>
                         <fa :icon="['fas', 'chart-line']" class="fa-2x opacity-75" />
                     </div>
@@ -197,47 +182,11 @@ onMounted(() => {
         </div>
         <div class="col-lg-4">
             <div class="card shadow-sm">
-                <div class="card-header bg-white">
+                 <div class="card-header bg-white">
                     <h5 class="mb-0">Danh mục bán chạy</h5>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <small>Điện tử - Công nghệ</small>
-                            <small>35%</small>
-                        </div>
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar bg-primary" style="width: 35%"></div>
-                        </div>
                     </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <small>Sách & Học tập</small>
-                            <small>28%</small>
-                        </div>
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar bg-success" style="width: 28%"></div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <small>Thời trang</small>
-                            <small>22%</small>
-                        </div>
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar bg-warning" style="width: 22%"></div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <small>Đồ gia dụng</small>
-                            <small>15%</small>
-                        </div>
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar bg-info" style="width: 15%"></div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -289,10 +238,7 @@ onMounted(() => {
                                 <h6 class="mb-0">{{ user.name }}</h6>
                                 <small class="text-muted">{{ user.university }}</small>
                             </div>
-                            <small class="text-success">{{ user.joinDate | formatDate }}</small>
-                        </div>
-                        <div v-if="newUsers.length === 0" class="p-3 text-center text-muted">
-                            Không có người dùng mới nào gần đây.
+                            <small class="text-success">{{ user.joinDate }}</small>
                         </div>
                     </div>
                 </div>
@@ -302,8 +248,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Các style cần thiết từ AdminLayout để giữ giao diện nhất quán */
-
+/* (Giữ nguyên toàn bộ CSS cũ của bạn) */
 .page-header {
     background: white;
     border-radius: 10px;
@@ -311,33 +256,25 @@ onMounted(() => {
     margin-bottom: 20px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
-
 .stats-card {
     border: none;
     border-radius: 15px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
 }
-
 .stats-card:hover {
     transform: translateY(-5px);
 }
-
 .card {
     border-radius: 10px;
 }
-
 .card-header {
     font-weight: 600;
     border-bottom: 1px solid #e9ecef;
 }
-
-/* Định dạng cho danh sách người dùng */
 #newUsersList .border-bottom:last-child {
     border-bottom: none !important;
 }
-
-/* Định dạng cho Table */
 .table thead th {
     font-weight: 600;
     color: #495057;
