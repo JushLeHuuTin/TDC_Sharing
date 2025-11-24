@@ -19,9 +19,9 @@ class Order extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function buyer()
+    public function seller()
     {
-        return $this->belongsTo(User::class, 'buyer_id');
+        return $this->belongsTo(User::class, 'seller_id');
     }
 
     public function address()

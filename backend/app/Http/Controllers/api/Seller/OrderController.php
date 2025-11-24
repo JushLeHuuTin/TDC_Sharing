@@ -19,14 +19,13 @@ class OrderController extends Controller
     public function index(FilterSellerOrdersRequest $request): JsonResponse // <-- Thay đổi ở đây
     {
         // 1. Kiểm tra quyền
-        $this->authorize('viewAnySeller', Order::class);
+        // $this->authorize('viewAnySeller', Order::class);
 
         $sellerId = Auth::id();
-
         // 2. Bắt đầu câu truy vấn cơ bản
-        $ordersQuery = Order::with(['buyer'])
+        $ordersQuery = Order::with(['user'])
             ->whereHas('items.product', function ($query) use ($sellerId) {
-                $query->where('user_id', $sellerId);
+                $query->where('seller_id', $sellerId);
             });
 
         // 3. ÁP DỤNG CÁC BỘ LỌC (PHẦN MỚI)

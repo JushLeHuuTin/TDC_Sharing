@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Seller;
 
+use Illuminate\Container\Attributes\Auth;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -14,7 +15,7 @@ class FilterSellerOrdersRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true; // Phân quyền sẽ được xử lý trong Controller/Policy
+        return auth()->check();  
     }
 
      public function rules(): array

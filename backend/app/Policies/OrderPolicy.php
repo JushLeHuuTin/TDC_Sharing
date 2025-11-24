@@ -24,7 +24,6 @@ class OrderPolicy
      */
     public function viewAnySeller(User $user): bool
     {
-        // Logic cho C2C: "Người bán" là người dùng đã đăng ít nhất một sản phẩm.
         return $user->products()->exists();
     }
 
