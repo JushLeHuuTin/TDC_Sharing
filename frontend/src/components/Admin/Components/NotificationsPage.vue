@@ -149,9 +149,27 @@ function getTypeBadgeClass(type) {
 
 <template>
     <div class="page-container p-6">
-        
+         <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <RouterLink to="/admin/dashboard">Dashboard</RouterLink>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">Quản lý thông báo</li>
+                    </ol>
+                </nav>
+                <h2 class="mb-0">Quản lý thông báo</h2>
+                <p class="text-muted mb-0">Tổ chức và quản lý thông báo</p>
+            </div>
+            <button class="btn btn-primary" @click="openAddModal()">
+                <fa :icon="['fas', 'plus']" class="me-2" />Thêm danh mục
+            </button>
+        </div>
+    </div>
         <!-- Header -->
-        <div class="flex justify-between items-center mb-6">
+        <!-- <div class="flex justify-between items-center mb-6">
             <div>
                 <h2 class="text-2xl font-semibold text-gray-800">Quản lý Thông báo</h2>
                 <p class="text-sm text-gray-500">Gửi và quản lý thông báo hệ thống</p>
@@ -160,7 +178,7 @@ function getTypeBadgeClass(type) {
                 <fa :icon="['fas', 'plus']" class="h-4 w-4 mr-2" />
                 Tạo thông báo
             </button>
-        </div>
+        </div> -->
         
         <!-- BẢNG DỮ LIỆU -->
         <div class="bg-white rounded-lg table-shadow overflow-hidden">
@@ -360,4 +378,116 @@ function getTypeBadgeClass(type) {
 .action-btn { transition: all 0.2s ease-in-out; font-weight: 500; font-size: 0.875rem; padding-top: 0.25rem; padding-bottom: 0.25rem; }
 .action-btn:hover { transform: translateY(-1px); }
 .table-row:hover { background-color: #f8fafc; }
+
+.page-header {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+}
+
+/* -------------------------------------- */
+/* CSS CỦA CATEGORIES PANEL */
+/* -------------------------------------- */
+
+.category-tree {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.category-item {
+    padding: 10px 15px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    background: white;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.category-item:hover {
+    background-color: #f8f9fa;
+    border-color: #0d6efd;
+}
+
+.category-level-1 {
+    border-left: 4px solid #0d6efd;
+    font-weight: 600;
+}
+
+.category-level-2 {
+    /* Điều chỉnh margin-left và border để tạo cấp độ */
+    margin-left: 40px;
+    border-left: 4px solid #6c757d;
+    background-color: #f8f9fa;
+    /* Loại bỏ padding-left: 15px !important; vì nó đã được xử lý bởi margin-left */
+}
+
+.category-actions {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.category-item:hover .category-actions {
+    opacity: 1;
+}
+
+.breadcrumb-item a {
+    color: #667eea;
+    /* Màu primary */
+    text-decoration: none;
+}
+
+/* Icon toggle button */
+.category-toggle-btn {
+    border: none;
+    background: none;
+    line-height: 1;
+    margin-top: 2px;
+}
+/* Hiệu ứng loading */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.9;
+}
+
+/* Spinner nằm trong nút */
+.btn-loading .spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    margin-right: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #fff; /* màu xoay */
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+}
+
+/* Text mờ nhẹ khi loading */
+.btn-loading .btn-text {
+    opacity: 0.6;
+}
+
+/* Animation */
+@keyframes spin {
+    100% {
+        transform: rotate(360deg);
+    }
+}
 </style>

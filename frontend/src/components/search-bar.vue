@@ -16,33 +16,6 @@ const instance = getCurrentInstance();
 const $toast = instance.appContext.config.globalProperties.$toast;
 // --- METHODS ---
 
-// Hàm xử lý logic tìm kiếm (Đã được Debounce)
-const fetchSuggestions = (query) => {
-    if (query.length < 2) {
-        suggestions.value = [];
-        showSuggestions.value = false;
-        return;
-    }
-    
-    // --- THỰC HIỆN GỌI API TẠI ĐÂY ---
-    console.log(`Đang tìm kiếm gợi ý cho: ${query}`);
-
-    // Giả lập dữ liệu API (Mock Data)
-    const mockData = [
-        { id: 1, title: 'iPhone 13 Pro Max (25tr)', price: '25,000,000', image_url: 'https://via.placeholder.com/40/3B82F6/FFFFFF?text=P1' },
-        { id: 2, title: 'MacBook Air M1 (22tr)', price: '22,000,000', image_url: 'https://via.placeholder.com/40/10B981/FFFFFF?text=P2' },
-        { id: 3, title: 'Sách Kinh tế học (450k)', price: '450,000', image_url: 'https://via.placeholder.com/40/8B5CF6/FFFFFF?text=P3' }
-    ];
-
-    if (mockData.length > 0) {
-        suggestions.value = mockData;
-        showSuggestions.value = true;
-    } else {
-        suggestions.value = [];
-        showSuggestions.value = false;
-    }
-};
-
 // Hàm xử lý Debounce cho input
 const handleInput = () => {
     // Xóa timeout cũ nếu có

@@ -2,7 +2,7 @@
 import { ref, computed } from "vue";
 import { useAuthStore } from "@/stores/auth";
 // Cần import useRoute và useRouter để xử lý logic Logo phức tạp (nếu cần)
-import { useRouter } from "vue-router"; 
+import { useRouter } from "vue-router";
 import logo from "@/assets/logo.png";
 // Giả định v-click-away đã được đăng ký toàn cục (hoặc import tại đây)
 // import { vClickAway } from '@vueuse/components'; // ví dụ
@@ -51,19 +51,21 @@ const unreadNotificationsCount = computed(() => {
 
 // --- XỬ LÝ ĐỊNH TUYẾN LOGO (Giải quyết vấn đề Ngrok/Dev Host) ---
 const navigateToHome = (event) => {
-    // Ngăn chặn hành vi mặc định của thẻ <a> (nếu đây là <a>)
-    event.preventDefault(); 
-    
-    // Kiểm tra Host hiện tại có phải là Host Dev Server không
-    if (window.location.host !== 'localhost:5173' && window.location.host !== '127.0.0.1:5173') {
-        // Nếu đang ở Ngrok/URL công khai, buộc chuyển về Host Dev Server
-        window.location.href = 'http://localhost:5173/';
-    } else {
-        // Nếu đã ở Dev Server, dùng Vue Router để điều hướng về trang chủ
-        router.push({ name: 'home.index' });
-    }
-};
+  // Ngăn chặn hành vi mặc định của thẻ <a> (nếu đây là <a>)
+  event.preventDefault();
 
+  // Kiểm tra Host hiện tại có phải là Host Dev Server không
+  if (
+    window.location.host !== "localhost:5173" &&
+    window.location.host !== "127.0.0.1:5173"
+  ) {
+    // Nếu đang ở Ngrok/URL công khai, buộc chuyển về Host Dev Server
+    window.location.href = "http://localhost:5173/";
+  } else {
+    // Nếu đã ở Dev Server, dùng Vue Router để điều hướng về trang chủ
+    router.push({ name: "home.index" });
+  }
+};
 </script>
 
 <template>
@@ -78,7 +80,7 @@ const navigateToHome = (event) => {
               class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3"
             >
               <!-- Giả định logo là một biến string/object đã import -->
-              <img :src="logo" alt="Vue Logo" /> 
+              <img :src="logo" alt="Vue Logo" />
             </div>
             <span class="text-xl font-bold text-blue-600 hidden sm:block"
               >TDC_Sharing</span
@@ -114,7 +116,7 @@ const navigateToHome = (event) => {
 
             <!-- Notifications -->
             <!-- Giả định v-click-away đã được đăng ký và hoạt động -->
-            <div class="relative" v-click-away="closeAllMenus"> 
+            <div class="relative" v-click-away="closeAllMenus">
               <button
                 @click="
                   isNotificationsOpen = !isNotificationsOpen;
@@ -212,12 +214,18 @@ const navigateToHome = (event) => {
                 >
                   <fa :icon="['fas', 'box']" class="mr-2" />Sản phẩm của tôi
                 </router-link>
-                <a
-                  href="#"
+                <router-link
+                  :to="{ name: 'orders.view' }"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
-                  <fa :icon="['fas', 'plus']" class="mr-2" />Đăng sản phẩm
-                </a>
+                  <fa :icon="['fas', 'shopping-cart']" class="mr-2" />Quản lý Đơn hàng
+                </router-link>
+                  <!-- <a
+                    href="#"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    <fa :icon="['fas', 'plus']" class="mr-2" />Đăng sản phẩm
+                  </a> -->
                 <a
                   href="#"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
