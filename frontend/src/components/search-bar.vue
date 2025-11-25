@@ -1,8 +1,9 @@
 <script setup>
 import { useCategoryStore } from '@/stores/categoryStore';
 import { ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 const route = useRoute();
+const router = useRouter();
 
 const CategoryStore = useCategoryStore();
 // --- STATE ---
@@ -36,6 +37,7 @@ const handleSearch = () => {
     if(localSearch.value.length>150){
         $toast.error('vui long nhap it hon 150 ky tu');
     }
+    router.push({ name: 'products.index' });
 
 };
 
@@ -70,7 +72,7 @@ const hideSuggestions = () => {
                 <fa :icon="['fas', 'search']" class="text-gray-400" />
             </div>
             <!-- Sử dụng @click.prevent="handleSubmit" để ngăn form submit mặc định -->
-            <button @click.prevent="handleSubmit" type="submit" class="absolute inset-y-0 right-0 pr-1 flex items-center">
+            <button @click.prevent="handleSearch" type="submit" class="absolute inset-y-0 right-0 pr-1 flex items-center">
                 <span class="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700">
                     Tìm
                 </span>
