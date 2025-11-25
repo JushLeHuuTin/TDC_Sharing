@@ -1,7 +1,7 @@
-# ====== BACKEND (Laravel) ======
-/vendor/
-/.env
-.env.*
+/backend/storage/logs/
+/backend/.env
+/backend/storage/*.log
+# Bỏ qua file cache và log của Laravel
 /bootstrap/cache/
 /storage/logs/
 /storage/framework/
