@@ -18,22 +18,13 @@ const BASE_STORAGE_URL = import.meta.env.VITE_BASE_STORAGE_URL || '/storage/';
 
 const getImageUrl = (imagePath) => {
     if (!imagePath) {
-        return 'http://127.0.0.1:8000/storage/products/default-product.jpg';
+        return BASE_STORAGE_URL+'products/default-product.jpg';
     }
     const cleanedPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
     return BASE_STORAGE_URL.endsWith('/')
         ? BASE_STORAGE_URL + cleanedPath
         : BASE_STORAGE_URL + '/' + cleanedPath;
 };
-// Chuyển đổi hàm định dạng số và logic định tuyến của Blade sang Vue
-
-// const formattedOriginalPrice = computed(() => {
-//     if (!props.product.original_price) return null;
-//     return new Intl.NumberFormat('vi-VN', { 
-//         style: 'currency', 
-//         currency: 'VND' 
-//     }).format(props.product.original_price);
-// });
 
 const formattedDate = computed(() => {
     if (props.product.created_at) {
@@ -78,7 +69,8 @@ const toggleFavorite = (event) => {
                         class="bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-md hover:scale-110 transition-transform text-gray-400"
                         
                         >
-                        <i class="fas fa-heart"></i>
+                        <fa :icon="['fas', 'heart']"  />
+
                     </button>
                 </form>
             </div>

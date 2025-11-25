@@ -12,7 +12,7 @@ class ProductResource extends JsonResource
         return [
             'id' => $this->id,
             'slug' => $this->slug,
-            'product_image' => optional($this->featuredImage)->image ?? 'https://placehold.co/600x400/EEE/31343C?text=No+Image', // Lấy ảnh đại diện, nếu không có thì dùng ảnh placeholder
+            'product_image' => optional($this->featuredImage)->image ?? null,
             'status' => $this->status, // Frontend sẽ tự xử lý việc cắt ngắn "..."
             'description' => $this->description, 
             'views' => $this->views_count, 
@@ -21,6 +21,7 @@ class ProductResource extends JsonResource
             'seller_name' => optional($this->seller)->full_name ?? 'Người bán không khả dụng', // Lấy tên người bán, nếu bị xóa thì báo
             'university' => optional($this->seller)->university ?? 'Chưa cập nhật', // Lấy tên trường
             'created_date' => $this->created_at->format('d/m/Y'), // Format ngày tạo
+            'updated_at' => $this->updated_at
         ];
     }
 }

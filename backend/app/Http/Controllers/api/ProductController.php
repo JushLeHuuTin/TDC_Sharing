@@ -65,9 +65,10 @@ class ProductController extends Controller
         if ($request->filled('price_max')) {
             $product->where('price', '<=', $request->price_max);
         }
-        if ($request->filled('q')) {
+        if (trim($request->input('q', ''))) {
+            // die();
             $keyword = $request->q;
-            $product->search($keyword); 
+            $product->search(trim($request->input('q', ''))); 
         }
         $products = $product->paginate(8);
         // Trả về dữ liệu qua API Resource như cũ
@@ -403,9 +404,22 @@ class ProductController extends Controller
         }
 
         // 2. LẤY DỮ LIỆU ĐÃ VALIDATE:
-        // Dữ liệu ở đây đã được làm sạch, trim, và kiểm tra bởi UpdateProductRequest.
         $validatedData = $request->validated();
-
+        $requestUpdatedAt = $request->input('updated_at'); 
+    
+        $currentUpdatedAt = $product->updated_at ? strtotime($product->updated_at) : null;
+        $requestUpdatedAtTimestamp = $requestUpdatedAt ? strtotime($requestUpdatedAt) : null;
+    
+        // ✨ KIỂM TRA OPTIMISTIC LOCKING
+        if ($requestUpdatedAtTimestamp && $currentUpdatedAt && $requestUpdatedAtTimestamp < $currentUpdatedAt) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sản phẩm đã được người dùng khác cập nhật. Vui lòng tải lại trang.',
+                'errors' => [ // Thêm key errors để Frontend dễ bắt lỗi
+                    'general' => ['Sản phẩm đã được người dùng khác cập nhật. Vui lòng tải lại trang.']
+                ]
+            ], 409); // 409 Conflict: Mã lỗi phù hợp cho xung đột dữ liệu
+        }
         try {
 
             // 3. XỬ LÝ TRANSACTION:

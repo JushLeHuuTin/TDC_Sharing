@@ -8,7 +8,7 @@ const categoryStore = useCategoryStore();
 const router = useRouter()
 
 // const localFilters = reactive({ ...props.selectedFilters });
-const emit = defineEmits(['handleFilterChange']);
+const emit = defineEmits(['handleFilterChange', 'resetFilters']); 
 
 const handleClickCategory = (slug) => {
   router.push(`/danhmuc/${slug}`)
@@ -42,8 +42,8 @@ const locations = [
 
 // Hàm này được gọi khi bất kỳ input nào thay đổi
 
-const handleResetFilters = () => {
-    // 💡 Trong thực tế, bạn nên đặt lại giá trị trong component cha
+const handleResetClick = () => {
+    // Phát sự kiện 'resetFilters' lên component cha
     emit('resetFilters'); 
 };
 </script>
@@ -54,7 +54,7 @@ const handleResetFilters = () => {
         <!-- Reset -->
         <div class="flex items-center justify-between mb-6">
             <h2 class="text-lg font-semibold text-gray-900">Bộ lọc</h2>
-            <button @click="props.handleResetFilters" class="text-sm text-blue-600 hover:text-blue-800">
+            <button @click="handleResetClick" class="text-sm text-blue-600 hover:text-blue-800">
                 <fa :icon="['fas', 'undo']" class="mr-1" />Đặt lại
             </button>
         </div>

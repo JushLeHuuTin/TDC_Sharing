@@ -20,6 +20,7 @@ class CategoryTreeResource extends JsonResource
             'is_visible' => $this->is_visible,
             'description' => $this->description,
             'display_order' => $this->display_order,
+            'updated_at' => $this->updated_at,
             // 'children' sẽ chỉ xuất hiện nếu collection con không rỗng
             'children' => self::collection($this->when(
                 $this->children->isNotEmpty(),

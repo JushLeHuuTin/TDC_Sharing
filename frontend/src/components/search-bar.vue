@@ -11,7 +11,7 @@ const searchQuery = ref(''); // Lưu trữ nội dung input (thay thế value="{
 const suggestions = ref([]); // Danh sách gợi ý tìm kiếm
 const showSuggestions = ref(false); // Trạng thái hiển thị/ẩn thanh gợi ý
 let searchTimeout = null; // Biến để xử lý Debouncing
-const localSearch = ref();
+const localSearch = ref('');
 import { getCurrentInstance } from 'vue';
 const instance = getCurrentInstance();
 const $toast = instance.appContext.config.globalProperties.$toast;
@@ -31,12 +31,15 @@ const handleInput = () => {
 
 // Hàm xử lý khi người dùng nhấn nút Tìm hoặc Enter
 const handleSearch = () => {
-    CategoryStore.filters.search = localSearch.value;
+    const keyword = localSearch.value ? localSearch.value.trim() : '';
+
+// Gán vào Store
+CategoryStore.filters.search = keyword;
     const slug = route.params.categorySlug || null;
     CategoryStore.fetchProductsBySlug(slug);
-    if(localSearch.value.length>150){
-        $toast.error('vui long nhap it hon 150 ky tu');
-    }
+    // if(localSearch.value.length>150){
+    //     $toast.error('vui long nhap it hon 150 ky tu');
+    // }
     router.push({ name: 'products.index' });
 
 };
@@ -46,11 +49,9 @@ const hideSuggestions = () => {
     // Chỉ ẩn suggestions, không xóa query
     showSuggestions.value = false;
 };
-
-// Tự động gán giá trị request('q') nếu có (Dùng cho Page được tải lần đầu)
-// Trong môi trường Vue/Inertia, query ban đầu sẽ được truyền qua props nếu cần.
-// Ở đây tôi giả định nó không được truyền qua props và khởi tạo là rỗng.
-
+const resetSearch = () => {
+    localSearch.value = '';
+};
 </script>
 
 <template>

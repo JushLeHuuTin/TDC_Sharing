@@ -1,13 +1,24 @@
 import { defineStore } from "pinia";
 import axios from "axios";
 
+// Hàm helper (Có thể đặt trong file riêng nhưng giữ ở đây cho tiện)
+const getFullImageUrl = (path, baseUrl) => {
+    if (!path) {
+        return baseUrl + 'products/default-product.jpg';
+    }
+    const cleanedPath = path.startsWith('/') ? path.substring(1) : path;
+    return baseUrl.endsWith('/') ? baseUrl + cleanedPath : baseUrl + '/' + cleanedPath;
+};
+
+
 export const useDetailProductStore = defineStore("detailProduct", {
     state: () => ({
         product: null,
-        mainImage: "",       // 🔥 Cho phép click đổi ảnh từ template
+        mainImage: "",      
         isLoading: false,
         error: null,
-        baseImageUrl: "http://127.0.0.1:8000/storage/" // Tuỳ backend
+        // Dùng biến env hoặc đường dẫn cố định, nhưng thêm dấu / ở cuối để dễ nối chuỗi
+        baseImageUrl: "http://127.0.0.1:8000/storage/" 
     }),
 
     getters: {
@@ -35,11 +46,20 @@ export const useDetailProductStore = defineStore("detailProduct", {
                 // Nếu API trả ảnh → set mainImage
                 if (data.images?.length) {
                     const featured = data.images.find(img => img.is_featured);
-                    const firstImage = featured?.path ?? data.images[0].path;
+                    const firstImagePath = featured?.path ?? data.images[0].path;
 
-                    this.mainImage = this.baseImageUrl + firstImage;
+                    // ✨ FIX: Sử dụng helper để tạo URL tuyệt đối
+                    this.mainImage = getFullImageUrl(firstImagePath, this.baseImageUrl);
+                    
+                    // ✨ Cập nhật đường dẫn cho tất cả ảnh thumbnail để template dễ dùng
+                    this.product.images = data.images.map(img => ({
+                        ...img,
+                        full_path: getFullImageUrl(img.path, this.baseImageUrl)
+                    }));
+
                 } else {
-                    this.mainImage = "/no-image.png"; // fallback
+                    // ✨ FIX: Sử dụng ảnh mặc định nội bộ
+                    this.mainImage = getFullImageUrl(null, this.baseImageUrl); 
                 }
 
             } catch (err) {
@@ -51,8 +71,8 @@ export const useDetailProductStore = defineStore("detailProduct", {
         },
 
         // 🔥 Dùng khi click vào thumbnail
-        setMainImage(path) {
-            this.mainImage = this.baseImageUrl + path;
+        setMainImage(fullPath) { // Nhận fullPath đã được xử lý
+            this.mainImage = fullPath;
         }
     }
 });

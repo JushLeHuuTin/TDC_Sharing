@@ -2,7 +2,7 @@
 import { RouterLink, useRoute } from 'vue-router'; // ⬅️ Chỉ cần 2 cái này
 
 const menuItems = [
-    { name: 'Dashboard', route: '/admin', page: 'dashboard', icon: ['fas', 'tachometer-alt'] },
+    { name: 'Dashboard', route: '/admin/dashboard', page: 'dashboard', icon: ['fas', 'tachometer-alt'] },
     { name: 'Quản lý người dùng', route: '/admin/users', page: 'users', icon: ['fas', 'users'] },
     { name: 'Quản lý sản phẩm', route: '/admin/products', page: 'products', icon: ['fas', 'box'] },
     { name: 'Quản lý danh mục', route: '/admin/categories', page: 'categories', icon: ['fas', 'tags'] },

@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class CategoryController extends Controller
 {
@@ -44,7 +45,7 @@ class CategoryController extends Controller
             $slug = $this->generateUniqueSlug($request->name);
             $category = DB::transaction(function () use ($validatedData, $slug) {
                 $dataToCreate = $validatedData;
-                $dataToCreate['slug'] = $slug; 
+                $dataToCreate['slug'] = $slug;
 
                 return Category::create($dataToCreate);
             });
@@ -95,14 +96,14 @@ class CategoryController extends Controller
         }
         if ($request->filled('q')) {
             $keyword = $request->q;
-            $query->search($keyword); 
+            $query->search($keyword);
         }
         $products = $query->paginate(8);
         if ($products->isEmpty() && $request->query('page', 1) == 1) {
             return response()->json([
                 'breadcrumb' => $breadcrumb,
                 'message' => 'Hiện chưa có sản phẩm nào trong danh mục này.',
-                'data' => $products, 
+                'data' => $products,
             ]);
         }
 
@@ -121,7 +122,20 @@ class CategoryController extends Controller
 
         // 2. LẤY DỮ LIỆU ĐÃ VALIDATE:
         $validatedData = $request->validated();
+        $requestUpdatedAt = $request->input('updated_at');
+        $currentUpdatedAt = $category->updated_at ? strtotime($category->updated_at) : null;
+        $requestUpdatedAtTimestamp = $requestUpdatedAt ? strtotime($requestUpdatedAt) : null;
 
+        if ($requestUpdatedAtTimestamp && $currentUpdatedAt && $requestUpdatedAtTimestamp < $currentUpdatedAt) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Danh mục đã được người dùng khác cập nhật. Vui lòng tải lại trang để xem dữ liệu mới nhất trước khi chỉnh sửa.',
+                'errors' => [ // Thêm key errors để Frontend dễ bắt lỗi
+                    'general' => ['Danh mục đã được người dùng khác cập nhật. Vui lòng tải lại trang.']
+                ]
+            ], 409); // 409 Conflict: Xung đột dữ liệu
+        }
         try {
             // 3. XỬ LÝ TRANSACTION (để đảm bảo an toàn)
             DB::transaction(function () use ($category, $validatedData) {
@@ -146,11 +160,19 @@ class CategoryController extends Controller
             ], 500);
         }
     }
-    public function destroy(Category $category)
+    public function destroy(int $categoryId)
     {
         try {
+            $category = Category::findOrFail($categoryId);
             $this->authorize('delete', $category);
-        } catch (exception $e) {
+        } catch (ModelNotFoundException $e) {
+            // Bắt lỗi khi Category::findOrFail($categoryId) thất bại
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi: Danh mục bạn muốn xóa không tồn tại.'
+            ], 404);
+        } catch (Exception $e) {
+            // Bắt lỗi phân quyền
             return response()->json([
                 'success' => false,
                 'message' =>  "Không có quyền xoá danh muc"

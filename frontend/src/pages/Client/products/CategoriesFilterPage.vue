@@ -74,6 +74,24 @@ const handleApplyFilters = async () => {
         isLoading.value = false;
     }
 };
+const resetFilters = async () => {
+    // 1. Reset các bộ lọc trong Store
+    categoryStore.filters.search = '';
+    categoryStore.filters.priceRange = null; // Hoặc giá trị mặc định của bạn
+    categoryStore.filters.categories = [];
+    categoryStore.filters.conditions = [];
+    categoryStore.filters.location = '';
+    categoryStore.filters.negotiable = false;
+    categoryStore.filters.hasImages = false;
+    categoryStore.filters.verified = false;
+    
+    // 2. Reset các trạng thái UI/Component
+    sortBy.value = 'newest';
+    // Đảm bảo reset input tìm kiếm
+
+    // 3. Kích hoạt tải lại dữ liệu
+    await categoryStore.fetchProductsBySlug(slug.value, 1);
+};
 const backSlug = async () => {
     categoryStore.filters.search='';
     categoryStore.fetchProductsBySlug(slug.value)

@@ -129,6 +129,7 @@ const startEdit = (id) => {
         editForm.price = cleanPriceForInput(product.price);
         editForm.description = product.description;
         editForm.status = product.status;
+        editForm.updated_at = product.updated_at;
 
         // Bật edit mode
         product.price = cleanPriceForInput(product.price);
@@ -159,19 +160,32 @@ const saveProduct = async (id) => {
     formData.append('price', editForm.price);
     formData.append('description', editForm.description || '');
     formData.append('status', editForm.status);
+    if (editForm.updated_at) {
+        formData.append('updated_at', editForm.updated_at);
+    }
+
     try {
         const updatedData = await productStore.updateProduct(product.id, formData);
+        
+        // Cập nhật thành công
         product.isEditing = false;
         delete product.originalData;
         productStore.updateProductInList(updatedData);
         $toast.success('Đã lưu thay đổi thành công!');
 
     } catch (error) {
+        const errorMessage = submissionError.value?.general?.[0] 
+            || error.message 
+            || 'Lưu thất bại! Vui lòng kiểm tra kết nối.';
+        
+        $toast.warning(errorMessage);
         if (error.message !== 'Unauthorized') {
-            $toast.error('Lưu thất bại !');
-            console.log(submissionError.value);
+             if (errorMessage.includes('đã được người dùng khác cập nhật')) {
+                 cancelEdit(product.id); 
+             } 
+        } else {
+             cancelEdit(product.id);
         }
-        cancelEdit(product.id);
     }
 };
 
@@ -562,8 +576,8 @@ onMounted(() => {
                                     <div class="mb-4">
                                         <fa :icon="['fas', 'box-open']" class="fa-4x text-muted" />
                                     </div>
-                                    <h5 class="text-muted mb-3">TIN</h5>
-                                    <p class="text-muted mb-4">TIN</p>
+                                    <h5 class="text-muted mb-3">Chưa có sản phẩm</h5>
+                                    <!-- <p class="text-muted mb-4">TIN</p> -->
                                     <button class="btn btn-primary" data-bs-toggle="modal"
                                         data-bs-target="#createProductModal">
                                         <fa :icon="['fas', 'plus']" class="me-2" />Đăng tin ngay

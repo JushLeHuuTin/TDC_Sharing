@@ -47,17 +47,21 @@ class StoreCategoryRequest extends FormRequest
 
     protected function prepareForValidation()
     {
-        // Chuẩn hoá is_visible
         if ($this->has('is_visible')) {
             $this->merge([
                 'is_visible' => filter_var($this->is_visible, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
             ]);
         }
 
-        // Nếu mô tả tồn tại → strip + trim
+        // ✨ CẬP NHẬT: strip_tags và trim cho cả name và description
         if ($this->has('description')) {
             $this->merge([
                 'description' => trim(strip_tags($this->description))
+            ]);
+        }
+        if ($this->has('name')) {
+            $this->merge([
+                'name' => trim(strip_tags($this->name))
             ]);
         }
     }

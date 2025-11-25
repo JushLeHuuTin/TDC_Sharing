@@ -46,7 +46,7 @@ class ProductDetailResource extends JsonResource
                     'path' => $image->image,
                     'is_featured' => (bool)$image->is_featured,
                 ]);
-            }, ['https://placehold.co/600x400?text=No+Image']),
+            }, [null]),
     
             'seller' => [
                 'name' => $this->seller?->full_name ?? 'Người bán không xác định',

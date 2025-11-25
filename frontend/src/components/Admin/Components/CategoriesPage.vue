@@ -95,7 +95,8 @@ function openEditModal(id) {
         icon: cat.icon ?? "fas fa-tag",
         color: cat.color ?? "#0d6efd",
         display_order: cat.display_order ?? 0,
-        is_visible: cat.is_visible === true
+        is_visible: cat.is_visible === true,
+        updated_at: cat.updated_at
     };
     showModal.value = true;
 }
@@ -118,25 +119,25 @@ async function saveCategory() {
         }
         showModal.value = false;
     } catch (error) {
-        $toast.error('Có lỗi xảy ra, vui lòng kiểm tra thông tin!');
+        const errorMessage = categoryStore.submissionError?.general?.[0] || 'Vui lòng kiểm tra lại dữ liệu.';
+        $toast.error(errorMessage);
         console.log('Backend error:', categoryStore.submissionError);
     }
 }
 
 
 async function confirmDeleteCategory() {
-    isDeleting.value = true;
     try {
         await categoryStore.deleteCategory(deletingCategoryId.value);
         showDeleteModal.value = false;
         deletingCategoryId.value = null;
-        await categoryStore.fetchCategories(true);
         $toast.success('Xóa danh mục thành công!');
     } catch (error) {
-        $toast.error(submissionError.value.general[0]);
-    } finally {
-        isDeleting.value = false;
-    }
+        const errorMessage = categoryStore.submissionError?.general?.[0] || 'Lỗi: Danh mục đã bị xóa hoặc có ràng buộc.';
+        $toast.error(errorMessage);
+
+        await categoryStore.fetchCategories(true); 
+    } 
 }
 
 </script>
@@ -331,7 +332,8 @@ async function confirmDeleteCategory() {
                             <label class="form-label">
                                 Tên danh mục <span class="text-danger">*</span>
                             </label>
-                            <input type="text" class="form-control" v-model="form.name" />
+                            <input type="text" class="form-control" v-model="form.name" 
+                                :class="{'is-invalid': submissionError?.name}" />
                             <div v-if="submissionError?.name" class="text-danger mt-1">
                                 {{ submissionError.name[0] }}
                             </div>
@@ -339,18 +341,26 @@ async function confirmDeleteCategory() {
                         <!-- PARENT -->
                         <div class="mb-3">
                             <label class="form-label">Danh mục cha</label>
-                            <select class="form-select" v-model="form.parent_id">
+                            <select class="form-select" v-model="form.parent_id"
+                                :class="{'is-invalid': submissionError?.parent_id}">
                                 <option value="">-- Danh mục gốc (Cấp 1) --</option>
                                 <option v-for="c in level1Categories" :key="c.id" :value="c.id">
                                     {{ c.name }}
                                 </option>
                             </select>
+                            <div v-if="submissionError?.parent_id" class="text-danger mt-1">
+                                {{ submissionError.parent_id[0] }}
+                            </div>
                         </div>
 
                         <!-- DESCRIPTION -->
                         <div class="mb-3">
                             <label class="form-label">Mô tả</label>
-                            <textarea class="form-control" rows="3" v-model="form.description"></textarea>
+                            <textarea class="form-control" rows="3" v-model="form.description"
+                                :class="{'is-invalid': submissionError?.description}"></textarea>
+                            <div v-if="submissionError?.description" class="text-danger mt-1">
+                                {{ submissionError.description[0] }}
+                            </div>
                         </div>
 
                         <!-- ICON -->
@@ -360,27 +370,48 @@ async function confirmDeleteCategory() {
                                 <span class="input-group-text">
                                     <i :class="form.icon"></i>
                                 </span>
-                                <input type="text" class="form-control" placeholder="fas fa-tag" v-model="form.icon">
+                                <input type="text" class="form-control" placeholder="fas fa-tag" v-model="form.icon"
+                                    :class="{'is-invalid': submissionError?.icon}">
                             </div>
                             <small class="text-muted">FontAwesome (vd: fas fa-book, fas fa-laptop)</small>
+                            <div v-if="submissionError?.icon" class="text-danger mt-1">
+                                {{ submissionError.icon[0] }}
+                            </div>
                         </div>
 
                         <!-- COLOR -->
                         <div class="mb-3">
                             <label class="form-label">Màu sắc</label>
-                            <input type="color" class="form-control form-control-color" v-model="form.color">
+                            <input type="color" class="form-control form-control-color" v-model="form.color"
+                                :class="{'is-invalid': submissionError?.color}">
+                            <div v-if="submissionError?.color" class="text-danger mt-1">
+                                {{ submissionError.color[0] }}
+                            </div>
                         </div>
 
                         <!-- ORDER -->
                         <div class="mb-3">
                             <label class="form-label">Thứ tự hiển thị</label>
-                            <input type="number" class="form-control" v-model="form.display_order" min="0">
+                            <input type="number" class="form-control" v-model="form.display_order" min="0"
+                                :class="{'is-invalid': submissionError?.display_order}">
+                            <div v-if="submissionError?.display_order" class="text-danger mt-1">
+                                {{ submissionError.display_order[0] }}
+                            </div>
                         </div>
 
                         <!-- ACTIVE -->
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" v-model="form.is_visible">
+                            <input class="form-check-input" type="checkbox" v-model="form.is_visible"
+                                :class="{'is-invalid': submissionError?.is_visible}">
                             <label class="form-check-label">Kích hoạt danh mục</label>
+                            <div v-if="submissionError?.is_visible" class="text-danger mt-1">
+                                {{ submissionError.is_visible[0] }}
+                            </div>
+                        </div>
+                        
+                        <!-- LỖI CHUNG (409 Conflict hoặc lỗi không thuộc field cụ thể) -->
+                        <div v-if="submissionError?.general" class="alert alert-danger mt-3" role="alert">
+                            <p class="mb-0" v-for="(msg, index) in submissionError.general" :key="index">{{ msg }}</p>
                         </div>
                     </div>
 

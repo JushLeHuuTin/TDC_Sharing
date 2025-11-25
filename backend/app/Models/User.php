@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable; // Thêm nếu dùng Notifications
@@ -48,9 +49,10 @@ class User extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
-    public function wishlists()
+    public function favorites(): BelongsToMany
     {
-        return $this->hasMany(Wishlist::class);
+        return $this->belongsToMany(Product::class, 'wishlists', 'user_id', 'product_id')
+                    ->withTimestamps(); // Bắt buộc phải có để truy cập 'wishlists.created_at'
     }
 
     public function reviews()

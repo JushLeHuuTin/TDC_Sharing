@@ -167,9 +167,11 @@ const navigateToHome = (event) => {
             </div>
 
             <!-- Favorites -->
-            <a href="#" class="p-2 text-gray-600 hover:text-blue-600">
+            <router-link 
+            :to="{name:'products.wishlist'}"
+            class="p-2 text-gray-600 hover:text-blue-600">
               <fa :icon="['fas', 'heart']" class="text-lg" />
-            </a>
+            </router-link>
             <!-- cart -->
             <router-link
               :to="{ name: 'cart' }"

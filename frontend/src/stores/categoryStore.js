@@ -164,13 +164,14 @@ export const useCategoryStore = defineStore('category', {
                     }
                 );
                 await this.fetchCategories(true);
-                this.isCreating = false;
                 return res.data.data;
 
             } catch (error) {
-                this.isCreating = false;
                 this.handleBackendError(error, authStore);
                 throw error; 
+            }
+            finally { 
+                this.isCreating = false; 
             }
         },
         async updateCategory(id, formData) {
@@ -197,13 +198,16 @@ export const useCategoryStore = defineStore('category', {
                     }
                 );
                 await this.fetchCategories(true);
-                this.isUpdating = false;
                 return res.data.data;
 
             } catch (error) {
-                this.isUpdating = false;
                 this.handleBackendError(error, authStore);
+                // this.submissionError = { general: [error.response?.data?.message || 'Lỗi hệ thống'] };
+
                 throw error; 
+            }
+            finally { 
+                this.isUpdating = false; 
             }
         },
         async deleteCategory(categoryId) {
@@ -214,7 +218,6 @@ export const useCategoryStore = defineStore('category', {
             const token = authStore.token;
 
             if (!token) {
-                this.isDeleting = false;
                 this.submissionError = { general: ['Phiên làm việc đã hết hạn.'] };
                 throw new Error('Unauthorized');
             }
@@ -225,7 +228,6 @@ export const useCategoryStore = defineStore('category', {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
-                this.isDeleting = false;
                 // Remove khỏi categoriesTree
                 this.categoriesTree = this.categoriesTree.filter(c => c.id !== categoryId);
 
@@ -243,6 +245,8 @@ export const useCategoryStore = defineStore('category', {
                 }
                 this.submissionError = { general: [error.response?.data?.message || 'Lỗi hệ thống'] };
                 throw new Error('System Error');
+            } finally { 
+                this.isDeleting = false; 
             }
         },
         handleBackendError(error, authStore) {

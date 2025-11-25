@@ -183,7 +183,6 @@ export const useProductStore = defineStore('product', {
                 this.pagination.perPage = response.data.meta.per_page;
                 this.pagination.links = response.data.meta.links;
                 this.myProducts = response.data.data;
-                console.log(this.pagination);
 
             } catch (error) {
                 // ...

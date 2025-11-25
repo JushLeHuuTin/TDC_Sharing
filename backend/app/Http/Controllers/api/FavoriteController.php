@@ -17,9 +17,9 @@ class FavoriteController extends Controller
         $user = $request->user();
         // Lấy danh sách sản phẩm yêu thích, eager load các quan hệ và phân trang
         $favoriteProducts = $user->favorites()
-                                  ->with(['seller', 'featuredImage']) // Tối ưu truy vấn
-                                  ->latest('wishlists.created_at') // Sắp xếp theo ngày yêu thích mới nhất
-                                  ->paginate(8);
+        ->with(['seller', 'featuredImage']) // Tối ưu truy vấn
+        ->latest('wishlists.created_at') // Sắp xếp theo ngày yêu thích mới nhất
+        ->paginate(8);
 
         // Xử lý trường hợp không có sản phẩm yêu thích nào
         if ($favoriteProducts->isEmpty() && $request->query('page', 1) == 1) {
@@ -39,9 +39,9 @@ class FavoriteController extends Controller
     public function store(Request $request)
     {
         $request->validate(['product_id' => 'required|exists:products,id']);
-        
+
         $user = $request->user();
-        
+
         // syncWithoutDetaching sẽ thêm mới mà không xóa các bản ghi đã có.
         // Nó sẽ tự động bỏ qua nếu đã tồn tại, tránh lỗi trùng lặp khi người dùng spam click.
         $user->favorites()->syncWithoutDetaching($request->product_id);
@@ -58,7 +58,7 @@ class FavoriteController extends Controller
     public function destroy(Request $request, Product $product)
     {
         $user = $request->user();
-        
+
         // Detach sẽ xóa mối quan hệ trong bảng trung gian (wishlist)
         $user->favorites()->detach($product->id);
 

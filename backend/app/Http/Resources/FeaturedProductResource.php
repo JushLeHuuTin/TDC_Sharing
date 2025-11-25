@@ -12,7 +12,7 @@ class FeaturedProductResource extends JsonResource
         return [
             'id' => $this->id,
             'slug' => $this->slug,
-            'product_image' => $this->featuredImage?->image ?? 'https://placehold.co/600x400?text=Image',
+            'product_image' => $this->featuredImage?->image ?? null,
             'title' => Str::limit($this->title ?? 'Sản phẩm chưa đặt tên', 50, '...'),
             'price' => $this->price > 0 ? number_format($this->price, 0, ',', '.') . 'đ' : 'Liên hệ',
             'seller_name' => Str::limit($this->seller?->full_name ?? 'Người bán không xác định', 30, '...'),
