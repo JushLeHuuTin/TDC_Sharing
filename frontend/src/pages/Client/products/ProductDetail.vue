@@ -7,6 +7,11 @@ import AppLayout from "@/Layouts/AppLayout.vue";
 import { useReviewStore } from "@/stores/reviewStore";
 import { useCartStore } from "@/stores/cartStore";
 import CartNotification from "@/components/CartNotification.vue";
+
+// --- 1. Import component Đánh giá ---
+// Đảm bảo đường dẫn này đúng với cấu trúc thư mục của bạn
+import ReviewSection from '@/components/Client/ReviewSection.vue';
+
 const route = useRoute();
 
 const detailProductStore = useDetailProductStore();
@@ -22,9 +27,17 @@ onMounted(() => {
 
 watch(
   () => route.params.productSlug,
-  (slug) => detailProductStore.fetchProduct(slug)
+  (slug) => {
+    if (slug) {
+      detailProductStore.fetchProduct(slug);
+    }
+  }
 );
-watch(
+
+// --- SỬA LỖI LOGIC: Bỏ Watcher gọi review ở đây ---
+// Lý do: Component <ReviewSection> đã tự gọi fetchReviews khi nó được mount (onMounted).
+// Nếu để watcher ở đây sẽ bị gọi API 2 lần (Double Fetch).
+/* watch(
   () => product.value,
   (newProduct) => {
     if (newProduct?.id) {
@@ -32,9 +45,11 @@ watch(
     }
   }
 );
+*/
 </script>
 
 <template>
+  <!-- Kiểm tra product tồn tại trước khi render để tránh lỗi undefined -->
   <div v-if="product">
     <AppLayout>
       <CartNotification />
@@ -324,190 +339,9 @@ watch(
           </div>
           <!-- Review Summary -->
         </div>
-        <div class="bg-white rounded-lg shadow-sm p-6 mt-6">
-          <!-- Header -->
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-lg font-semibold text-gray-900">Đánh giá từ người mua</h3>
-            <button class="text-blue-600 hover:text-blue-700 text-sm font-medium">
-              Viết đánh giá
-            </button>
-          </div>
-
-          <!-- Summary Box -->
-          <div class="bg-gray-50 rounded-lg p-6 mb-6" v-if="reviewStore.formattedSummary">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- Tổng điểm -->
-              <div class="flex flex-col items-center justify-center">
-                <div class="text-5xl font-bold text-gray-900 mb-2">
-                  {{ reviewStore.formattedSummary.avg }}
-                </div>
-
-                <div class="flex items-center mb-2">
-                  <i
-                    v-for="i in 5"
-                    :key="i"
-                    class="fas fa-star text-xl"
-                    :class="
-                      i <= reviewStore.formattedSummary.avg
-                        ? 'text-yellow-400'
-                        : 'text-gray-300'
-                    "
-                  ></i>
-                </div>
-
-                <div class="text-gray-600 text-sm">
-                  Dựa trên {{ reviewStore.formattedSummary.total }} đánh giá
-                </div>
-              </div>
-
-              <!-- Breakdown -->
-              <div class="space-y-2">
-                <div
-                  v-for="item in reviewStore.formattedSummary.breakdown"
-                  :key="item.stars"
-                  class="flex items-center space-x-3"
-                >
-                  <span class="text-sm text-gray-600 w-12"> {{ item.stars }} sao </span>
-
-                  <div class="flex-1 bg-gray-200 rounded-full h-2">
-                    <div
-                      class="bg-yellow-400 h-2 rounded-full"
-                      :style="`width: ${item.percentage}%`"
-                    ></div>
-                  </div>
-
-                  <span class="text-sm text-gray-600 w-8">
-                    {{ item.count }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Filter -->
-          <div
-            class="flex items-center justify-between mb-4 pb-4 border-b border-gray-200"
-          >
-            <div class="flex items-center space-x-2">
-              <button
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium"
-              >
-                Tất cả ({{ reviewStore.summary?.total ?? 0 }})
-              </button>
-              <button
-                class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200"
-              >
-                Có hình ảnh
-              </button>
-              <button
-                class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200"
-              >
-                5 sao
-              </button>
-            </div>
-
-            <select class="px-4 py-2 border border-gray-300 rounded-lg text-sm">
-              <option>Mới nhất</option>
-              <option>Hữu ích nhất</option>
-              <option>Xếp hạng cao nhất</option>
-              <option>Xếp hạng thấp nhất</option>
-            </select>
-          </div>
-
-          <div class="space-y-6">
-            <div
-              v-for="review in reviewStore.filteredReviews"
-              :key="review.id"
-              class="border-b border-gray-100 pb-6 last:border-b-0 last:pb-0"
-            >
-              <!-- Reviewer Info -->
-              <div class="flex items-start space-x-3 mb-3">
-                <!-- Avatar -->
-                <img
-                  :src="review.user_avatar"
-                  class="w-12 h-12 rounded-full object-cover"
-                />
-
-                <div class="flex-1">
-                  <!-- Name + Verified -->
-                  <div class="flex items-center space-x-2 mb-1">
-                    <h4 class="font-semibold text-gray-900">
-                      {{ review.user_name }}
-                    </h4>
-
-                    <span
-                      v-if="review.verified"
-                      class="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded flex items-center"
-                    >
-                      <i class="fas fa-check-circle mr-1"></i>
-                      Đã mua hàng
-                    </span>
-                  </div>
-
-                  <!-- Rating + Date -->
-                  <div class="flex items-center space-x-3 mb-2">
-                    <div class="flex items-center">
-                      <i
-                        v-for="i in 5"
-                        :key="i"
-                        class="fas fa-star text-sm"
-                        :class="i <= review.rating ? 'text-yellow-400' : 'text-gray-300'"
-                      ></i>
-                    </div>
-
-                    <span class="text-sm text-gray-500">{{ review.date }}</span>
-                  </div>
-
-                  <!-- Comment -->
-                  <p class="text-gray-700 mb-3">{{ review.comment }}</p>
-
-                  <!-- Review Images -->
-                  <div v-if="review.images.length" class="flex space-x-2 mb-3">
-                    <img
-                      v-for="img in review.images"
-                      :src="img"
-                      class="w-20 h-20 rounded-lg object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                    />
-                  </div>
-
-                  <!-- Buttons -->
-                  <div class="flex items-center space-x-4">
-                    <button
-                      class="text-sm text-gray-600 hover:text-blue-600 flex items-center space-x-1"
-                    >
-                      <i class="far fa-thumbs-up"></i>
-                      <span>Hữu ích ({{ review.helpful_count }})</span>
-                    </button>
-
-                    <button
-                      class="text-sm text-gray-600 hover:text-blue-600 flex items-center space-x-1"
-                    >
-                      <i class="far fa-comment"></i>
-                      <span>Phản hồi</span>
-                    </button>
-                  </div>
-
-                  <!-- Seller Reply -->
-                  <div
-                    v-if="review.seller_reply"
-                    class="mt-3 ml-4 p-3 bg-blue-50 rounded-lg border-l-2 border-blue-500"
-                  >
-                    <div class="flex items-center space-x-2 mb-1">
-                      <i class="fas fa-store text-blue-600 text-sm"></i>
-                      <span class="font-medium text-gray-900 text-sm">
-                        Phản hồi từ người bán
-                      </span>
-                    </div>
-
-                    <p class="text-sm text-gray-700">
-                      {{ review.seller_reply }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        
+        <!-- 2. Hiển thị component ReviewSection TẠI ĐÂY -->
+        <ReviewSection :productId="product.id" />
 
         <!-- Related Products -->
         <div class="mt-12">

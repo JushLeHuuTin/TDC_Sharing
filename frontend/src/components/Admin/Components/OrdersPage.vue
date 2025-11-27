@@ -9,23 +9,36 @@ const orderStore = useAdminOrderStore();
 const { orders, isLoading, error, paginationData } = storeToRefs(orderStore);
 const router = useRouter();
 
+// --- HELPER: LẤY NGÀY HIỆN TẠI (YYYY-MM-DD) ---
+const formatDate = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+};
+
 // --- 2. STATE CỤC BỘ (BỘ LỌC) ---
+// Mặc định gán ngày hiện tại cho cả 2 ô
+const todayStr = formatDate(new Date());
+
 const filters = ref({
     status: '',
-    from_date: '',
-    to_date: '',
+    from_date: todayStr, // Mặc định là hôm nay
+    to_date: todayStr,   // Mặc định là hôm nay
     page: 1
 });
 
 // --- 3. LIFECYCLE ---
 onMounted(() => {
-    orderStore.fetchOrders();
+    // Gọi API ngay khi vào trang với bộ lọc ngày tháng mặc định
+    orderStore.fetchOrders(filters.value);
 });
 
 // --- 4. METHODS (XỬ LÝ LOGIC) ---
 function handleApplyFilters() {
     filters.value.page = 1; 
     const activeFilters = {};
+    // Chỉ gửi những filter có giá trị
     if (filters.value.status) activeFilters.status = filters.value.status;
     if (filters.value.from_date) activeFilters.from_date = filters.value.from_date;
     if (filters.value.to_date) activeFilters.to_date = filters.value.to_date;
@@ -51,15 +64,17 @@ function handleDeleteOrder(orderId) {
 function changePage(page) {
     if (!paginationData.value || page < 1 || page > paginationData.value.last_page) return;
     filters.value.page = page;
-    orderStore.fetchOrders(filters.value);
+    
+    // Khi chuyển trang, vẫn giữ nguyên các filter đang chọn (bao gồm ngày tháng)
+    const activeFilters = { ...filters.value, page: page };
+    orderStore.fetchOrders(activeFilters);
 }
 
-// --- 5. HELPER FUNCTIONS ---
+// --- 5. HELPER FUNCTIONS (STATUS) ---
 function getStatusText(status) {
     const statusMap = {
         'pending': 'Chờ duyệt',
-        'processing': 'Chờ duyệt',
-        'approved': 'Đã duyệt',
+        'processing': 'Đã duyệt',
         'shipped': 'Đang giao',
         'delivered': 'Đã giao',
         'rejected': 'Đã hủy',
@@ -71,8 +86,7 @@ function getStatusText(status) {
 function getStatusBadgeClass(status) {
     const statusClassMap = {
         'pending': 'status-pending',
-        'processing': 'status-pending',
-        'approved': 'status-approved',
+        'processing': 'status-approved',
         'shipped': 'status-processing',
         'delivered': 'status-approved',
         'rejected': 'status-rejected',
@@ -93,8 +107,8 @@ function getStatusBadgeClass(status) {
                     <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label> 
                     <select v-model="filters.status" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">Tất cả</option>
-                        <option value="processing">Chờ duyệt</option>
-                        <option value="pending">Chờ duyệt (Pending)</option>
+                        <option value="pending">Chờ duyệt</option>
+                        <option value="processing">Đã duyệt</option>
                         <option value="shipped">Đang giao</option>
                         <option value="delivered">Đã giao</option>
                         <option value="cancelled">Đã hủy</option>
@@ -182,7 +196,16 @@ function getStatusBadgeClass(status) {
             <div class="bg-white px-6 py-3 border-t border-gray-200" v-if="!isLoading && paginationData && paginationData.last_page > 1">
                  <nav class="flex justify-center">
                     <ul class="flex items-center -space-x-px h-8 text-sm">
-                        </ul>
+                        <li>
+                            <button @click="changePage(filters.page - 1)" :disabled="filters.page === 1" class="px-3 py-1 border border-gray-300 rounded-l-lg hover:bg-gray-100 disabled:opacity-50">Trước</button>
+                        </li>
+                        <li>
+                            <span class="px-3 py-1 border border-gray-300 bg-blue-50 text-blue-600">{{ filters.page }} / {{ paginationData.last_page }}</span>
+                        </li>
+                        <li>
+                            <button @click="changePage(filters.page + 1)" :disabled="filters.page === paginationData.last_page" class="px-3 py-1 border border-gray-300 rounded-r-lg hover:bg-gray-100 disabled:opacity-50">Sau</button>
+                        </li>
+                    </ul>
                 </nav>
             </div>
         </div>
@@ -190,7 +213,6 @@ function getStatusBadgeClass(status) {
 </template>
 
 <style scoped>
-/* (Giữ nguyên CSS của bạn) */
 .custom-scrollbar::-webkit-scrollbar {
     width: 8px; height: 8px;
 }
@@ -212,7 +234,7 @@ function getStatusBadgeClass(status) {
     border-radius: 9999px; text-transform: uppercase;
 }
 .status-pending {
-    background-color: #fef3c7; color: #92400e;
+    background-color: #fef3c7; color: #92400e; 
 }
 .status-approved {
     background-color: #d1fae5; color: #065f46;
