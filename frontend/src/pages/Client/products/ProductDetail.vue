@@ -341,7 +341,7 @@ watch(
         </div>
         
         <!-- 2. Hiển thị component ReviewSection TẠI ĐÂY -->
-        <ReviewSection :productId="product.id" />
+      <ReviewSection :productId="product.id" :key="product.id" />
 
         <!-- Related Products -->
         <div class="mt-12">

@@ -4,8 +4,13 @@ import { storeToRefs } from 'pinia';
 import { useReviewStore } from '@/stores/reviewStore';
 import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'vue-router';
-// 1. Import SweetAlert2
 import Swal from 'sweetalert2';
+import axios from 'axios';
+
+// --- QUAN TRỌNG: Import CSS của Animate.css để có hiệu ứng đẹp ---
+// Nếu dự án bạn chưa cài animate.css, hãy chạy: npm install animate.css
+// Hoặc đơn giản là thêm link CDN vào index.html cũng được.
+// Nhưng Swal2 cũng có animation mặc định khá ổn nếu không có animate.css.
 
 const props = defineProps({
     productId: {
@@ -14,6 +19,7 @@ const props = defineProps({
     }
 });
 
+const router = useRouter();
 const reviewStore = useReviewStore();
 const { reviews, isLoading } = storeToRefs(reviewStore);
 const authStore = useAuthStore();
@@ -27,6 +33,7 @@ const newReview = ref({
 
 const showEditModal = ref(false);
 const editingReview = ref(null);
+const pendingReviews = ref([]);
 
 const averageRating = computed(() => {
     if (reviews.value.length === 0) return 0;
@@ -46,23 +53,30 @@ onMounted(() => {
     }
 });
 
-// --- HELPER ---
-const Toast = Swal.mixin({
-    toast: true,
-    position: 'top-end',
-    showConfirmButton: false,
-    timer: 3000,
-    timerProgressBar: true
-});
+// --- API Lấy sản phẩm chưa đánh giá ---
+async function fetchPendingReviews() {
+    try {
+        const response = await axios.get('http://127.0.0.1:8000/api/reviews/pending', {
+            headers: { Authorization: `Bearer ${authStore.token}` }
+        });
+        pendingReviews.value = response.data.data;
+    } catch (error) {
+        console.error("Lỗi lấy sản phẩm chờ đánh giá:", error);
+    }
+}
 
 // --- XỬ LÝ THÊM ĐÁNH GIÁ ---
 async function handleAddReview() {
     if (!newReview.value.comment.trim()) {
         Swal.fire({
             icon: 'warning',
-            title: 'Chưa nhập nội dung',
-            text: 'Vui lòng chia sẻ cảm nhận của bạn về sản phẩm nhé!',
+            title: 'Oops...',
+            text: 'Bạn chưa nhập nội dung đánh giá!',
             confirmButtonColor: '#3085d6',
+            confirmButtonText: 'Để tôi nhập lại',
+            // Hiệu ứng Rung lắc nhẹ khi cảnh báo
+            showClass: { popup: 'animate__animated animate__shakeX' },
+            hideClass: { popup: 'animate__animated animate__fadeOut' }
         });
         return;
     }
@@ -70,7 +84,6 @@ async function handleAddReview() {
     const result = await reviewStore.addReview(newReview.value);
     
     if (result.success) {
-        // --- THÀNH CÔNG ---
         newReview.value.rating = 5;
         newReview.value.comment = '';
         
@@ -79,18 +92,63 @@ async function handleAddReview() {
             title: 'Tuyệt vời!',
             text: 'Cảm ơn bạn đã đánh giá sản phẩm.',
             showConfirmButton: false,
-            timer: 2000
+            timer: 2000,
+            // Hiệu ứng trượt xuống mượt mà
+            showClass: { popup: 'animate__animated animate__fadeInDown' },
+            hideClass: { popup: 'animate__animated animate__fadeOutUp' }
         });
     } else {
-        // --- THẤT BẠI (Chưa mua hàng / Đã đánh giá rồi / Lỗi server) ---
+        // --- NẾU LỖI (CHƯA MUA HÀNG) ---
+        await fetchPendingReviews();
+
+        let htmlContent = `<div class="text-gray-600 mb-4 text-sm">${result.message}</div>`;
+        
+        if (pendingReviews.value.length > 0) {
+            htmlContent += `
+                <div class="border-t pt-3">
+                    <p class="font-bold text-gray-800 text-left mb-2 text-sm">
+                        <i class="fas fa-gift text-yellow-500 mr-1"></i> Các sản phẩm bạn có thể đánh giá:
+                    </p>
+                    <div class="text-left space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+            `;
+            pendingReviews.value.forEach(p => {
+                const imgUrl = p.images?.[0]?.path || 'https://placehold.co/50';
+                htmlContent += `
+                    <div class="flex items-center gap-3 p-2 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-blue-100 product-link" data-slug="${p.slug}">
+                        <img src="${imgUrl}" class="w-12 h-12 object-cover rounded-md border border-gray-200">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-800 truncate">${p.title}</p>
+                            <p class="text-xs text-blue-600 mt-0.5">Viết đánh giá ngay &rarr;</p>
+                        </div>
+                    </div>
+                `;
+            });
+            htmlContent += `</div></div>`;
+        } else {
+             htmlContent += `<p class="text-xs text-gray-400 mt-4 italic">(Bạn hiện không có sản phẩm nào chờ đánh giá)</p>`;
+        }
+
         Swal.fire({
-            icon: 'error', // Dùng icon Error màu đỏ cho hợp lý
-            title: 'Rất tiếc...',
-            text: result.message, // Backend trả về: "Bạn cần mua hàng..." hoặc "Đã đánh giá rồi"
+            icon: 'info',
+            title: 'Thông báo',
+            html: htmlContent,
             confirmButtonText: 'Đã hiểu',
-            confirmButtonColor: '#d33',
+            confirmButtonColor: '#3085d6',
+            width: '32rem',
+            // Hiệu ứng Zoom In mạnh mẽ để gây chú ý
+            showClass: { popup: 'animate__animated animate__zoomIn' },
+            hideClass: { popup: 'animate__animated animate__zoomOut' },
+            didOpen: () => {
+                const links = Swal.getHtmlContainer().querySelectorAll('.product-link');
+                links.forEach(link => {
+                    link.addEventListener('click', () => {
+                        const slug = link.getAttribute('data-slug');
+                        Swal.close();
+                        router.push(`/products/${slug}`);
+                    });
+                });
+            }
         }).then(() => {
-            // ===> RESET FORM KHI ĐÓNG THÔNG BÁO LỖI <===
             newReview.value.comment = ''; 
             newReview.value.rating = 5; 
         });
@@ -100,22 +158,30 @@ async function handleAddReview() {
 // --- XỬ LÝ XÓA ---
 async function handleDelete(reviewId) {
     const confirmResult = await Swal.fire({
-        title: 'Bạn chắc chứ?',
-        text: "Bạn muốn xóa đánh giá này? Hành động này không thể hoàn tác.",
+        title: 'Bạn chắc chắn chứ?',
+        text: "Hành động này sẽ xóa vĩnh viễn đánh giá này!",
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
         cancelButtonColor: '#3085d6',
         confirmButtonText: 'Xóa ngay!',
-        cancelButtonText: 'Hủy'
+        cancelButtonText: 'Hủy',
+        // Hiệu ứng nảy nảy (Bounce)
+        showClass: { popup: 'animate__animated animate__bounceIn' },
+        hideClass: { popup: 'animate__animated animate__bounceOut' }
     });
 
     if (confirmResult.isConfirmed) {
         const result = await reviewStore.deleteReview(reviewId, props.productId);
         if (result.success) {
-            Swal.fire('Đã xóa!', 'Đánh giá của bạn đã được xóa.', 'success');
+            Swal.fire('Đã xóa!', 'Đánh giá đã được xóa.', 'success');
         } else {
-            Swal.fire('Lỗi!', result.message, 'error');
+            // Dịch thông báo lỗi tiếng Anh sang tiếng Việt
+            let errorMessage = result.message;
+            if (errorMessage === 'This action is unauthorized.') {
+                errorMessage = 'Bạn không có quyền xóa đánh giá này.';
+            }
+            Swal.fire('Lỗi!', errorMessage, 'error');
         }
     }
 }
@@ -142,17 +208,34 @@ async function handleUpdateReview() {
     
     if (result.success) {
         closeEditModal();
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
+            }
+        });
         Toast.fire({
             icon: 'success',
             title: 'Cập nhật đánh giá thành công!'
         });
     } else {
-        Swal.fire('Lỗi!', result.message, 'error');
+        // Dịch thông báo lỗi tiếng Anh sang tiếng Việt
+        let errorMessage = result.message;
+        if (errorMessage === 'This action is unauthorized.') {
+            errorMessage = 'Bạn không có quyền chỉnh sửa đánh giá này.';
+        }
+        Swal.fire('Lỗi!', errorMessage, 'error');
     }
 }
 </script>
 
 <template>
+    <!-- Template giữ nguyên như cũ -->
     <div class="bg-white rounded-lg shadow-md p-6 mt-6 border border-gray-100">
         <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
             <fa :icon="['fas', 'comments']" class="mr-2 text-blue-600" />
@@ -229,8 +312,7 @@ async function handleUpdateReview() {
                                 </div>
                             </div>
                             
-                            <!-- Nút Sửa/Xóa (Chính chủ hoặc Admin) -->
-                            <div v-if="isLoggedIn && user && (user.id == review.user_id || user.role === 'admin')" class="flex space-x-2">
+                            <div v-if="isLoggedIn && user && (user.id == review.user_id || (user.role && user.role.toLowerCase() === 'admin'))" class="flex space-x-2">
                                 <button @click="openEditModal(review)" class="text-gray-400 hover:text-blue-600"><fa :icon="['fas', 'pencil-alt']" /></button>
                                 <button @click="handleDelete(review.id)" class="text-gray-400 hover:text-red-600"><fa :icon="['fas', 'trash-alt']" /></button>
                             </div>
@@ -261,3 +343,25 @@ async function handleUpdateReview() {
         </div>
     </div>
 </template>
+
+<style scoped>
+/* Tùy chỉnh thanh cuộn cho đẹp */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* * Mẹo: Nếu muốn dùng Animate.css để hiệu ứng mượt hơn nữa, 
+* bạn có thể thêm dòng này vào file index.html của project:
+* <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+*/
+</style>

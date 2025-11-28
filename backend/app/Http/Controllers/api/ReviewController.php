@@ -16,14 +16,17 @@ use Illuminate\Http\Request;
 
 class ReviewController extends Controller
 {
+    /**
+     * Store a newly created review in storage.
+     */
     public function store(StoreReviewRequest $request): JsonResponse
     {
         $validatedData = $request->validated();
         $user = $request->user();
         $productId = $validatedData['product_id'];
 
-        // --- DANH SÁCH TRẠNG THÁI HỢP LỆ ---
-        $validStatuses = ['delivered', 'completed', 'success', 'đã giao', 'đã giao hàng'];
+        // --- CẤU HÌNH CÁC TRẠNG THÁI ĐƯỢC PHÉP ĐÁNH GIÁ ---
+        $validStatuses = ['delivered', 'completed', 'success', 'đã giao', 'đã giao hàng', 'thành công'];
 
         // --- CHECK 1: Kiểm tra mua hàng ---
         $hasPurchased = Order::where('user_id', $user->id)
@@ -34,24 +37,12 @@ class ReviewController extends Controller
             ->exists();
 
         if (!$hasPurchased) {
-            // === ĐOẠN CODE ĐIỀU TRA ===
-            // Lấy tất cả ID sản phẩm mà User này đã mua thành công
-            $boughtProductIds = DB::table('orders')
-                ->join('order_items', 'orders.id', '=', 'order_items.order_id')
-                ->where('orders.user_id', $user->id)
-                ->whereIn('orders.status', $validStatuses)
-                ->pluck('order_items.product_id')
-                ->toArray();
-            
-            $listIds = implode(', ', $boughtProductIds);
+            // Lấy tên sản phẩm để hiển thị thông báo
+            $productName = Product::where('id', $productId)->value('title') ?? 'Sản phẩm này';
 
-            // Trả về lỗi chi tiết để bạn so sánh
             return response()->json([
                 'success' => false,
-                'message' => "LỖI LỆCH ID!\n" .
-                             "- Bạn đang xem sản phẩm có ID: $productId\n" .
-                             "- Nhưng bạn đã mua các sản phẩm ID: [$listIds]\n" .
-                             "👉 Hãy kiểm tra xem 2 số này có khớp nhau không?"
+                'message' => "Rất tiếc, bạn cần mua và nhận hàng thành công sản phẩm \"$productName\" để có thể viết đánh giá."
             ], 403); 
         }
 
@@ -61,7 +52,10 @@ class ReviewController extends Controller
             ->exists();
 
         if ($existingReview) {
-            return response()->json(['success' => false, 'message' => 'Bạn đã đánh giá sản phẩm này rồi.'], 400); 
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn đã đánh giá sản phẩm này rồi.'
+            ], 400); 
         }
 
         // --- LƯU ĐÁNH GIÁ ---
@@ -73,35 +67,81 @@ class ReviewController extends Controller
                 'rating'      => $validatedData['rating'],
                 'comment'     => strip_tags($validatedData['comment'] ?? ''),
             ]);
+
             DB::commit();
-            return response()->json(['success' => true, 'message' => 'Gửi đánh giá thành công.', 'data' => new ReviewResource($review)], 201);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Gửi đánh giá thành công.',
+                'data'    => new ReviewResource($review)
+            ], 201);
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()], 500);
+            Log::error('Lỗi khi gửi đánh giá: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Gửi thất bại.'], 500);
         }
     }
 
-    // Các hàm khác giữ nguyên...
-    public function update(UpdateReviewRequest $request, Review $review): JsonResponse {
-        $this->authorize('update', $review);
-        $review->update($request->validated());
-        return response()->json(['success' => true, 'message' => 'Cập nhật thành công.', 'data' => new ReviewResource($review)]);
+   public function update(UpdateReviewRequest $request, Review $review): JsonResponse
+    {
+        // Gọi Policy để kiểm tra quyền (Admin hoặc Chính chủ)
+        $this->authorize('update', $review); 
+
+        try {
+            // ... (Logic update giữ nguyên) ...
+            $review->update($request->validated());
+            return response()->json(['success' => true, 'message' => 'Cập nhật thành công.', 'data' => new ReviewResource($review)]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Lỗi cập nhật.'], 500);
+        }
     }
-    public function destroy(Review $review): JsonResponse {
+
+    public function destroy(Request $request, Review $review): JsonResponse
+    {
+        // Gọi Policy để kiểm tra quyền (Admin hoặc Chính chủ)
         $this->authorize('delete', $review);
-        $review->delete();
-        return response()->json(['success' => true, 'message' => 'Xóa thành công.']);
+
+        try {
+            $review->delete();
+            return response()->json(['success' => true, 'message' => 'Xóa thành công.']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Lỗi xóa.'], 500);
+        }
     }
-    public function index(Request $request, Product $product): JsonResponse {
+
+    /**
+     * Display reviews.
+     */
+    public function index(Request $request, Product $product): JsonResponse
+    {
         $request->validate(['rating' => 'nullable|integer|in:1,2,3,4,5']);
+        
+        $baseQuery = $product->reviews(); 
+        $totalReviews = $baseQuery->count();
+        $averageRating = $totalReviews > 0 ? round($baseQuery->avg('rating'), 1) : 0;
+        
+        $ratingCountsRaw = $product->reviews()
+            ->select('rating', DB::raw('count(*) as count'))
+            ->groupBy('rating')->pluck('count', 'rating')->toArray();
+            
+        $ratingCounts = [];
+        for ($i = 5; $i >= 1; $i--) { $ratingCounts[$i] = $ratingCountsRaw[$i] ?? 0; }
+
         $reviewsQuery = $product->reviews()->with('user'); 
         if ($request->filled('rating')) { $reviewsQuery->where('rating', $request->query('rating')); }
         $reviews = $reviewsQuery->latest()->paginate(8);
-        $totalReviews = $product->reviews()->count();
-        $averageRating = $totalReviews > 0 ? round($product->reviews()->avg('rating'), 1) : 0;
-        return response()->json(['success' => true, 'data' => [
-            'summary' => ['total_reviews' => $totalReviews, 'average_rating' => $averageRating, 'rating_counts' => []],
-            'reviews' => ReviewResource::collection($reviews),
-        ]]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'summary' => [
+                    'total_reviews' => $totalReviews,
+                    'average_rating' => $averageRating,
+                    'rating_counts' => $ratingCounts,
+                ],
+                'reviews' => ReviewResource::collection($reviews),
+            ]
+        ]);
     }
 }
