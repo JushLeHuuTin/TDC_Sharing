@@ -14,7 +14,6 @@ class OrderItemSeeder extends Seeder
         $orderItems = [
             // Order 1
             [
-                'order_item_id' => 'ORDITEM-' . strtoupper(Str::random(10)),
                 'order_id' => 1,
                 'product_id' => 1, // iPhone 15 Pro Max
                 'quantity' => 1,
@@ -22,7 +21,6 @@ class OrderItemSeeder extends Seeder
                 'subtotal' => 29990000.00
             ],
             [
-                'order_item_id' => 'ORDITEM-' . strtoupper(Str::random(10)),
                 'order_id' => 1,
                 'product_id' => 9, // AirPods Pro
                 'quantity' => 1,
@@ -32,7 +30,6 @@ class OrderItemSeeder extends Seeder
             
             // Order 2
             [
-                'order_item_id' => 'ORDITEM-' . strtoupper(Str::random(10)),
                 'order_id' => 2,
                 'product_id' => 2, // iPhone 14 Pro
                 'quantity' => 1,
@@ -42,7 +39,6 @@ class OrderItemSeeder extends Seeder
             
             // Order 3
             [
-                'order_item_id' => 'ORDITEM-' . strtoupper(Str::random(10)),
                 'order_id' => 3,
                 'product_id' => 10, // Sony WH
                 'quantity' => 1,
@@ -52,7 +48,6 @@ class OrderItemSeeder extends Seeder
             
             // Order 4
             [
-                'order_item_id' => 'ORDITEM-' . strtoupper(Str::random(10)),
                 'order_id' => 4,
                 'product_id' => 11, // Anker PowerCore
                 'quantity' => 1,
@@ -60,7 +55,6 @@ class OrderItemSeeder extends Seeder
                 'subtotal' => 990000.00
             ],
             [
-                'order_item_id' => 'ORDITEM-' . strtoupper(Str::random(10)),
                 'order_id' => 4,
                 'product_id' => 12, // Xiaomi Power Bank
                 'quantity' => 1,
@@ -70,7 +64,6 @@ class OrderItemSeeder extends Seeder
             
             // Order 5
             [
-                'order_item_id' => 'ORDITEM-' . strtoupper(Str::random(10)),
                 'order_id' => 5,
                 'product_id' => 6, // Dell XPS
                 'quantity' => 1,

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\ProductImage;
 
@@ -9,50 +10,33 @@ class ProductImageSeeder extends Seeder
 {
     public function run()
     {
+        // ⚠️ Cần xóa dữ liệu cũ trước khi chạy
+        // ProductImage::truncate(); 
+
         $images = [
-            // iPhone 15 Pro Max
-            ['product_id' => 1, 'image' => 'iphone-15-pro-max-1.jpg', 'is_featured' => true],
-            ['product_id' => 1, 'image' => 'iphone-15-pro-max-2.jpg', 'is_featured' => false],
-            ['product_id' => 1, 'image' => 'iphone-15-pro-max-3.jpg', 'is_featured' => false],
+            // Product ID 1 (Giáo trình chuyên ngành số 1)
+            ['product_id' => 1, 'image' => 'book-it-1.jpg', 'is_featured' => true],
             
-            // iPhone 14 Pro
-            ['product_id' => 2, 'image' => 'iphone-14-pro-1.jpg', 'is_featured' => true],
-            ['product_id' => 2, 'image' => 'iphone-14-pro-2.jpg', 'is_featured' => false],
+            // Product ID 11 (Thiết bị học tập nâng cao 1) - Status Pending
+            ['product_id' => 11, 'image' => 'headphone-case-1.jpg', 'is_featured' => true],
             
-            // Samsung S24 Ultra
-            ['product_id' => 3, 'image' => 'samsung-s24-ultra-1.jpg', 'is_featured' => true],
-            ['product_id' => 3, 'image' => 'samsung-s24-ultra-2.jpg', 'is_featured' => false],
-            ['product_id' => 3, 'image' => 'samsung-s24-ultra-3.jpg', 'is_featured' => false],
+            // Product ID 21 (Phụ kiện / Tài liệu hỗ trợ 1)
+            ['product_id' => 21, 'image' => 'accessory-box-1.jpg', 'is_featured' => true],
+            ['product_id' => 21, 'image' => 'accessory-box-2.jpg', 'is_featured' => false],
             
-            // Samsung Z Fold 5
-            ['product_id' => 4, 'image' => 'samsung-z-fold-5-1.jpg', 'is_featured' => true],
-            ['product_id' => 4, 'image' => 'samsung-z-fold-5-2.jpg', 'is_featured' => false],
+            // Product ID 5 (Laptop Dell Inspiron 14 5402)
+            ['product_id' => 5, 'image' => 'laptop-dell-used-1.jpg', 'is_featured' => true],
+            ['product_id' => 5, 'image' => 'laptop-dell-used-2.jpg', 'is_featured' => false],
+            ['product_id' => 5, 'image' => 'laptop-dell-used-3.jpg', 'is_featured' => false],
             
-            // MacBook Pro
-            ['product_id' => 5, 'image' => 'macbook-pro-14-m3-1.jpg', 'is_featured' => true],
-            ['product_id' => 5, 'image' => 'macbook-pro-14-m3-2.jpg', 'is_featured' => false],
+            // Product ID 12 (Thiết bị học tập nâng cao 2) - Status Sold
+            ['product_id' => 12, 'image' => 'samsung-tablet-1.jpg', 'is_featured' => true],
             
-            // Dell XPS
-            ['product_id' => 6, 'image' => 'dell-xps-15-1.jpg', 'is_featured' => true],
+            // Product ID 10 (Giáo trình chuyên ngành số 10)
+            ['product_id' => 10, 'image' => 'math-book-1.jpg', 'is_featured' => true],
             
-            // iPad Pro
-            ['product_id' => 7, 'image' => 'ipad-pro-129-1.jpg', 'is_featured' => true],
-            ['product_id' => 7, 'image' => 'ipad-pro-129-2.jpg', 'is_featured' => false],
-            
-            // Galaxy Tab
-            ['product_id' => 8, 'image' => 'galaxy-tab-s9-1.jpg', 'is_featured' => true],
-            
-            // AirPods Pro
-            ['product_id' => 9, 'image' => 'airpods-pro-2-1.jpg', 'is_featured' => true],
-            
-            // Sony WH
-            ['product_id' => 10, 'image' => 'sony-wh-1000xm5-1.jpg', 'is_featured' => true],
-            
-            // Anker
-            ['product_id' => 11, 'image' => 'anker-powercore-1.jpg', 'is_featured' => true],
-            
-            // Xiaomi
-            ['product_id' => 12, 'image' => 'xiaomi-power-bank-1.jpg', 'is_featured' => true],
+            // Product ID 19 (Laptop sinh viên 10)
+            ['product_id' => 19, 'image' => 'laptop-hp-used-1.jpg', 'is_featured' => true],
         ];
 
         foreach ($images as $image) {

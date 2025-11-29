@@ -13,7 +13,7 @@ class StoreProductRequest extends FormRequest
     /**
      * Determine if the user is authorized to make this request.
      */
-    public function authorize() : bool
+    public function authorize(): bool
     {
         // return auth()->check(); // Yêu cầu đăng nhập
         return true;
@@ -36,7 +36,7 @@ class StoreProductRequest extends FormRequest
                 'regex:/^[a-zA-Z0-9\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđĐÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸ\-\(\)\/]+$/',
                 Rule::unique('products', 'title')
             ],
-            
+
             // Giá sản phẩm
             'price' => [
                 'required',
@@ -45,7 +45,7 @@ class StoreProductRequest extends FormRequest
                 'max:999999999.99',
                 'regex:/^\d+(\.\d{1,2})?$/'
             ],
-            
+
             // Mô tả
             'description' => [
                 'required',
@@ -54,14 +54,14 @@ class StoreProductRequest extends FormRequest
                 'max:2000',
                 'regex:/^[^<>]*$/', // Không cho phép HTML tags
             ],
-            
+
             // Danh mục
             'category_id' => [
                 'required',
                 'integer',
                 'exists:categories,id'
             ],
-            
+
             // Số lượng tồn kho
             'stocks' => [
                 'required',
@@ -69,40 +69,46 @@ class StoreProductRequest extends FormRequest
                 'min:0',
                 'max:999999'
             ],
-            
+
             // Trạng thái
             'status' => [
                 'nullable',
                 'in:active,inactive,out_of_stock'
             ],
-            
+
             // Sản phẩm nổi bật
             'is_featured' => [
                 'nullable',
                 'boolean'
             ],
-            
+
             // Hình ảnh sản phẩm
             'images' => [
                 // 'required',
                 'array',
                 'min:1',
-                'max:10'
+                'max:5'
             ],
-            'images.*' => [
-                // 'required',
+            'images.0' => [
+                'required', 
                 'image',
                 'mimes:jpeg,jpg,png,webp',
-                'max:2048', // 2MB
+                'max:2048',
             ],
-            
+            'images.*' => [
+                'nullable', 
+                'image',
+                'mimes:jpeg,jpg,png,webp',
+                'max:2048',
+            ],
+
             // Ảnh đại diện (index của mảng images)
             'featured_image_index' => [
                 'required',
                 'integer',
                 'min:0'
             ],
-            
+
             // Thuộc tính động (attributes)
             'attributes' => [
                 'nullable',
@@ -129,49 +135,60 @@ class StoreProductRequest extends FormRequest
             'title.max' => 'Tiêu đề sản phẩm không được vượt quá 150 ký tự',
             'title.regex' => 'Tiêu đề sản phẩm chứa ký tự không hợp lệ',
             'title.unique' => 'Tiêu đề sản phẩm đã tồn tại trong hệ thống',
-            
+
             // Price messages
             'price.required' => 'Giá sản phẩm không được để trống',
             'price.numeric' => 'Giá sản phẩm phải là số',
             'price.min' => 'Giá sản phẩm phải lớn hơn 1.000 VNĐ',
-            'price.max' => 'Giá sản phẩm vượt quá giới hạn cho phép',
+            'price.max' => 'Giá sản phẩm không được vượt quá 999,999,999.99đ.',
             'price.regex' => 'Giá sản phẩm có định dạng không hợp lệ',
-            
+
             // Description messages
             'description.required' => 'Mô tả sản phẩm không được để trống',
             'description.min' => 'Mô tả sản phẩm phải có ít nhất 10 ký tự',
             'description.max' => 'Mô tả sản phẩm không được vượt quá 2000 ký tự',
             'description.regex' => 'Mô tả sản phẩm không được chứa thẻ HTML',
-            
+
             // Category messages
             'category_id.required' => 'Vui lòng chọn danh mục sản phẩm',
             'category_id.integer' => 'Danh mục không hợp lệ',
             'category_id.exists' => 'Danh mục không tồn tại trong hệ thống',
-            
+
             // Stocks messages
             'stocks.required' => 'Số lượng tồn kho không được để trống',
             'stocks.integer' => 'Số lượng tồn kho phải là số nguyên',
             'stocks.min' => 'Số lượng tồn kho không được âm',
             'stocks.max' => 'Số lượng tồn kho vượt quá giới hạn',
-            
+
             // Status messages
             'status.in' => 'Trạng thái sản phẩm không hợp lệ',
-            
+
             // Images messages
-            // 'images.required' => 'Vui lòng upload ít nhất 1 hình ảnh sản phẩm',
-            // 'images.array' => 'Dữ liệu hình ảnh không hợp lệ',
-            // 'images.min' => 'Vui lòng upload ít nhất 1 hình ảnh',
-            // 'images.max' => 'Chỉ được upload tối đa 10 hình ảnh',
-            // 'images.*.required' => 'File hình ảnh không được để trống',
-            // 'images.*.image' => 'File upload phải là hình ảnh',
-            // 'images.*.mimes' => 'Hình ảnh phải có định dạng: jpeg, jpg, png, webp',
-            // 'images.*.max' => 'Kích thước hình ảnh không được vượt quá 2MB',
-            
+            'images.required' => 'Vui lòng upload ít nhất 1 hình ảnh sản phẩm.',
+
+            // Khi file đầu tiên (Ảnh Chính) bị thiếu. 
+            // Lưu ý: Nếu bạn dùng 'images.0' => 'required', nó sẽ bắt lỗi chính xác hơn.
+            // Tuy nhiên, thường dùng images.required/images.min để bao quát.
+            'images.0.required' => 'Ảnh chính là bắt buộc. Vui lòng chọn một file.',
+            'images.0.image' => 'Ảnh chính phải là file hình ảnh.',
+            'images.0.max' => 'Kích thước ảnh chính không được vượt quá 2MB.',
+
+            // --- 2. LỖI CHO CẤU TRÚC MẢNG ---
+            'images.array' => 'Dữ liệu hình ảnh không hợp lệ.',
+            'images.min' => 'Vui lòng upload ít nhất 1 hình ảnh.', // (Nếu bạn dùng rule images:min:1)
+            'images.max' => 'Chỉ được upload tối đa 5 hình ảnh.', // (Nếu bạn dùng rule images:max:5)
+
+            // --- 3. LỖI CHO TẤT CẢ CÁC ẢNH PHỤ (KEY: images.*) ---
+            'images.*.required' => 'File hình ảnh không được để trống.',
+            'images.*.image' => 'File upload phải là hình ảnh (jpeg, png, v.v.).',
+            'images.*.mimes' => 'Hình ảnh phải có định dạng: jpeg, jpg, png, webp.',
+            'images.*.max' => 'Kích thước hình ảnh không được vượt quá 2MB.',
+
             // Featured image messages
             'featured_image_index.required' => 'Vui lòng chọn ảnh đại diện cho sản phẩm',
             'featured_image_index.integer' => 'Chỉ số ảnh đại diện không hợp lệ',
             'featured_image_index.min' => 'Chỉ số ảnh đại diện không hợp lệ',
-            
+
             // Attributes messages
             'attributes.array' => 'Dữ liệu thuộc tính không hợp lệ',
             'attributes.*.attribute_id.required_with' => 'ID thuộc tính không được để trống',
@@ -233,7 +250,7 @@ class StoreProductRequest extends FormRequest
                 foreach ($this->file('images') as $index => $image) {
                     $originalName = $image->getClientOriginalName();
                     $dangerous_extensions = ['.php', '.exe', '.sh', '.bat', '.cmd', '.js'];
-                    
+
                     foreach ($dangerous_extensions as $ext) {
                         if (stripos($originalName, $ext) !== false) {
                             $validator->errors()->add("images.{$index}", 'Tên file ảnh chứa phần mở rộng nguy hiểm');
@@ -263,7 +280,7 @@ class StoreProductRequest extends FormRequest
                         $attribute = \App\Models\Attribute::find($attr['attribute_id']);
                         if ($attribute && $attribute->category_id != $this->category_id) {
                             $validator->errors()->add(
-                                "attributes.{$index}.attribute_id", 
+                                "attributes.{$index}.attribute_id",
                                 'Thuộc tính không thuộc danh mục đã chọn'
                             );
                         }

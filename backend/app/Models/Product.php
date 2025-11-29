@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 // use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -46,15 +47,11 @@ class Product extends Model
         'views_count' => 'integer',
         'stocks' => 'integer',
     ];
-
-    //======================================================================
-    // MỐI QUAN HỆ (RELATIONSHIPS)
-    //======================================================================
-
-    /**
-     * Mối quan hệ: Một sản phẩm thuộc về một người bán (User).
-     */
     public function seller(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
@@ -66,6 +63,11 @@ class Product extends Model
         return $this->belongsTo(Category::class, 'category_id');
     }
 
+    public function cartItems()
+    {
+        // 'hasMany' định nghĩa quan hệ One-to-Many
+        return $this->hasMany(CartItem::class);
+    }
     /**
      * Mối quan hệ: Một sản phẩm có nhiều hình ảnh (ProductImage).
      */
@@ -78,22 +80,6 @@ class Product extends Model
     {
         return $this->hasOne(ProductImage::class)->where('is_featured', true);
     }
-    /**
-     * Mối quan hệ: Một sản phẩm có nhiều đánh giá (Review).
-     */
-   /**
-     * Mối quan hệ: Một sản phẩm có nhiều đánh giá (Review).
-     */
-    public function reviews(): HasMany
-    {
-        return $this->hasMany(Review::class, 'product_id');
-    }
-
-
-    /**
-     * Mối quan hệ Many-to-Many: Lấy ra các Model Attribute thông qua bảng product_attributes.
-     * Quan trọng: withPivot('value') để lấy được giá trị của thuộc tính đó.
-     */
     public function attributes(): BelongsToMany
     {
         return $this->belongsToMany(Attribute::class, 'product_attributes', 'product_id', 'attribute_id')
@@ -104,6 +90,10 @@ class Product extends Model
     {
         // Giả sử bạn có model App\Models\ProductAttribute cho bảng product_attributes
         return $this->hasMany(ProductAttribute::class, 'product_id');
+    }
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class, 'product_id');
     }
     /**
      * Mối quan hệ Many-to-Many: Lấy ra những người dùng đã thêm sản phẩm này vào Wishlist.
@@ -153,40 +143,58 @@ class Product extends Model
     {
         return $query->where('status', 'published');
     }
-    public function scopeSearch(Builder $query, string $keyword): Builder
+    public function scopeSearch(Builder $query, ?string $keyword): Builder
     {
-        return $query->where('status', 'active') // Chỉ tìm trong các sản phẩm đang hoạt động
-                     ->with(['seller', 'featuredImage']) // Tải sẵn các quan hệ cần thiết
-                     ->where(function (Builder $q) use ($keyword) {
-                         // Tìm kiếm trong tên sản phẩm
-                         $q->where('title', 'like', "%{$keyword}%")
-                           // HOẶC tìm kiếm trong tên của người bán (qua quan hệ)
-                           ->orWhereHas('seller', function (Builder $sellerQuery) use ($keyword) {
-                               $sellerQuery->where('full_name', 'like', "%{$keyword}%"); 
-                           });
-                     })
-                     ->latest(); // Sắp xếp kết quả mới nhất lên đầu
+        if (!$keyword) {
+            // Nếu không có keyword, chỉ preload và lọc status
+            return $query->where('status', 'active')
+                ->with(['seller', 'featuredImage'])
+                ->latest();
+        }
+
+        return $query->where('status', 'active')
+            ->with(['seller', 'featuredImage'])
+            ->where(function (Builder $q) use ($keyword) {
+                // 1. Fulltext search trên title + description (nếu đã có fulltext index)
+                $q->whereRaw(
+                    "MATCH(title, description) AGAINST(? IN BOOLEAN MODE)",
+                    [$keyword]
+                )
+                    // 2. OR fallback LIKE trên title + description
+                    ->orWhere('title', 'like', "%{$keyword}%")
+                    ->orWhere('description', 'like', "%{$keyword}%")
+                    // 3. OR search theo tên người bán qua quan hệ
+                    ->orWhereHas('seller', function (Builder $sellerQuery) use ($keyword) {
+                        $sellerQuery->where('full_name', 'like', "%{$keyword}%");
+                    });
+            })
+            ->latest();
     }
     public function scopeActiveAndReady(Builder $query): Builder
     {
-        return $query->where('status', 'active')
+        return $query->where('is_visible', '1')->where('status', 'active')
+            ->with(['seller', 'featuredImage'])
+            ->latest();
+    }
+    public function scopeMyProducts(Builder $query): Builder
+    {
+        return $query->where('user_id', Auth::id())
             ->with(['seller', 'featuredImage'])
             ->latest();
     }
     public function scopeFeatured(Builder $query): Builder
     {
         return $query->where('is_featured', true)
-                     ->where('is_visible', '1')
-                     ->with(['seller', 'featuredImage']) // Tải sẵn thông tin người bán VÀ trường đại học của họ
-                     ->latest()
-                     ->limit(4); // Giới hạn chỉ lấy 4 sản phẩm nổi bật
+            ->where('is_visible', '1')
+            ->with(['seller', 'featuredImage']) // Tải sẵn thông tin người bán VÀ trường đại học của họ
+            ->latest()
+            ->limit(4); // Giới hạn chỉ lấy 4 sản phẩm nổi bật
     }
     public function scopeInCategory(Builder $query, Category $category): Builder
     {
         $categoryIds = $category->getAllChildIds();
-
         return $query->whereIn('category_id', $categoryIds)
-                     ->activeAndReady(); // Tái sử dụng scope đã có để lấy sản phẩm active và eager load
+            ->activeAndReady(); // Tái sử dụng scope đã có để lấy sản phẩm active và eager load
     }
     public function favoredByUsers(): BelongsToMany
     {

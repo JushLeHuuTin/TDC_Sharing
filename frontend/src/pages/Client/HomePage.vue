@@ -30,13 +30,13 @@ const props = defineProps({
 });
 // --- QUẢN LÝ STATE TỪ PINIA ---
 const authStore = useAuthStore();
-const categoryStore = useCategoryStore(); 
-const productStore = useProductStore(); 
+const categoryStore = useCategoryStore();
+const productStore = useProductStore();
 
 const { user, isLoggedIn, isAdmin } = storeToRefs(authStore);
-const { categories, isLoading, error } = storeToRefs(categoryStore);
+const { topFiveCategories, isLoading, error } = storeToRefs(categoryStore);
 const { featuredProducts, isLoadingFeatured, featuredError } = storeToRefs(productStore);
-
+console.log(featuredProducts);
 // --- DỮ LIỆU GIẢ/MOCK DỮ LIỆU CHO TESTIMONIALS ---
 const testimonials = ref([
     { name: 'Nguyễn Minh Anh', university: 'ĐH Khoa học Tự nhiên', avatar: 'https://via.placeholder.com/60', rating: 5, comment: 'Tuyệt vời! Tôi đã bán được laptop cũ và mua được máy tính mới với giá rất hợp lý.' },
@@ -45,19 +45,9 @@ const testimonials = ref([
 ]);
 
 onMounted(() => {
-    categoryStore.fetchCategories(); 
+    categoryStore.fetchCategories(false);
     productStore.fetchFeaturedProducts();
 });
-// Sử dụng các hàm để mô phỏng hành vi của route() trong Blade
-const getRoute = (name) => {
-    const routes = {
-        'products.create': '/products/create',
-        'products.index': '/products',
-        'products.register': '/register',
-        'products.login': '/login',
-    };
-    return routes[name] || '#';
-};
 
 // Hàm để định dạng số (tương tự ProductCard, nhưng dùng cho Stats)
 const formatNumber = (number) => {
@@ -95,15 +85,22 @@ const formatNumber = (number) => {
                         </router-link>
                     </template>
                     <template v-else>
-                        <a :href="getRoute('products.create')"
-                        style="background-color: rgb(102 126 234 / 87%)"
+                        <router-link to="/products/create" style="background-color: rgb(102 126 234 / 87%)"
                             class=" text-white font-semibold px-8 py-3  rounded-lg hover:bg-blue-700 transition">
                             <fa :icon="['fas', 'plus']" class="mr-2" />Đăng chia sẻ tài nguyên
-                        </a>
-                        <a :href="getRoute('products.index')"
+                        </router-link>
+                        <!-- <a :href="getRoute('products.create')"
+                        class=" text-white font-semibold px-8 py-3  rounded-lg hover:bg-blue-700 transition">
+                            <fa :icon="['fas', 'plus']" class="mr-2" />Đăng chia sẻ tài nguyên
+                        </a> -->
+                        <router-link to="/sanpham" 
+                        class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold  hover:text-blue-600 transition-colors">
+                            <fa :icon="['fas', 'plus']" class="mr-2" />Khám phá hoạt động sinh viên
+                        </router-link>
+                        <!-- <a :href="getRoute('products.index')"
                             class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold  hover:text-blue-600 transition-colors">
                             <fa :icon="['fas', 'search']" class="mr-2" />Khám phá hoạt động sinh viên
-                        </a>
+                        </a> -->
                     </template>
                 </div>
             </div>
@@ -140,7 +137,7 @@ const formatNumber = (number) => {
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                <a v-for="category in categories" :key="category.name" href="#"
+                <router-link v-for="category in topFiveCategories" :to="`/danhmuc/${category.slug}`" :key="category.name" href="#"
                     class="group bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 text-center">
                     <div :style="{ 'background-color': category.color }"
                         class="w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
@@ -148,7 +145,15 @@ const formatNumber = (number) => {
                     </div>
                     <h3 class="font-semibold text-gray-900 mb-1">{{ category.name }}</h3>
                     <p class="text-sm text-gray-500">{{ category.count }} sản phẩm</p>
-                </a>
+                </router-link>
+                <!-- <router-link href="#"
+                    class="group bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 text-center">
+                    <div 
+                        class="w-12 bg-gray-500 h-12 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                        <fa :icon="['fas', 'ellipsis']" class="text-white text-lg" />
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-1">Khác</h3>
+                </router-link> -->
             </div>
         </section>
 

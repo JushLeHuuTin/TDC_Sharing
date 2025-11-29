@@ -30,7 +30,7 @@ class UpdateProductRequest extends FormRequest
             'title' => 'required|string|max:150',
             'price' => 'required|numeric|gt:0|max:999999999', // gt:0 nghĩa là > 0
             'description' => 'nullable|string|max:2000',
-            'status' => ['required', Rule::in(['active', 'inactive', 'draft'])], // Chỉ chấp nhận các giá trị này
+            'status' => ['required', Rule::in(['active','new','draft','pending','sold','hidden'])], // Chỉ chấp nhận các giá trị này
         ];
     }
     public function messages()

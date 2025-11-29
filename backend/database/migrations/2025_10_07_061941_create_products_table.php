@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('title', 130);
             $table->text('description')->nullable();
             $table->decimal('price', 10, 2);
-            $table->enum('status', ['active', 'inactive', 'out_of_stock','new'])->default('active');
+            $table->enum('status', ['active','new','draft','pending','sold','hidden'])->default('active');
             $table->integer('stocks')->default(0);
             $table->boolean('is_visible')->default(true);
             $table->boolean('is_featured')->default(false);
@@ -32,6 +32,7 @@ return new class extends Migration
             $table->index('slug');
             $table->index('status');
             $table->index('is_featured');
+            $table->fullText(['title', 'description']);
         });
     }
 

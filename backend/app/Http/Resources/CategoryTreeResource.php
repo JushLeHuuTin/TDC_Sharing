@@ -14,7 +14,12 @@ class CategoryTreeResource extends JsonResource
             'name' => $this->name ?? '(Không xác định)',
             'products_count' => $this->products_count ?? 0, // Lấy từ withCount
             'slug' => $this->slug, // Cung cấp slug để frontend tạo link sửa/xóa
-            
+            'color' => $this->color, // Cung cấp slug để frontend tạo link sửa/xóa
+            'icon' => $this->icon, // Cung cấp slug để frontend tạo link sửa/xóa
+            'total_products' => $this->total_products,
+            'is_visible' => $this->is_visible,
+            'description' => $this->description,
+            'display_order' => $this->display_order,
             // 'children' sẽ chỉ xuất hiện nếu collection con không rỗng
             'children' => self::collection($this->when(
                 $this->children->isNotEmpty(),

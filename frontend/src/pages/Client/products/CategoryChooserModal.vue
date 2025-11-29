@@ -1,22 +1,19 @@
 <script setup>
-import { ref, onMounted ,watch} from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useCategoryStore } from '@/stores/categoryStore';
 
 const props = defineProps({
-    // Nhận hàm để đóng modal và truyền ID đã chọn
     onCategorySelected: Function,
-    // Nhận trạng thái hiển thị modal từ component cha
     isVisible: Boolean,
+    
 });
 
 const categoryStore = useCategoryStore();
-const { categories: categoryOptions, isLoading: isLoadingCategories } = storeToRefs(categoryStore);
-
+const { flattenedCategories, isLoading: isLoadingCategories } = storeToRefs(categoryStore);
 const selectedCategory = ref('');
 
-// --- LOGIC XỬ LÝ SỰ KIỆN ---
-
+// --- LOGIC XỬ LÝ SỰ KIỆN (Giữ nguyên) ---
 const selectAndClose = () => {
     if (selectedCategory.value) {
         props.onCategorySelected(selectedCategory.value);
@@ -28,7 +25,7 @@ const closeModal = () => {
     props.onCategorySelected(null);
 };
 
-// --- QUẢN LÝ BOOTSTRAP MODAL (Sử dụng JS) ---
+// --- QUẢN LÝ BOOTSTRAP MODAL (Sử dụng JS) (Giữ nguyên) ---
 let modalElement = null;
 let bsModal = null;
 
@@ -73,11 +70,26 @@ onMounted(() => {
                     <div v-if="isLoadingCategories" class="text-center py-4">
                         <fa :icon="['fas', 'spinner']" class="fa-spin me-2" /> Đang tải danh mục...
                     </div>
+                    
                     <div v-else class="mb-3">
                         <label for="initialCategory" class="form-label fw-bold">Danh mục chính</label>
+                        
                         <select id="initialCategory" class="form-select form-control" v-model="selectedCategory">
                             <option value="" disabled>--- Chọn danh mục ---</option>
-                            <option v-for="cat in categoryOptions" :key="cat.id" :value="cat.id">
+                            
+                            <option 
+                                v-for="cat in flattenedCategories" 
+                                :key="cat.id" 
+                                :value="cat.id"
+                                
+                                :disabled="cat.isParent" 
+                                
+                                :class="{ 
+                                    'fw-bold bg-light text-primary': cat.isParent, 
+                                    'text-muted': cat.isParent && cat.level === 0, 
+                                    'text-dark': !cat.isParent 
+                                }"
+                            >
                                 {{ cat.name }}
                             </option>
                         </select>
@@ -88,6 +100,7 @@ onMounted(() => {
                         Bạn phải chọn một danh mục để tiếp tục.
                     </p>
                 </div>
+                
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" @click="closeModal">
                         Hủy bỏ và quay lại trang chủ

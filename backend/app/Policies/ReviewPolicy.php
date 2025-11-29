@@ -2,45 +2,51 @@
 
 namespace App\Policies;
 
-use App\Models\Product;
 use App\Models\Review;
 use App\Models\User;
+use Illuminate\Auth\Access\Response;
 
 class ReviewPolicy
 {
     /**
-     * Determine whether the user can create reviews.
-     * Logic ở đây là để kiểm tra xem người dùng có quyền tạo review cho sản phẩm này không.
-     *
-     * @param \App\Models\User $user
-     * @param \App\Models\Product $product
-     * @return bool
+     * Determine whether the user can view any models.
      */
-    public function create(User $user, Product $product): bool
+    public function viewAny(User $user): bool
     {
-        // Ví dụ logic nâng cao: Kiểm tra xem người dùng đã từng mua sản phẩm này chưa.
-        // Bạn cần tự định nghĩa hàm `hasPurchased` trong model User.
-        // return $user->hasPurchased($product);
+        return true; // Ai cũng có thể xem danh sách đánh giá
+    }
 
-        // Logic cơ bản: Bất kỳ người dùng nào đã đăng nhập đều có thể viết đánh giá.
-        // Đây là phương án đơn giản hơn để bắt đầu.
-        return true;
-    }
-    public function delete(User $user, Review $review): bool
+    /**
+     * Determine whether the user can view the model.
+     */
+    public function view(User $user, Review $review): bool
     {
-        // Cho phép xóa nếu:
-        // 1. Người dùng là người đã viết đánh giá đó.
-        // HOẶC
-        // 2. Người dùng có vai trò là 'admin'.
-        // (Giả sử model User của bạn có một thuộc tính `role`)
-        return $user->id === $review->user_id || $user->role === 'admin';
+        return true; // Ai cũng có thể xem chi tiết đánh giá
     }
+
+    /**
+     * Determine whether the user can create models.
+     */
+    public function create(User $user): bool
+    {
+        return true; // Ai đăng nhập rồi đều có thể đánh giá (Controller sẽ check mua hàng sau)
+    }
+
+    /**
+     * Determine whether the user can update the model.
+     */
     public function update(User $user, Review $review): bool
     {
-        // Cho phép cập nhật nếu:
-        // 1. Người dùng là người đã viết đánh giá đó.
-        // HOẶC
-        // 2. Người dùng có vai trò là 'admin'.
-        return $user->id === $review->user_id || $user->role === 'admin';
+        // Cho phép nếu là Admin HOẶC là chính chủ
+        return $user->role === 'admin' || $user->id === $review->reviewer_id;
+    }
+
+    /**
+     * Determine whether the user can delete the model.
+     */
+    public function delete(User $user, Review $review): bool
+    {
+        // Cho phép nếu là Admin HOẶC là chính chủ
+        return $user->role === 'admin' || $user->id === $review->reviewer_id;
     }
 }

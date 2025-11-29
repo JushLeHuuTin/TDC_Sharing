@@ -13,20 +13,22 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->string('order_id', 50)->unique();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('buyer_id')->nullable()->constrained('users')->onDelete('set null');
-            $table->enum('payment_method', ['cod', 'bank_transfer', 'credit_card', 'e_wallet'])->default('cod');
-            $table->foreignId('address_id')->nullable()->constrained()->onDelete('set null');
-            $table->foreignId('voucher_id')->nullable()->constrained()->onDelete('set null');
-            $table->enum('status', ['pending', 'processing', 'shipped', 'delivered', 'cancelled'])->default('pending');
+           
+            $table->foreignId('user_id')
+                  ->constrained('users') // Tham chiếu đến bảng 'users'
+                  ->onDelete('cascade'); // Nếu người dùng bị xóa, order cũng xóa (hoặc set null)
+            $table->foreignId('seller_id')
+                  ->constrained('users');
+            $table->enum('payment_method', ['cod', 'momo', 'bank', 'e_wallet'])->default('cod');
+            $table->foreignId('address_id')->nullable()->constrained('addresses')->onDelete('set null');
+            $table->foreignId('voucher_id')->nullable()->constrained('vouchers')->onDelete('set null');
+            $table->enum('status', ['pending','paid', 'processing', 'shipped', 'delivered', 'cancelled'])->default('pending');
             $table->decimal('total_amount', 10, 2)->default(0);
-            $table->decimal('discount_amount', 10, 2)->default(0);
-            $table->decimal('final_amount', 10, 2)->default(0);
+ 
             $table->timestamps();
             
-            $table->index('user_id');
-            $table->index('order_id');
+            // Đánh chỉ mục
+            $table->index('user_id'); 
             $table->index('status');
         });
     }

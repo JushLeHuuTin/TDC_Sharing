@@ -11,13 +11,10 @@ onBeforeMount(() => {
     console.log('App is mounting. Initializing Auth Store...');
     
     authStore.initializeStore(); 
-    
-    // [Tùy chọn] Kiểm tra và điều hướng nếu cần
-    // Nếu người dùng đang ở trang Login/Register nhưng đã có token, chuyển họ về trang chính
     if (authStore.isLoggedIn && 
         (router.currentRoute.value.name === 'login' || router.currentRoute.value.name === 'register')) {
         
-        router.push({ name: 'home' });
+        router.push({ name: 'home.index' });
     }
 });
 </script>

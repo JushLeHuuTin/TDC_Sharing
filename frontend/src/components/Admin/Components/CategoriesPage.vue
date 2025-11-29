@@ -1,187 +1,172 @@
 <script setup>
-import { computed, ref } from 'vue';
-import { RouterLink } from 'vue-router'; 
+import { useCategoryStore } from '@/stores/categoryStore';
+import { storeToRefs } from 'pinia';
+import { onMounted, computed, ref } from 'vue';
+import { RouterLink } from 'vue-router';
+import { getCurrentInstance } from 'vue';
 
-// --- STATE CỤC BỘ ---
-const expandedCategories = ref([]); // Lưu trữ ID của các danh mục cha đang mở
-
-// --- PROPS NHẬN TỪ LAYOUT ---
-const props = defineProps({
-    // Data Props
-    categories: Array,
-    selectedCategoryId: [Number, String, null],
-    
-    // CRUD Action Handlers (Gọi logic Modal/CRUD trong Layout)
-    onAddCategory: Function,
-    onSelectCategory: Function,
-    onEditCategory: Function,
-    onDeleteCategory: Function,
-    onAddSubCategory: Function,
-    
-    // Utilities
-    getFaIconArray: Function,
-    showToast: Function,
+const instance = getCurrentInstance();
+const $toast = instance.appContext.config.globalProperties.$toast;
+const categoryStore = useCategoryStore();
+const { categoriesArray, selectedCategoryInfo, expandedCategories, selectedCategoryId, submissionError, isCreating, isUpdating, isDeleting } = storeToRefs(categoryStore);
+const categoryTreeData = computed(() => categoryStore.categoryTreeData);
+onMounted(async () => {
+    await categoryStore.fetchCategories(true); // fetch full tree
+    console.log('categoriesTree:', categoryStore.categoriesTree);
+    console.log('categoriesTree:', categoryTreeData);
 });
-
-// --- COMPUTED PROPERTIES ---
-
-// Đảm bảo không bị lỗi filter() khi categories chưa load xong
-const categoriesArray = computed(() => props.categories || []);
-
-const categoryStats = computed(() => {
-    const level1Count = categoriesArray.value.filter(c => c.level === 1).length;
-    const level2Count = categoriesArray.value.filter(c => c.level === 2).length;
-    const totalProducts = categoriesArray.value.reduce((sum, c) => sum + c.product_count, 0);
-    return {
-        totalCategories: categoriesArray.value.length,
-        level1Categories: level1Count,
-        level2Categories: level2Count,
-        activeProducts: totalProducts.toLocaleString('en-US')
-    };
-});
-
-// Logic tạo cây danh mục
-const categoryTreeData = computed(() => {
-    const level1Categories = categoriesArray.value.filter(c => c.level === 1).sort((a, b) => a.order - b.order);
-    const tree = [];
-    level1Categories.forEach(category => {
-        // 1. Thêm danh mục cấp 1
-        tree.push(category);
-        
-        // 2. Nếu danh mục cấp 1 đang mở, thêm danh mục con
-        if (expandedCategories.value.includes(category.id)) {
-            categoriesArray.value
-                .filter(c => c.parent_id === category.id)
-                .sort((a, b) => a.order - b.order)
-                .forEach(subCategory => {
-                    tree.push(subCategory);
-                });
-        }
-    });
-    return tree;
-});
-
-const selectedCategoryInfo = computed(() => {
-    if (!props.selectedCategoryId) return null;
-    const category = categoriesArray.value.find(c => c.id === props.selectedCategoryId);
-    if (!category) return null;
-
-    const parentCategory = category.parent_id ? categoriesArray.value.find(c => c.id === category.parent_id) : null;
-    const subCategories = categoriesArray.value.filter(c => c.parent_id === category.id);
-    
-    return { ...category, parentCategory, subCategories };
-});
-
-// --- LOGIC THU/MỞ RỘNG DANH MỤC ---
-
-// Kiểm tra xem danh mục có danh mục con không
-const hasSubCategories = (id) => {
-    return categoriesArray.value.some(c => c.parent_id === id);
-};
-
-// Chuyển đổi trạng thái mở/đóng của một danh mục cha
-const toggleExpand = (id) => {
-    if (expandedCategories.value.includes(id)) {
-        expandedCategories.value = expandedCategories.value.filter(catId => catId !== id);
-    } else {
-        expandedCategories.value = [...expandedCategories.value, id];
-    }
-};
-
-// Mở rộng tất cả
-function expandAll() {
-    expandedCategories.value = categoriesArray.value
-        .filter(c => c.level === 1 && hasSubCategories(c.id))
-        .map(c => c.id);
-    props.showToast('Đã mở rộng tất cả danh mục!', 'info');
-}
-
-// Thu gọn tất cả
-function collapseAll() {
-    expandedCategories.value = [];
-    props.showToast('Đã thu gọn tất cả danh mục!', 'info');
-}
-
 // --- LOCAL HANDLERS ---
-function viewProducts(id) { 
-    const category = categoriesArray.value.find(c => c.id === id);
-    props.showToast(`Chuyển đến sản phẩm của "${category.name}"...`, 'info'); 
+function viewProducts(id) {
+    const category = categoryTreeData.value.find(c => c.id === id);
+    alert(`Chuyển đến sản phẩm của "${category.name}"...`);
 }
-function importCategories() { props.showToast('Tính năng import đang được phát triển!', 'info'); }
-function exportCategories() { props.showToast('Đã xuất danh sách danh mục!', 'success'); }
+
+function toggleExpand(id) {
+    categoryStore.toggleExpand(id);
+}
+
+function expandAll() {
+    categoryStore.expandAll();
+}
+
+function collapseAll() {
+    categoryStore.collapseAll();
+}
+
+function hasSubCategories(id) {
+    return categoryStore.hasSubCategories(id);
+}
+
+function selectCategory(id) {
+    categoryStore.selectCategory(id);
+}
+
+function openDeleteModal(id) {
+    deletingCategoryId.value = id;
+    showDeleteModal.value = true;
+}
+
+const showModal = ref(false);
+const isEditing = ref(false);
+const showDeleteModal = ref(false);
+const deletingCategoryId = ref(null);
+
+const form = ref({
+    id: null,
+    name: "",
+    parent_id: "",
+    description: "",
+    icon: "fas fa-tag",
+    color: "#0d6efd",
+    display_order: 0,
+    is_visible: true
+});
+
+// Chỉ lấy level = 1
+const level1Categories = computed(() =>
+    categoryTreeData.value.filter(c => c.level === 1)
+);
+
+function openAddModal(parentId = null) {
+    isEditing.value = false;
+    form.value = {
+        id: null,
+        name: "",
+        parent_id: parentId ?? "",
+        description: "",
+        icon: "fas fa-tag",
+        color: "#0d6efd",
+        display_order: 0,
+        is_visible: true
+    };
+    showModal.value = true;
+}
+
+function openEditModal(id) {
+    const cat = categoryTreeData.value.find(c => c.id === id);
+    if (!cat) return;
+
+    isEditing.value = true;
+    form.value = {
+        id: cat.id,
+        name: cat.name,
+        parent_id: cat.parent_id ?? "",
+        description: cat.description ?? "",
+        icon: cat.icon ?? "fas fa-tag",
+        color: cat.color ?? "#0d6efd",
+        display_order: cat.display_order ?? 0,
+        is_visible: cat.is_visible === true
+    };
+    showModal.value = true;
+}
+
+async function saveCategory() {
+    const formData = new FormData();
+    Object.keys(form.value).forEach(key => {
+        let value = form.value[key];
+        if (typeof value === 'boolean') value = value ? 1 : 0;
+        formData.append(key, value);
+    });
+
+    try {
+        if (isEditing.value) {
+            await categoryStore.updateCategory(form.value.id, formData);
+            $toast.success('Cập nhật thành công!');
+        } else {
+            await categoryStore.createCategory(formData);
+            $toast.success('Thêm danh mục thành công!');
+        }
+        showModal.value = false;
+    } catch (error) {
+        $toast.error('Có lỗi xảy ra, vui lòng kiểm tra thông tin!');
+        console.log('Backend error:', categoryStore.submissionError);
+    }
+}
+
+
+async function confirmDeleteCategory() {
+    isDeleting.value = true;
+    try {
+        await categoryStore.deleteCategory(deletingCategoryId.value);
+        showDeleteModal.value = false;
+        deletingCategoryId.value = null;
+        await categoryStore.fetchCategories(true);
+        $toast.success('Xóa danh mục thành công!');
+    } catch (error) {
+        $toast.error(submissionError.value.general[0]);
+    } finally {
+        isDeleting.value = false;
+    }
+}
 
 </script>
 
 <template>
-    <!-- Page Header (Đã có style trong AdminLayout) -->
     <div class="page-header">
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><RouterLink to="/admin/dashboard">Dashboard</RouterLink></li>
+                        <li class="breadcrumb-item">
+                            <RouterLink to="/admin/dashboard">Dashboard</RouterLink>
+                        </li>
                         <li class="breadcrumb-item active" aria-current="page">Quản lý danh mục</li>
                     </ol>
                 </nav>
                 <h2 class="mb-0">Quản lý danh mục sản phẩm</h2>
                 <p class="text-muted mb-0">Tổ chức và quản lý danh mục theo cấp độ</p>
             </div>
-            <button class="btn btn-primary" @click="props.onAddCategory">
+            <button class="btn btn-primary" @click="openAddModal()">
                 <fa :icon="['fas', 'plus']" class="me-2" />Thêm danh mục
             </button>
         </div>
     </div>
 
-    <!-- Stats Cards (Giữ nguyên) -->
-    <div class="row mb-4">
-        <div class="col-md-3 mb-3">
-            <div class="card stats-card bg-primary text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div><h3 class="mb-1">{{ categoryStats.totalCategories }}</h3><p class="mb-0 opacity-75">Tổng danh mục</p></div>
-                        <fa :icon="['fas', 'tags']" class="fa-2x opacity-75" />
-                    </div>
-                </div>
-            </div>
-        </div>
-         <div class="col-md-3 mb-3">
-            <div class="card stats-card bg-success text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div><h3 class="mb-1">{{ categoryStats.level1Categories }}</h3><p class="mb-0 opacity-75">Danh mục cấp 1</p></div>
-                        <fa :icon="['fas', 'layer-group']" class="fa-2x opacity-75" />
-                    </div>
-                </div>
-            </div>
-        </div>
-         <div class="col-md-3 mb-3">
-            <div class="card stats-card bg-info text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div><h3 class="mb-1">{{ categoryStats.level2Categories }}</h3><p class="mb-0 opacity-75">Danh mục cấp 2</p></div>
-                        <fa :icon="['fas', 'sitemap']" class="fa-2x opacity-75" />
-                    </div>
-                </div>
-            </div>
-        </div>
-         <div class="col-md-3 mb-3">
-            <div class="card stats-card bg-warning text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div><h3 class="mb-1">{{ categoryStats.activeProducts }}</h3><p class="mb-0 opacity-75">Sản phẩm đang bán</p></div>
-                        <fa :icon="['fas', 'box']" class="fa-2x opacity-75" />
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Category Management -->
-    <div class="row">
+    <!-- Category Tree Panel -->
+    <div class="row mt-4">
         <div class="col-md-8">
-            <!-- Đã có sẵn .category-tree với nền trắng và shadow -->
-            <div class="category-tree"> 
-                <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+            <div class="category-tree">
+                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
                     <h5 class="mb-0">Cây danh mục</h5>
                     <div class="d-flex gap-2">
                         <button class="btn btn-outline-primary btn-sm" @click="expandAll">
@@ -192,80 +177,92 @@ function exportCategories() { props.showToast('Đã xuất danh sách danh mục
                         </button>
                     </div>
                 </div>
-                
-                <div id="categoryTree" class="pt-3">
-                    <div 
-                        v-for="category in categoryTreeData" 
-                        :key="category.id"
-                        :class="[
-                            'category-item', 
-                            `category-level-${category.level}`, 
+
+                <div>
+
+                    <div v-if="categoryTreeData.length > 0">
+                        <div v-for="category in categoryTreeData" :key="category.id" :class="[
+                            'category-item',
+                            `category-level-${category.level}`,
                             { 'border-primary bg-light': selectedCategoryId === category.id }
-                        ]" 
-                        @click="props.onSelectCategory(category.id)"
-                    >
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center flex-grow-1">
-                                
-                                <!-- Icon Toggle -->
-                                <button v-if="category.level === 1 && hasSubCategories(category.id)" 
-                                        @click.stop="toggleExpand(category.id)"
-                                        class="btn btn-sm p-0 me-2 category-toggle-btn"
-                                        :class="{'text-primary': expandedCategories.includes(category.id), 'text-muted': !expandedCategories.includes(category.id)}">
-                                    <fa :icon="['fas', expandedCategories.includes(category.id) ? 'chevron-down' : 'chevron-right']" class="fa-xs" />
-                                </button>
-                                
-                                <fa :icon="props.getFaIconArray(category.icon)" class="me-3" :style="{ color: category.color }" />
-                                <div>
-                                    <h6 class="mb-1">{{ category.name }}</h6>
-                                    <small class="text-muted">
-                                        {{ category.product_count }} sản phẩm
-                                        <template v-if="!category.active"> • <span class="text-danger">Đã tắt</span></template>
-                                    </small>
+                        ]" @click="selectCategory(category.id)">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center flex-grow-1">
+                                    <!-- Icon Toggle -->
+                                    <button v-if="category.level === 1 && categoryStore.hasSubCategories(category.id)"
+                                        @click.stop="categoryStore.toggleExpand(category.id)"
+                                        class="btn btn-sm p-0 me-2 category-toggle-btn" :class="{
+                                            'text-primary': categoryStore.expandedCategories.includes(category.id),
+                                            'text-muted': !categoryStore.expandedCategories.includes(category.id)
+                                        }">
+                                        <fa :icon="['fas', categoryStore.expandedCategories.includes(category.id) ? 'chevron-down' : 'chevron-right']"
+                                            class="fa-xs" />
+                                    </button>
+
+                                    <fa :icon="category.icon" class="me-3" :style="{ color: category.color }" />
+                                    <div>
+                                        <h6 class="mb-1">{{ category.name }}</h6>
+                                        <small class="text-muted">
+                                            {{ category.total_products }} sản phẩm
+                                            <template v-if="!category.is_visible"> • <span class="text-danger">Đã
+                                                    tắt</span></template>
+                                        </small>
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <div class="category-actions">
-                                <div class="btn-group btn-group-sm">
-                                    <button class="btn btn-outline-primary" @click.stop="props.onEditCategory(category.id)" title="Chỉnh sửa">
-                                        <fa :icon="['fas', 'edit']" />
-                                    </button>
-                                    <template v-if="category.level === 1">
-                                        <button class="btn btn-outline-success" @click.stop="props.onAddSubCategory(category.id)" title="Thêm danh mục con">
-                                            <fa :icon="['fas', 'plus']" />
+                                <div class="category-actions">
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" @click.stop="openEditModal(category.id)"
+                                            title="Chỉnh sửa">
+                                            <fa :icon="['fas', 'edit']" />
                                         </button>
-                                    </template>
-                                    <button class="btn btn-outline-danger" @click.stop="props.onDeleteCategory(category.id)" title="Xóa">
-                                        <fa :icon="['fas', 'trash']" />
-                                    </button>
+                                        <template v-if="category.level === 1">
+                                            <button class="btn btn-outline-success"
+                                                @click.stop="openAddModal(category.id)" title="Thêm danh mục con">
+                                                <fa :icon="['fas', 'plus']" />
+                                            </button>
+                                        </template>
+                                        <button class="btn btn-outline-danger"
+                                            @click.stop="openDeleteModal(category.id)" title="Xóa">
+                                            <fa :icon="['fas', 'trash']" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    <div v-else class="text-center text-muted py-4">
+                        Đang tải danh mục...
+                    </div>
                 </div>
             </div>
         </div>
-        
+
+        <!-- Info Panel -->
         <div class="col-md-4">
             <div class="card shadow-sm category-info-card">
                 <div class="card-header bg-light">
                     <h6 class="mb-0 fw-bold">Thông tin danh mục</h6>
                 </div>
-                <div class="card-body" id="categoryInfo">
+                <div class="card-body">
                     <template v-if="selectedCategoryInfo">
                         <div class="text-center mb-3 border-bottom pb-3">
-                            <fa :icon="props.getFaIconArray(selectedCategoryInfo.icon)" class="fa-3x mb-2" :style="{ color: selectedCategoryInfo.color }" />
+                            <fa :icon="selectedCategoryInfo.icon" class="fa-3x mb-2"
+                                :style="{ color: selectedCategoryInfo.color }" />
+
                             <h5>{{ selectedCategoryInfo.name }}</h5>
-                            <span class="badge" :class="selectedCategoryInfo.active ? 'bg-success' : 'bg-secondary'">
-                                {{ selectedCategoryInfo.active ? 'Đang hoạt động' : 'Đã tắt' }}
+
+                            <span class="badge"
+                                :class="selectedCategoryInfo.is_visible ? 'bg-success' : 'bg-secondary'">
+                                {{ selectedCategoryInfo.is_visible ? 'Đang hoạt động' : 'Đã tắt' }}
                             </span>
                         </div>
-                        
-                        <!-- Thông tin chi tiết -->
                         <div class="mb-3">
                             <strong>Mô tả:</strong>
-                            <p class="text-muted mb-0">{{ selectedCategoryInfo.description || 'Chưa có mô tả' }}</p>
+                            <p class="text-muted mb-0">
+                                {{ selectedCategoryInfo.description || 'Chưa có mô tả' }}
+                            </p>
                         </div>
+
                         <div class="row mb-3">
                             <div class="col-6">
                                 <strong>Cấp độ:</strong>
@@ -273,56 +270,162 @@ function exportCategories() { props.showToast('Đã xuất danh sách danh mục
                             </div>
                             <div class="col-6">
                                 <strong>Thứ tự:</strong>
-                                <p class="mb-0">{{ selectedCategoryInfo.order }}</p>
+                                <p class="mb-0">{{ selectedCategoryInfo.display_order }}</p>
                             </div>
                         </div>
-                        <!-- ... (Parent category, product count) ... -->
+
                         <div class="mb-3">
                             <strong>Số sản phẩm:</strong>
-                            <p class="mb-0 text-primary fw-bold">{{ selectedCategoryInfo.product_count }} sản phẩm</p>
+                            <p class="mb-0 text-primary fw-bold">
+                                {{ selectedCategoryInfo.total_products }} sản phẩm
+                            </p>
                         </div>
-                        
+
                         <div class="d-grid gap-2 border-top pt-3">
-                            <button class="btn btn-primary btn-sm" @click="props.onEditCategory(selectedCategoryInfo.id)">
-                                <fa :icon="['fas', 'edit']" class="me-2" />Chỉnh sửa
+                            <button class="btn btn-primary btn-sm" @click="openEditModal(selectedCategoryInfo.id)">
+                                <fa :icon="['fas', 'edit']" class="me-2" />
+                                Chỉnh sửa
                             </button>
+
                             <template v-if="selectedCategoryInfo.level === 1">
-                                <button class="btn btn-success btn-sm" @click="props.onAddSubCategory(selectedCategoryInfo.id)">
-                                    <fa :icon="['fas', 'plus']" class="me-2" />Thêm danh mục con
+                                <button class="btn btn-success btn-sm"
+                                    @click="props.onAddSubCategory(selectedCategoryInfo.id)">
+                                    <fa :icon="['fas', 'plus']" class="me-2" />
+                                    Thêm danh mục con
                                 </button>
                             </template>
+
                             <button class="btn btn-outline-info btn-sm" @click="viewProducts(selectedCategoryInfo.id)">
-                                <fa :icon="['fas', 'box']" class="me-2" />Xem sản phẩm
+                                <fa :icon="['fas', 'box']" class="me-2" />
+                                Xem sản phẩm
                             </button>
                         </div>
                     </template>
+
                     <div v-else class="text-center text-muted py-4">
                         <fa :icon="['fas', 'info-circle']" class="fa-3x mb-3" />
                         <p>Chọn một danh mục để xem thông tin chi tiết</p>
                     </div>
                 </div>
+
             </div>
-            
-            <div class="card mt-3 shadow-sm">
-                <div class="card-header bg-light">
-                    <h6 class="mb-0 fw-bold">Thao tác nhanh</h6>
+        </div>
+    </div>
+    <!-- CATEGORY MODAL -->
+    <div v-if="showModal" class="modal fade show" style="display: block;" aria-modal="true" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        {{ isEditing ? 'Chỉnh sửa danh mục' : 'Thêm danh mục' }}
+                    </h5>
+                    <button type="button" class="btn-close" @click="showModal = false"></button>
                 </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-primary" @click="props.onAddCategory">
-                            <fa :icon="['fas', 'plus']" class="me-2" />Thêm danh mục mới
-                        </button>
-                        <button class="btn btn-outline-info" @click="importCategories">
-                            <fa :icon="['fas', 'file-import']" class="me-2" />Import danh mục
-                        </button>
-                        <button class="btn btn-outline-success" @click="exportCategories">
-                            <fa :icon="['fas', 'file-export']" class="me-2" />Export danh mục
+
+                <form @submit.prevent="saveCategory">
+                    <div class="modal-body">
+
+                        <!-- NAME -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Tên danh mục <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" v-model="form.name" />
+                            <div v-if="submissionError?.name" class="text-danger mt-1">
+                                {{ submissionError.name[0] }}
+                            </div>
+                        </div>
+                        <!-- PARENT -->
+                        <div class="mb-3">
+                            <label class="form-label">Danh mục cha</label>
+                            <select class="form-select" v-model="form.parent_id">
+                                <option value="">-- Danh mục gốc (Cấp 1) --</option>
+                                <option v-for="c in level1Categories" :key="c.id" :value="c.id">
+                                    {{ c.name }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- DESCRIPTION -->
+                        <div class="mb-3">
+                            <label class="form-label">Mô tả</label>
+                            <textarea class="form-control" rows="3" v-model="form.description"></textarea>
+                        </div>
+
+                        <!-- ICON -->
+                        <div class="mb-3">
+                            <label class="form-label">Icon</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i :class="form.icon"></i>
+                                </span>
+                                <input type="text" class="form-control" placeholder="fas fa-tag" v-model="form.icon">
+                            </div>
+                            <small class="text-muted">FontAwesome (vd: fas fa-book, fas fa-laptop)</small>
+                        </div>
+
+                        <!-- COLOR -->
+                        <div class="mb-3">
+                            <label class="form-label">Màu sắc</label>
+                            <input type="color" class="form-control form-control-color" v-model="form.color">
+                        </div>
+
+                        <!-- ORDER -->
+                        <div class="mb-3">
+                            <label class="form-label">Thứ tự hiển thị</label>
+                            <input type="number" class="form-control" v-model="form.display_order" min="0">
+                        </div>
+
+                        <!-- ACTIVE -->
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" v-model="form.is_visible">
+                            <label class="form-check-label">Kích hoạt danh mục</label>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @click="showModal = false">Hủy</button>
+                        <button type="submit" class="btn btn-primary"
+                            :class="{ 'btn-loading': isCreating || isUpdating }" :disabled="isCreating || isUpdating">
+                            <i v-if="!(isCreating || isUpdating)" class="fas fa-save me-2"></i>
+                            <span v-if="!(isCreating || isUpdating)">Lưu danh mục</span>
+                            <span v-else class="spinner"></span>
                         </button>
                     </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+    <div v-if="showDeleteModal" class="modal fade show" style="display: block;" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Xác nhận xóa</h5>
+                    <button type="button" class="btn-close" @click="showDeleteModal = false"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn xóa danh mục này không?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @click="showDeleteModal = false">Hủy</button>
+                    <button type="button" class="btn btn-danger" @click="confirmDeleteCategory"
+                        :class="{ 'btn-loading': isDeleting }" :disabled="isDeleting">
+                        <i v-if="!(isDeleting)" class="fas fa-save me-2"></i>
+                        <span v-if="!(isDeleting)">Xóa</span>
+                        <span v-else class="spinner"></span>
+                    </button>
+
                 </div>
             </div>
         </div>
     </div>
+    <div v-if="showDeleteModal" class="modal-backdrop fade show"></div>
+
+    <!-- BACKDROP -->
+    <div v-if="showModal" class="modal-backdrop fade show"></div>
+
 </template>
 
 <style scoped>
@@ -380,7 +483,7 @@ function exportCategories() { props.showToast('Đã xuất danh sách danh mục
 
 .category-level-2 {
     /* Điều chỉnh margin-left và border để tạo cấp độ */
-    margin-left: 40px; 
+    margin-left: 40px;
     border-left: 4px solid #6c757d;
     background-color: #f8f9fa;
     /* Loại bỏ padding-left: 15px !important; vì nó đã được xử lý bởi margin-left */
@@ -396,7 +499,8 @@ function exportCategories() { props.showToast('Đã xuất danh sách danh mục
 }
 
 .breadcrumb-item a {
-    color: #667eea; /* Màu primary */
+    color: #667eea;
+    /* Màu primary */
     text-decoration: none;
 }
 
@@ -406,5 +510,36 @@ function exportCategories() { props.showToast('Đã xuất danh sách danh mục
     background: none;
     line-height: 1;
     margin-top: 2px;
+}
+/* Hiệu ứng loading */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.9;
+}
+
+/* Spinner nằm trong nút */
+.btn-loading .spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    margin-right: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #fff; /* màu xoay */
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+}
+
+/* Text mờ nhẹ khi loading */
+.btn-loading .btn-text {
+    opacity: 0.6;
+}
+
+/* Animation */
+@keyframes spin {
+    100% {
+        transform: rotate(360deg);
+    }
 }
 </style>

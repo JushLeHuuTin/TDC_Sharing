@@ -34,6 +34,7 @@ watch(() => props.flash, (newFlash) => {
 
 onMounted(() => {
     // Khởi tạo thư viện JS nếu cần
+
 });
 </script>
 
@@ -67,7 +68,6 @@ onMounted(() => {
                 </div>
             </div>
 
-            <!-- SLOT: Nội dung trang cụ thể -->
             <slot />
         </main>
 

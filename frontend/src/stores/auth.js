@@ -1,12 +1,14 @@
 // stores/auth.js
 import { defineStore } from 'pinia';
 import router from '@/router'; // Giả định import router instance
-
+import axios from 'axios';
 export const useAuthStore = defineStore('auth', {
     state: () => ({
         token: null,
         user: null, 
         isLoggedIn: false,
+        loadingProfile: false,
+        userProfile:[]
     }),
     actions: {
         // 1. Hàm KHỞI TẠO (Lấy lại trạng thái từ LocalStorage khi F5)
@@ -47,7 +49,22 @@ export const useAuthStore = defineStore('auth', {
             
             // Chuyển hướng về trang đăng nhập
             router.push({ name: 'login' });
-        }
+        },
+        async fetchUserProfile() {
+            this.loadingProfile = true;
+            try {
+                // Endpoint lấy profile chi tiết (đã xác nhận)
+
+                const response = await axios.get("http://127.0.0.1:8000/api/user/profile"); 
+                this.userProfile = response.data.data; 
+          
+            } catch (error) {
+                console.error("Lỗi fetching profile:", error);
+                // Xử lý lỗi (ví dụ: hiển thị toast)
+            } finally {
+                this.loadingProfile = false;
+            }
+        },
     },
     getters: {
         // Ví dụ: kiểm tra quyền admin

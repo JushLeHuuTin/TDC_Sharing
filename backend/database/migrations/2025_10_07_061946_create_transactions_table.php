@@ -14,13 +14,14 @@ return new class extends Migration
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
             $table->string('transaction_id', 50)->unique();
-            $table->foreignId('order_id')->constrained()->onDelete('cascade');
-            $table->enum('payment_method', ['cod', 'bank_transfer', 'credit_card', 'e_wallet'])->default('cod');
+            // SỬA: Cho phép order_id là NULL để hỗ trợ Multi-Order
+            $table->foreignId('order_id')->nullable()->constrained()->onDelete('cascade');
+            $table->enum('payment_method', ['cod', 'momo', 'credit_card', 'e_wallet'])->default('cod');
             $table->text('transaction_details')->nullable();
-            $table->enum('status', ['pending', 'completed', 'failed', 'refunded'])->default('pending');
+            $table->enum('status', ['pending', 'success', 'failed', 'refunded'])->default('pending');
             $table->decimal('amount', 10, 2);
             $table->timestamps();
-            
+
             $table->index('transaction_id');
             $table->index('order_id');
             $table->index('status');

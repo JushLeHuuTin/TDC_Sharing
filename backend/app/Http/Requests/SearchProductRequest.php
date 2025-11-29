@@ -22,7 +22,7 @@ class SearchProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'q' => 'required|string|max:150', // 'q' là query parameter (vd: /search?q=keyword)
+            'q' => 'string|max:150', // 'q' là query parameter (vd: /search?q=keyword)
         ];
     }
 
@@ -32,7 +32,6 @@ class SearchProductRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'q.required' => 'Vui lòng nhập từ khóa tìm kiếm.',
             'q.max' => 'Từ khóa tìm kiếm không quá 150 ký tự.',
         ];
     }

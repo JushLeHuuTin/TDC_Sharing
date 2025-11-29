@@ -38,9 +38,9 @@ class Category extends Model
     }
 
     public function products()
-{
-    return $this->hasMany(Product::class)->where('status', 'active');
-}
+    {
+        return $this->hasMany(Product::class)->where('is_visible', '1')->where('status', 'active');
+    }
 
     public function attributes()
     {
@@ -68,7 +68,9 @@ class Category extends Model
     {
         // 1. Lấy tất cả danh mục cùng với số lượng sản phẩm của mỗi danh mục
         // withCount sẽ tạo ra một thuộc tính 'products_count' cho mỗi category
-        $allCategories = self::withCount('products')->get();
+        $allCategories = self::withCount('products')  
+        ->orderBy('display_order', 'asc')
+        ->get();;
 
         // 2. Nhóm các danh mục theo parent_id để dễ dàng xây dựng cây
         $grouped = $allCategories->groupBy('parent_id');
@@ -91,9 +93,9 @@ class Category extends Model
     {
         foreach ($categories as $category) {
             $children = $allGrouped->get($category->id, collect());
-            $category->children = $children; // Gán collection con vào thuộc tính 'children'
-
-            // Nếu có danh mục con, tiếp tục xây dựng cây cho chúng
+            if ($children->isNotEmpty()) {
+            }
+            $category->children = $children;
             if ($children->isNotEmpty()) {
                 self::buildTree($children, $allGrouped);
             }
@@ -102,9 +104,20 @@ class Category extends Model
     public function scopeTopFive(Builder $query): Builder
     {
         return $query->where('is_visible', true) // Chỉ lấy các danh mục đang được kích hoạt
+            ->whereNotNull('parent_id')
             ->withCount('products')
             ->orderBy('display_order', 'asc') // Sắp xếp theo thứ tự hiển thị
             ->orderBy('id', 'asc') // Thêm sắp xếp phụ để đảm bảo thứ tự nhất quán khi display_order trùng nhau
             ->take(5); // Giới hạn chỉ lấy 5 danh mục
+    }
+    public function getTotalProductsAttribute()
+    {
+        $total = $this->products()->count();
+
+        foreach ($this->children as $child) {
+            $total += $child->total_products; // đệ quy
+        }
+
+        return $total;
     }
 }

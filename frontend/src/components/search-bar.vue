@@ -1,40 +1,20 @@
 <script setup>
+import { useCategoryStore } from '@/stores/categoryStore';
 import { ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
+const route = useRoute();
 
+const CategoryStore = useCategoryStore();
 // --- STATE ---
 const searchQuery = ref(''); // Lưu trữ nội dung input (thay thế value="{{ request('q') }}")
 const suggestions = ref([]); // Danh sách gợi ý tìm kiếm
 const showSuggestions = ref(false); // Trạng thái hiển thị/ẩn thanh gợi ý
 let searchTimeout = null; // Biến để xử lý Debouncing
-
+const localSearch = ref();
+import { getCurrentInstance } from 'vue';
+const instance = getCurrentInstance();
+const $toast = instance.appContext.config.globalProperties.$toast;
 // --- METHODS ---
-
-// Hàm xử lý logic tìm kiếm (Đã được Debounce)
-const fetchSuggestions = (query) => {
-    if (query.length < 2) {
-        suggestions.value = [];
-        showSuggestions.value = false;
-        return;
-    }
-    
-    // --- THỰC HIỆN GỌI API TẠI ĐÂY ---
-    console.log(`Đang tìm kiếm gợi ý cho: ${query}`);
-
-    // Giả lập dữ liệu API (Mock Data)
-    const mockData = [
-        { id: 1, title: 'iPhone 13 Pro Max (25tr)', price: '25,000,000', image_url: 'https://via.placeholder.com/40/3B82F6/FFFFFF?text=P1' },
-        { id: 2, title: 'MacBook Air M1 (22tr)', price: '22,000,000', image_url: 'https://via.placeholder.com/40/10B981/FFFFFF?text=P2' },
-        { id: 3, title: 'Sách Kinh tế học (450k)', price: '450,000', image_url: 'https://via.placeholder.com/40/8B5CF6/FFFFFF?text=P3' }
-    ];
-
-    if (mockData.length > 0) {
-        suggestions.value = mockData;
-        showSuggestions.value = true;
-    } else {
-        suggestions.value = [];
-        showSuggestions.value = false;
-    }
-};
 
 // Hàm xử lý Debounce cho input
 const handleInput = () => {
@@ -42,19 +22,21 @@ const handleInput = () => {
     if (searchTimeout) {
         clearTimeout(searchTimeout);
     }
-    
     // Thiết lập timeout mới sau 300ms
     searchTimeout = setTimeout(() => {
-        fetchSuggestions(searchQuery.value.trim());
+        // fetchSuggestions(searchQuery.value.trim());
     }, 300);
 };
 
 // Hàm xử lý khi người dùng nhấn nút Tìm hoặc Enter
-const handleSubmit = () => {
-    if (searchQuery.value.trim().length > 0) {
-        console.log(`Thực hiện tìm kiếm chính thức: /products?q=${searchQuery.value}`);
-        // Thay thế bằng router.push() hoặc Inertia.visit()
+const handleSearch = () => {
+    CategoryStore.filters.search = localSearch.value;
+    const slug = route.params.categorySlug || null;
+    CategoryStore.fetchProductsBySlug(slug);
+    if(localSearch.value.length>150){
+        $toast.error('vui long nhap it hon 150 ky tu');
     }
+
 };
 
 // Hàm xử lý khi click ra ngoài (để ẩn suggestions)
@@ -76,9 +58,10 @@ const hideSuggestions = () => {
             <!-- Sử dụng v-model để liên kết với searchQuery -->
             <input 
                 type="text" 
-                v-model="searchQuery"
+                :maxlength="150"
+                v-model="localSearch"
                 @input="handleInput"
-                @keyup.enter="handleSubmit"
+                @keyup.enter="handleSearch" 
                 placeholder="Tìm kiếm sản phẩm..." 
                 class="w-full pl-10 pr-16 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 autocomplete="off"

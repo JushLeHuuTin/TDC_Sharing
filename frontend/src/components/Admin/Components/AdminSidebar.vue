@@ -1,7 +1,6 @@
 <script setup>
 import { RouterLink, useRoute } from 'vue-router'; // ⬅️ Chỉ cần 2 cái này
 
-// Dữ liệu menuItems
 const menuItems = [
     { name: 'Dashboard', route: '/admin', page: 'dashboard', icon: ['fas', 'tachometer-alt'] },
     { name: 'Quản lý người dùng', route: '/admin/users', page: 'users', icon: ['fas', 'users'] },
