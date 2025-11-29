@@ -129,6 +129,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         // 2.5.HANH display order for seller
         Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/{id}', [AdminOrderController::class, 'show'])->name('orders.show');
+        Route::delete('/orders/{id}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
+
+
         // 2.6.HANH add notifications
         Route::post('/notifications', [AdminNotificationController::class, 'store'])->name('notifications.store');
         // 2.7.Hanh update notifictions

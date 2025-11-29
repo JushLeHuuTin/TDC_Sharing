@@ -1,57 +1,76 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
-import { useAuthStore } from '@/stores/auth';
-
-const API_URL = 'http://127.0.0.1:8000/api/admin/orders';
+import { useAuthStore } from './auth';
 
 export const useAdminOrderStore = defineStore('adminOrder', {
     state: () => ({
-        orders: [],      // Danh sách tất cả đơn hàng
+        orders: [],
+        currentOrder: null,
         isLoading: false,
+        isDetailLoading: false,
         error: null,
-        paginationData: null 
+        pagination: { currentPage: 1, lastPage: 1, total: 0 }
     }),
 
     actions: {
-        /**
-         * Lấy danh sách TẤT CẢ đơn hàng (Admin - Tính năng 10)
-         * @param {object} filters - { status, from_date, to_date, page }
-         */
-        async fetchOrders(filters = {}) {
+        async fetchOrders(params = {}) {
             this.isLoading = true;
-            this.error = null;
             const authStore = useAuthStore();
-            const token = authStore.token;
-
-            if (!token || !authStore.isAdmin) { // Kiểm tra admin
-                this.error = 'Bạn không có quyền truy cập.';
-                this.isLoading = false;
-                return;
-            }
-
             try {
-                const config = {
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    params: filters 
-                };
-
-                const response = await axios.get(API_URL, config);
-
-                // Giả định API trả về có .data và .meta (giống API seller)
-                if (response.data && response.data.data) {
+                // Gọi API Admin
+                const response = await axios.get('http://127.0.0.1:8000/api/admin/orders', {
+                    headers: { Authorization: `Bearer ${authStore.token}` },
+                    params
+                });
+                if (response.data.success) {
                     this.orders = response.data.data;
-                    this.paginationData = response.data.meta || null;
-                } else {
-                    this.orders = [];
-                    this.error = 'Không thể tải danh sách đơn hàng.';
+                    if (response.data.meta) {
+                         this.pagination = {
+                            currentPage: response.data.meta.current_page,
+                            lastPage: response.data.meta.last_page,
+                            total: response.data.meta.total
+                        };
+                    }
                 }
-
             } catch (err) {
-                this.error = 'Lỗi máy chủ khi tải đơn hàng.';
-                console.error('Lỗi fetchOrders (Admin):', err);
+                this.error = 'Không thể tải danh sách đơn hàng.';
+                console.error(err);
             } finally {
                 this.isLoading = false;
             }
         },
+
+        async fetchOrderDetail(orderId) {
+            this.isDetailLoading = true;
+            this.currentOrder = null;
+            const authStore = useAuthStore();
+            try {
+                // Gọi API chi tiết Admin
+                const response = await axios.get(`http://127.0.0.1:8000/api/admin/orders/${orderId}`, {
+                    headers: { Authorization: `Bearer ${authStore.token}` }
+                });
+                if (response.data.success) {
+                    this.currentOrder = response.data.data;
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                this.isDetailLoading = false;
+            }
+        },
+
+        async deleteOrder(orderId) {
+            const authStore = useAuthStore();
+            try {
+                await axios.delete(`http://127.0.0.1:8000/api/admin/orders/${orderId}`, {
+                    headers: { Authorization: `Bearer ${authStore.token}` }
+                });
+                // Xóa khỏi danh sách local sau khi xóa thành công trên server
+                this.orders = this.orders.filter(o => o.order_id !== orderId);
+                return { success: true };
+            } catch (err) {
+                return { success: false, message: 'Lỗi xóa đơn hàng.' };
+            }
+        }
     }
 });

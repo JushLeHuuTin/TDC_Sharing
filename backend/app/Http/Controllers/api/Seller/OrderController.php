@@ -3,127 +3,133 @@
 namespace App\Http\Controllers\Api\Seller;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Seller\FilterSellerOrdersRequest; // <-- Import file Request mới
-use App\Http\Resources\Seller\OrderDetailResource;
 use App\Http\Resources\Seller\OrderResource;
+use App\Http\Resources\Seller\OrderDetailResource;
 use App\Models\Order;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
-    /**
-     * CẬP NHẬT: Display a listing of the resource for the authenticated seller with filters.
-     */
-    public function index(FilterSellerOrdersRequest $request): JsonResponse // <-- Thay đổi ở đây
+    // ... (Các hàm index, show giữ nguyên) ...
+    public function index(Request $request)
     {
-        // 1. Kiểm tra quyền
-        $this->authorize('viewAnySeller', Order::class);
         $sellerId = Auth::id();
-        $ordersQuery = Order::with(['user', 'orderItems']);
+        $query = Order::query()
+            ->where('seller_id', $sellerId)
+            ->with(['user', 'orderItems.product']);
 
-        // 3. Ràng buộc: Chỉ lấy những đơn hàng có ít nhất 1 sản phẩm thuộc Seller này.
-        $ordersQuery->whereHas('orderItems.product', function ($query) use ($sellerId) {
-            $query->where('seller_id', $sellerId);
-        });
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('id', 'like', "%$search%")
+                  ->orWhereHas('user', function($u) use ($search) {
+                      $u->where('full_name', 'like', "%$search%");
+                  });
+            });
+        }
 
-        // 3. ÁP DỤNG CÁC BỘ LỌC (PHẦN MỚI)
-        // Chỉ thêm điều kiện lọc KHI người dùng có gửi tham số tương ứng
-        $ordersQuery->when($request->filled('status'), function ($query) use ($request) {
-            $query->where('status', $request->query('status'));
-        });
+        if ($request->filled('from_date')) {
+            $query->whereDate('created_at', '>=', $request->from_date);
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('created_at', '<=', $request->to_date);
+        }
 
-        $ordersQuery->when($request->filled('from_date'), function ($query) use ($request) {
-            $query->whereDate('created_at', '>=', $request->query('from_date'));
-        });
-
-        $ordersQuery->when($request->filled('to_date'), function ($query) use ($request) {
-            $query->whereDate('created_at', '<=', $request->query('to_date'));
-        });
-
-        // 4. Sắp xếp và phân trang 
-        $orders = $ordersQuery->latest()->paginate(15);
+        $orders = $query->latest()->paginate(10);
 
         return response()->json([
             'success' => true,
-            'data'    => OrderResource::collection($orders)
+            'data' => OrderResource::collection($orders),
+            'meta' => [
+                'current_page' => $orders->currentPage(),
+                'last_page' => $orders->lastPage(),
+                'total' => $orders->total(),
+            ]
         ]);
     }
 
-    /**
-     * Approve an order.
-     */
-    public function approve(Order $order): JsonResponse
+    public function show($id)
     {
-        $this->authorize('approve', $order);
+        $user = Auth::user();
+        $order = Order::with(['user', 'address', 'orderItems.product'])->find($id);
 
-        try {
-            $order->status = 'processing';
-            $order->save();
-
-            // SỬA LỖI: Tải lại các mối quan hệ cần thiết cho OrderDetailResource
-            $freshOrder = $order->fresh()->load(['user', 'address', 'items.product']);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Đã xác nhận đơn hàng thành công.',
-                'data'    => new OrderDetailResource($freshOrder)
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Lỗi khi duyệt đơn hàng: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Duyệt đơn hàng thất bại, vui lòng thử lại.'
-            ], 500);
+        if (!$order) {
+            return response()->json(['success' => false, 'message' => 'Đơn hàng không tồn tại.'], 404);
         }
-    }
 
-    /**
-     * Reject an order.
-     */
-    /**
-     * Reject an order.
-     * API để Seller từ chối đơn hàng.
-     */
-    public function reject(Order $order): JsonResponse
-    {
-        // 1. Kiểm tra quyền hạn (Gọi hàm reject trong Policy)
-        $this->authorize('reject', $order);
+        $isSeller = $order->seller_id === $user->id;
+        $isAdmin = ($user->role === 'admin');
 
-        try {
-            // 2. Cập nhật trạng thái thành 'cancelled' (hoặc 'rejected' tùy ENUM của bạn)
-            $order->status = 'cancelled';
-            $order->save();
-
-            // 3. Tải lại thông tin để trả về
-            $freshOrder = $order->fresh()->load(['user', 'address', 'items.product']);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Đã từ chối đơn hàng thành công.',
-                'data'    => new OrderDetailResource($freshOrder)
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Lỗi khi từ chối đơn hàng: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Từ chối đơn hàng thất bại, vui lòng thử lại.'
-            ], 500);
+        if (!$isSeller && !$isAdmin) {
+            return response()->json(['success' => false, 'message' => 'Bạn không có quyền xem đơn hàng này.'], 403);
         }
-    }
-    public function show(Order $order): JsonResponse
-    {
-        // 1. Kiểm tra quyền hạn: Seller có quyền xem chi tiết đơn hàng này không?
-        $this->authorize('view', $order);
 
-        // 2. Tải các mối quan hệ cần thiết
-        $order->load(['user', 'address', 'items.product']);
-
-        // 3. Trả về response đã được định dạng
         return response()->json([
             'success' => true,
-            'data'    => new OrderDetailResource($order)
+            'data' => new OrderDetailResource($order)
         ]);
+    }
+
+    // 3. DUYỆT ĐƠN (Chuyển sang 'processing' - Đang xử lý/Đóng gói)
+    public function approve($id)
+    {
+        $user = Auth::user();
+        $order = Order::find($id);
+
+        if (!$order || $order->seller_id !== $user->id) {
+             return response()->json(['success' => false, 'message' => 'Không có quyền.'], 403);
+        }
+
+        if ($order->status !== 'pending') { 
+            return response()->json(['success' => false, 'message' => 'Chỉ được duyệt đơn chờ xử lý.'], 400);
+        }
+
+        // SỬA: Chuyển sang processing thay vì shipped
+        $order->update(['status' => 'processing']);
+
+        return response()->json(['success' => true, 'message' => 'Đơn hàng đang được xử lý.']);
+    }
+
+    // 4. GIAO HÀNG (MỚI: Chuyển từ 'processing' sang 'shipped')
+    public function ship($id)
+    {
+        $user = Auth::user();
+        $order = Order::find($id);
+
+        if (!$order || $order->seller_id !== $user->id) {
+             return response()->json(['success' => false, 'message' => 'Không có quyền.'], 403);
+        }
+
+        if ($order->status !== 'processing') { 
+            return response()->json(['success' => false, 'message' => 'Đơn hàng chưa sẵn sàng để giao.'], 400);
+        }
+
+        $order->update(['status' => 'shipped']);
+
+        return response()->json(['success' => true, 'message' => 'Đơn hàng đã được giao cho vận chuyển.']);
+    }
+
+    // 5. Từ chối đơn hàng
+    public function reject($id)
+    {
+        $user = Auth::user();
+        $order = Order::find($id);
+
+        if (!$order || $order->seller_id !== $user->id) {
+             return response()->json(['success' => false, 'message' => 'Không có quyền.'], 403);
+        }
+
+        if ($order->status !== 'pending') {
+            return response()->json(['success' => false, 'message' => 'Không thể hủy đơn hàng này.'], 400);
+        }
+
+        $order->update(['status' => 'cancelled']);
+
+        return response()->json(['success' => true, 'message' => 'Đã từ chối đơn hàng.']);
     }
 }

@@ -1,122 +1,101 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
-import { useAuthStore } from '@/stores/auth';
-
-const API_URL = 'http://127.0.0.1:8000/api/seller/orders';
+import { useAuthStore } from './auth';
 
 export const useSellerOrderStore = defineStore('sellerOrder', {
     state: () => ({
         orders: [],
+        currentOrder: null, // Đơn hàng đang xem chi tiết
         isLoading: false,
-        error: null,
-        
-        // --- STATE CHO MODAL CHI TIẾT ---
-        currentOrder: null, 
         isDetailLoading: false,
-        // --------------------------------
+        error: null,
+        pagination: {
+            currentPage: 1,
+            lastPage: 1,
+            total: 0
+        }
     }),
 
     actions: {
-        // 1. Lấy danh sách
-     async fetchOrders(filters = {}) {
+        async fetchOrders(params = {}) {
             this.isLoading = true;
             this.error = null;
             const authStore = useAuthStore();
-            const token = authStore.token;
-
-            if (!token) {
-                this.error = 'Bạn cần đăng nhập.';
-                this.isLoading = false;
-                return;
-            }
 
             try {
-                const config = { headers: { 'Authorization': `Bearer ${token}` }, params: filters };
-                const response = await axios.get(API_URL, config);
+                const response = await axios.get('http://127.0.0.1:8000/api/seller/orders', {
+                    headers: { Authorization: `Bearer ${authStore.token}` },
+                    params: params // Gửi kèm filter (page, status, search...)
+                });
 
-                if (response.data && response.data.success) {
+                if (response.data.success) {
                     this.orders = response.data.data;
-                } else {
-                    this.orders = [];
-                    // Xử lý trường hợp backend trả về success=false nhưng không phải 422
+                    this.pagination = response.data.meta;
                 }
             } catch (err) {
-                this.error = 'Lỗi tải danh sách đơn hàng.';
+                this.error = err.response?.data?.message || 'Lỗi tải danh sách đơn hàng.';
                 console.error(err);
-
-                // --- BẮT LỖI VALIDATION (STATUS CODE 422) ---
-                if (err.response && err.response.status === 422 && err.response.data.errors) {
-                    const validationErrors = err.response.data.errors;
-                    let errorMessages = [];
-
-                    // Lặp qua từng trường lỗi (from_date, to_date,...)
-                    for (const field in validationErrors) {
-                        if (validationErrors.hasOwnProperty(field)) {
-                            // Thêm tất cả thông báo lỗi của trường đó vào mảng
-                            errorMessages = errorMessages.concat(validationErrors[field]);
-                        }
-                    }
-
-                    // Nối các thông báo lỗi lại thành một chuỗi duy nhất để hiển thị
-                    if (errorMessages.length > 0) {
-                        this.error = 'Dữ liệu lọc không hợp lệ:\n' + errorMessages.join('\n');
-                    } else {
-                        // Trường hợp 422 nhưng không có errors (rất hiếm)
-                        this.error = err.response.data.message || 'Lỗi validation không xác định.';
-                    }
-                } 
-                // --- KẾT THÚC BẮT LỖI VALIDATION ---
-
             } finally {
                 this.isLoading = false;
             }
         },
 
-        // 2. Duyệt đơn
-        async approveOrder(orderId) {
-            const authStore = useAuthStore();
-            const token = authStore.token;
-            try {
-                const config = { headers: { 'Authorization': `Bearer ${token}` } };
-                await axios.put(`${API_URL}/${orderId}/approve`, {}, config);
-                this.fetchOrders(); 
-                return true;
-            } catch (err) { return false; }
-        },
-
-        // 3. Từ chối đơn
-        async rejectOrder(orderId) {
-            const authStore = useAuthStore();
-            const token = authStore.token;
-            try {
-                const config = { headers: { 'Authorization': `Bearer ${token}` } };
-                await axios.put(`${API_URL}/${orderId}/reject`, {}, config);
-                
-                const index = this.orders.findIndex(o => o.id == orderId || o.order_code == orderId);
-                if (index !== -1) this.orders[index].status = 'cancelled'; 
-                return true;
-            } catch (err) { return false; }
-        },
-        
-        // 4. HÀM LẤY CHI TIẾT (QUAN TRỌNG)
-        async fetchOrderDetail(orderId) {
+       async fetchOrderDetail(orderId) {
             this.isDetailLoading = true;
             this.currentOrder = null;
             const authStore = useAuthStore();
-            const token = authStore.token;
-
+            
             try {
-                const config = { headers: { 'Authorization': `Bearer ${token}` } };
-                // API: GET /api/seller/orders/{id}
-                const response = await axios.get(`${API_URL}/${orderId}`, config);
+                // Gọi API xem chi tiết
+                const response = await axios.get(`http://127.0.0.1:8000/api/seller/orders/${orderId}`, {
+                    headers: { Authorization: `Bearer ${authStore.token}` }
+                });
 
-                if (response.data && response.data.success) {
+                if (response.data.success) {
                     this.currentOrder = response.data.data;
                 }
             } catch (err) {
-                console.error('Lỗi lấy chi tiết:', err);
+                console.error("Lỗi xem chi tiết đơn hàng:", err);
+                // Không cần set error global để tránh hiện thông báo đỏ ở danh sách
             } finally {
                 this.isDetailLoading = false;
+            }
+        },
+
+        async approveOrder(orderId) {
+            const authStore = useAuthStore();
+            try {
+                const response = await axios.put(`http://127.0.0.1:8000/api/seller/orders/${orderId}/approve`, {}, {
+                    headers: { Authorization: `Bearer ${authStore.token}` }
+                });
+                
+                // Cập nhật lại trạng thái trong danh sách local (Optimistic UI)
+                const index = this.orders.findIndex(o => o.id === orderId);
+                if (index !== -1) {
+                    this.orders[index].status = 'shipped';
+                }
+                
+                return { success: true };
+            } catch (err) {
+                return { success: false, message: err.response?.data?.message || 'Lỗi duyệt đơn.' };
+            }
+        },
+
+        async rejectOrder(orderId) {
+            const authStore = useAuthStore();
+            try {
+                const response = await axios.put(`http://127.0.0.1:8000/api/seller/orders/${orderId}/reject`, {}, {
+                    headers: { Authorization: `Bearer ${authStore.token}` }
+                });
+                
+                const index = this.orders.findIndex(o => o.id === orderId);
+                if (index !== -1) {
+                    this.orders[index].status = 'cancelled';
+                }
+                
+                return { success: true };
+            } catch (err) {
+                return { success: false, message: err.response?.data?.message || 'Lỗi từ chối đơn.' };
             }
         }
     }
