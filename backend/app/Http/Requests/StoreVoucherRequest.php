@@ -148,18 +148,23 @@ class StoreVoucherRequest extends FormRequest
     }
     protected function prepareForValidation(): void
     {
-        // 13. Kích hoạt ngay: Boolean (mặc định = false nếu không chọn)
+        // Làm sạch XSS và chuẩn hóa cho name, code, description
+        $cleanedCode = $this->input('code') ? strtoupper(strip_tags(trim($this->input('code')))) : null;
+        $cleanedName = strip_tags(trim($this->input('name')));
+        $cleanedDescription = strip_tags($this->input('description'));
+
         $this->merge([
+            // 1. Bảo vệ và chuẩn hóa Mã, Tên, Mô tả
+            'code' => $cleanedCode,
+            'name' => $cleanedName,
+            'description' => $cleanedDescription,
+
+            // 2. Ép kiểu và gán giá trị mặc định an toàn
             'is_active' => $this->is_active ?? false,
-            // 11. Đảm bảo giá trị tối thiểu là 1 nếu không truyền vào (mặc dù đã có min:1 trong rules)
-            'max_uses_per_user' => $this->max_uses_per_user ?? 1,
-            // 6. Đảm bảo giá trị tối đa là 0 nếu không truyền vào
-            'discount_value' => $this->discount_value ?? 0,
-            // 7. Đơn hàng tối thiểu
-            'min_purchase' => $this->min_purchase ?? 0,
-            // Đảm bảo các giá trị numeric là số thực
-            'value' => is_string($this->value) ? floatval($this->value) : $this->value,
+
+            // 3. Đảm bảo các giá trị numeric là số thực
             'discount_value' => is_string($this->discount_value) ? floatval($this->discount_value) : $this->discount_value,
+            'max_value' => is_string($this->max_value) ? floatval($this->max_value) : $this->max_value,
             'min_purchase' => is_string($this->min_purchase) ? floatval($this->min_purchase) : $this->min_purchase,
         ]);
     }

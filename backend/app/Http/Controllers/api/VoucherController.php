@@ -15,6 +15,7 @@ use App\Http\Requests\VoucherIndexRequest;
 use Carbon\Carbon;
 use App\Models\Cart;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 
 class VoucherController extends Controller
@@ -160,40 +161,54 @@ class VoucherController extends Controller
      */
     public function update(UpdateVoucherRequest $request, int $id): JsonResponse
     {
-        // Dữ liệu đã được xác thực và làm sạch bởi UpdateVoucherRequest
+        try {
+            $voucher = Voucher::findOrFail($id);
+            $this->authorize('update', $voucher);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy mã voucher cần cập nhật.'
+            ], 404);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn không có quyền thực hiện thao tác này.',
+            ], 403);
+        }
+        // LẤY DỮ LIỆU ĐÃ VALIDATE:
         $data = $request->validated();
+        
+        // --- Xử lý Optimistic Locking ---
+        $requestUpdatedAt = $request->input('updated_at');
+        $currentUpdatedAt = $voucher->updated_at ? strtotime($voucher->updated_at) : null;
+        $requestUpdatedAtTimestamp = $requestUpdatedAt ? strtotime($requestUpdatedAt) : null;
 
+        if ($requestUpdatedAtTimestamp && $currentUpdatedAt && $requestUpdatedAtTimestamp < $currentUpdatedAt) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Voucher đã được người dùng khác cập nhật. Vui lòng tải lại trang để xem dữ liệu mới nhất trước khi chỉnh sửa.',
+                'errors' => [ 
+                    'general' => ['Voucher đã được người dùng khác cập nhật. Vui lòng tải lại trang.']
+                ]
+            ], 409); 
+        }
         if (isset($data['is_active'])) {
             $data['is_active'] = $data['is_active'] ? 1 : 0;
         }
-        // Ràng buộc 1: Tìm voucher
-        $voucher = Voucher::find($id);
-
-        if (!$voucher) {
-            return response()->json([
-                'message' => 'Không tìm thấy mã voucher cần cập nhật.',
-            ], 404);
-        }
-
-        // Ràng buộc 15: Bắt đầu Transaction và xử lý lỗi DB
         DB::beginTransaction();
         try {
-            // Ràng buộc 1-13: Cập nhật dữ liệu
             $voucher->update($data);
-
             DB::commit();
-
-            // Ràng buộc 15: Thông báo thành công
             return response()->json([
-                'message' => 'Cập nhật voucher thành công. 🎉',
-                'data' => $voucher,
+                'success' => true,
+                'message' => 'Cập nhật voucher thành công.',
+                'data' => $voucher->fresh(),
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
-
-            // Ràng buộc 15: Xử lý lỗi server
-            // Log::error("Update Voucher Error: " . $e->getMessage()); // Nên log lỗi
+            Log::error("Update Voucher Error: " . $e->getMessage()); // Nên log lỗi
             return response()->json([
+                'success' => false,
                 'message' => 'Lưu voucher thất bại, vui lòng thử lại. Lỗi hệ thống.',
                 'error' => $e->getMessage()
             ], 500);
@@ -218,7 +233,7 @@ class VoucherController extends Controller
         }
         $validatedData = $request->validated();
 
-        $perPage = $validatedData['per_page'] ?? 10;
+        $perPage = $validatedData['per_page'] ?? 4;
         // Bắt đầu Query Builder
         $query = Voucher::query();
         $now = Carbon::now();
@@ -288,6 +303,7 @@ class VoucherController extends Controller
                     'is_active' => $voucher->is_active,
                     'start_date' => $voucher->start_date,
                     'end_date' => $voucher->end_date,
+                    'updated_at' => $voucher->updated_at,
                     // Ràng buộc 6: Trạng thái hiển thị (Logic Front-end nên xử lý màu sắc)
                     'status_text' => $this->getVoucherStatusText($voucher, $now),
                     // 'is_active' => $voucher->is_active,
@@ -330,12 +346,13 @@ class VoucherController extends Controller
         }
         return 'active';
     }
-    public function destroy(Voucher $voucher): JsonResponse
+    public function destroy(int $voucherId): JsonResponse
     {
+        // die($voucherId);
         try {
-            // Ràng buộc 6: Kiểm tra Policy (Auth::user() có quyền xóa voucher này không)
+            // Ràng buộc 6: Kiểm tra Policy (Auth:: user() có quyền xóa voucher này không)
+            $voucher = Voucher::findOrFail($voucherId);
             $this->authorize('delete', $voucher);
-
             // Ràng buộc 3: Bắt đầu Transaction để đảm bảo tính toàn vẹn
             DB::beginTransaction();
 
@@ -360,7 +377,14 @@ class VoucherController extends Controller
             return response()->json([
                 'message' => "Xóa voucher {$voucher->code} thành công.",
             ], 200);
-        } catch (AuthorizationException $e) {
+        }  
+        catch (ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi: Voucher bạn muốn xóa không tồn tại.'
+            ], 404);
+        }
+        catch (AuthorizationException $e) {
             // Lỗi Policy (Ràng buộc 6: Không có quyền)
             DB::rollBack();
             return response()->json([

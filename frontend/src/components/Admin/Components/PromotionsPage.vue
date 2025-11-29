@@ -2,16 +2,19 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { RouterLink } from "vue-router";
 import { useVoucherStore } from "@/stores/voucherStore";
+import { usePromotionStore } from "@/stores/promotionStore";
 import { storeToRefs } from "pinia";
 import { getCurrentInstance } from "vue";
+import BasePagination from "@/components/BasePagination.vue";
 
 const instance = getCurrentInstance();
 const $toast = instance.appContext.config.globalProperties.$toast;
 
 let voucherModal = null;
-
 const voucherStore = useVoucherStore();
-const { vouchers } = storeToRefs(voucherStore);
+const promotionStore = usePromotionStore();
+const { vouchers, voucherPagination } = storeToRefs(voucherStore);
+const { promotions,promotionPagination } = storeToRefs(promotionStore);
 const activeTab = ref("promotions");
 const isEditing = ref(false);
 const newVoucher = ref({
@@ -23,6 +26,12 @@ const newVoucher = ref({
   discount_value: 1,
   min_purchase: 0,
   usage_limit: 1, // 'voucherQuantity'
+
+  max_discount: null, 
+  per_customer_limit: 1, 
+  target_audiences: [],
+  category_ids: [],
+
   start_date: new Date().toISOString().split("T")[0], // Ngày hiện tại YYYY-MM-DD
   end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1))
     .toISOString()
@@ -38,6 +47,7 @@ const maxLengths = {
 onMounted(() => {
   const modalEl = document.getElementById("addVoucherModal");
   voucherModal = new bootstrap.Modal(modalEl);
+  promotionStore.fetchPromotions(1);
 
   // Áp dụng giá trị mặc định cho form ngay khi mount
   document.getElementById("voucherStartDate").value = newVoucher.value.start_date;
@@ -48,6 +58,9 @@ watch(activeTab, (value) => {
   if (value === "vouchers") {
     voucherStore.fetchVouchers(1);
   }
+  if(value === "promotions"){
+    promotionStore.fetchPromotions(1);
+  }
 });
 
 const isSaving = ref(false);
@@ -56,6 +69,12 @@ const formErrors = ref({});
 const voucherSearchQuery = ref("");
 const voucherFilterStatus = ref("");
 const voucherFilterType = ref("");
+
+// Biến lọc MỚI cho Promotions
+const promotionSearchQuery = ref("");
+const promotionFilterStatus = ref("");
+const promotionFilterType = ref("");
+
 
 const filteredVouchers = computed(() => {
   let list = voucherStore.vouchers;
@@ -68,7 +87,9 @@ const filteredVouchers = computed(() => {
   }
 
   if (voucherFilterStatus.value) {
-    list = list.filter((v) => v.status_text === voucherFilterStatus.value);
+    // Logic lọc theo trạng thái (cần đồng bộ với getVoucherStatus)
+    const statusText = voucherFilterStatus.value;
+    list = list.filter((v) => getVoucherStatus(v).text === statusText);
   }
 
   if (voucherFilterType.value) {
@@ -78,76 +99,149 @@ const filteredVouchers = computed(() => {
   return list;
 });
 
-async function saveVoucher() {
+// Hàm computed MỚI cho Promotions
+const filteredPromotions = computed(() => {
+  let list = promotionStore.promotions;
+  
+  if (promotionSearchQuery.value) {
+    const q = promotionSearchQuery.value.toLowerCase();
+    list = list.filter(
+      (p) => p.name.toLowerCase().includes(q)
+    );
+  }
+
+  if (promotionFilterStatus.value) {
+     // Logic lọc theo trạng thái (cần đồng bộ với getPromotionStatus)
+    const statusText = promotionFilterStatus.value;
+    list = list.filter((p) => getPromotionStatus(p).text === statusText);
+  }
+
+  if (promotionFilterType.value) {
+    list = list.filter((p) => p.type === promotionFilterType.value);
+  }
+
+  return list;
+});
+
+
+async function saveDiscount() {
   isSaving.value = true;
   formErrors.value = {}; // Reset lỗi // Tương tự như code hiện tại, chuẩn bị payload
 
-  const payload = {
-    code: newVoucher.value.code.toUpperCase(),
-    name: newVoucher.value.name,
-    description: newVoucher.value.description,
-
-    discount_type: newVoucher.value.discount_type,
-    discount_value: parseFloat(newVoucher.value.discount_value),
-    max_value: newVoucher.value.max_value ? parseFloat(newVoucher.value.max_value) : null,
-    min_purchase: parseFloat(newVoucher.value.min_purchase),
-    usage_limit: parseInt(newVoucher.value.usage_limit),
-    start_date: newVoucher.value.start_date,
-    end_date: newVoucher.value.end_date,
-    is_active: newVoucher.value.is_active ? 1 : 0, 
-    user_limit: newVoucher.value.user_limit, // Thêm các trường thiếu trong payload cũ
-    target_audience: newVoucher.value.target_audience, // Thêm các trường thiếu trong payload cũ
-  };
-
-  if (newVoucher.value.type === "shipping") {
-    payload.discount_value = 0;
-  }
-
   let result;
-  if (isEditing.value) {
-    // Gọi hàm CẬP NHẬT
-    result = await voucherStore.updateVoucher(newVoucher.value.id, payload);
-  } else {
-    // Gọi hàm TẠO MỚI (code hiện tại của bạn)
-    result = await voucherStore.createVoucher(payload);
-  }
+  
+  // Cấu trúc Payload chung dựa trên activeTab
+  let payload = {
+      name: newVoucher.value.name,
+      description: newVoucher.value.description,
+      discount_type: newVoucher.value.discount_type,
+      discount_value: parseFloat(newVoucher.value.discount_value),
+      min_purchase: parseFloat(newVoucher.value.min_purchase),
+      is_active: newVoucher.value.is_active ? 1 : 0, 
+      start_date: newVoucher.value.start_date,
+      end_date: newVoucher.value.end_date,
+      updated_at: newVoucher.value.updated_at,
+  };
+  
+  // Xử lý giá trị float/null an toàn
+  const maxDiscountValue = newVoucher.value.max_discount ? parseFloat(newVoucher.value.max_discount) : null;
+  const usageLimitValue = newVoucher.value.usage_limit ? parseInt(newVoucher.value.usage_limit) : null;
+  const perCustomerLimitValue = newVoucher.value.per_customer_limit ? parseInt(newVoucher.value.per_customer_limit) : null;
+  if (activeTab.value === 'promotions') {
+      // --- Logic cho Promotion ---
+      payload = {
+          ...payload,
+          max_discount: maxDiscountValue,
+          usage_limit: usageLimitValue,
+          per_customer_limit: perCustomerLimitValue, 
+          target_audiences: newVoucher.value.target_audiences, // Giả định là mảng
+          category_ids: newVoucher.value.category_ids, // Giả định là mảng
+      };
 
-  if (result.success) {
-    $toast.success(`Đã lưu voucher: ${result.voucher.code}`);
-    resetVoucherForm();
-    voucherModal.hide(); // Không cần fetch lại toàn bộ nếu store đã tự cập nhật,
-    // nhưng nếu backend không gửi lại toàn bộ danh sách,
-    // bạn có thể giữ lại fetchVouchers để đảm bảo dữ liệu mới nhất.
-    voucherStore.fetchVouchers(1);
+      if (isEditing.value) {
+          result = await promotionStore.updatePromotion(newVoucher.value.id, payload);
+      } else {
+          result = await promotionStore.createPromotion(payload);
+      }
+      
+  } else {
+      // --- Logic cho Voucher ---
+      payload = {
+          ...payload,
+          code: newVoucher.value.code.toUpperCase(), // Bắt buộc
+          max_value: maxDiscountValue,
+          usage_limit: usageLimitValue, // Voucher thường dùng tên cột là usage_limit hoặc quantity
+          user_limit: newVoucher.value.per_customer_limit, // Voucher thường dùng tên cột user_limit
+          target_audience: newVoucher.value.target_audience, // Voucher thường có target audience
+      };
+      if (newVoucher.value.discount_type === "shipping") {
+          payload.discount_value = 0;
+      }
+      
+      if (isEditing.value) {
+          result = await voucherStore.updateVoucher(newVoucher.value.id, payload);
+      } else {
+          result = await voucherStore.createVoucher(payload);
+      }
+    
+    }
+    if (result && result.success) {
+    $toast.success(result.message || `Đã lưu thành công!`);
+    voucherModal.hide(); 
+    
+    // Refresh danh sách tương ứng
+    if (activeTab.value === 'promotions') {
+        promotionStore.fetchPromotions(1);
+    } else {
+        voucherStore.fetchVouchers(1);
+    }
   } else {
     // Xử lý lỗi validation từ server
-    if (result.errors) {
+    if (result && result.errors) {
       formErrors.value = result.errors;
-      $toast.error("Lưu voucher thất bại! Vui lòng kiểm tra các trường đã nhập.");
+      $toast.error((result && result.message));
     } else {
-      $toast.error(result.message || "Lỗi không xác định khi thao tác với voucher.");
+      $toast.error((result && result.message) || "Lỗi không xác định khi thao tác.");
     }
   }
-
   isSaving.value = false;
 }
 async function deleteVoucher(id) {
-  if (confirm("Bạn có chắc chắn muốn xóa voucher này?")) {
-    const result = await voucherStore.deleteVoucher(id);
+  if (!confirm("Bạn có chắc chắn muốn xóa voucher này?")) {
+    return; // Dừng nếu người dùng hủy
+  }
+  const voucherCode = vouchers.value.find(v => v.id === id)?.code || `#${id}`;
 
-    if (result.success) {
-      $toast.success(result.message || `Đã xóa Voucher #${id} thành công!`);
-    } else {
-      $toast.error(result.message || `Không thể xóa Voucher #${id}.`);
+  try {
+    const result = await voucherStore.deleteVoucher(id);
+    $toast.success(result.message || `Đã xóa Voucher ${voucherCode} thành công!`);
+    
+  } catch (error) {
+
+    let messageToDisplay = 'Xóa thất bại. Vui lòng thử lại.';
+    if (error && error.message) {
+        messageToDisplay = error.message;
+    }  if (error && error.errors) {
     }
+    
+    $toast.error(messageToDisplay);
   }
 }
 function resetVoucherFilters() {
   voucherSearchQuery.value = "";
   voucherFilterStatus.value = "";
   voucherFilterType.value = "";
-  props.showToast("Đã đặt lại bộ lọc Voucher", "info");
+  $toast.info("Đã đặt lại bộ lọc Voucher"); // Sửa props.showToast thành $toast.info
 }
+
+// Hàm reset MỚI cho Promotions
+function resetPromotionFilters() {
+  promotionSearchQuery.value = "";
+  promotionFilterStatus.value = "";
+  promotionFilterType.value = "";
+  $toast.info("Đã đặt lại bộ lọc Chương trình Khuyến mãi"); 
+}
+
 function generateVoucherCode() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let result = "";
@@ -199,12 +293,48 @@ function resetVoucherForm() {
   document.getElementById("voucherEndDate").value = newVoucher.value.end_date;
   updateVoucherValueLabel();
 }
+function resetPromotionForm() {
+  isEditing.value = false;
+  formErrors.value = {};
+  newVoucher.value = { 
+    id: "",
+    code: null, // KHÔNG có mã code
+    name: "",
+    description: "",
+    discount_type: "percentage",
+    discount_value: 5,
+    min_purchase: 0,
+    usage_limit: 100, 
+    max_discount: null,
+    per_customer_limit: 1, 
+    target_audiences: [],
+    category_ids: [],
+
+    start_date: new Date().toISOString().split("T")[0],
+    end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1))
+      .toISOString()
+      .split("T")[0],
+    is_active: true,
+  };
+  // Cập nhật lại giá trị cho date inputs
+  const startDateEl = document.getElementById("voucherStartDate");
+  const endDateEl = document.getElementById("voucherEndDate");
+  if (startDateEl) startDateEl.value = newVoucher.value.start_date;
+  if (endDateEl) endDateEl.value = newVoucher.value.end_date;
+  updateVoucherValueLabel();
+}
 
 // Cập nhật hàm createVoucher để reset form
 function createVoucher() {
   resetVoucherForm(); // Đảm bảo form sạch sẽ khi mở
   document.getElementById("voucherModalTitle").innerText = "Thêm voucher giảm giá";
   voucherModal.show();
+}
+function createPromotion() {
+  resetPromotionForm(); 
+  activeTab.value = 'promotions'; 
+  document.getElementById("voucherModalTitle").innerText = "Tạo Chương trình Khuyến mãi"; 
+  if (voucherModal) voucherModal.show(); 
 }
 function updateVoucher(id) {
   isEditing.value = true;
@@ -220,6 +350,7 @@ function updateVoucher(id) {
     usage_limit: vou.quantity,
     start_date: vou.start_date,
     end_date: vou.end_date,
+    updated_at: vou.updated_at,
       is_active: !!vou.is_active,
     user_limit: 1,
   };
@@ -229,14 +360,19 @@ function updateVoucher(id) {
 
 // Thêm hàm Dummy cho các nút thao tác mới (nếu bạn chưa có)
 function viewVoucherUsage(id) {
-  props.showToast(`Xem lượt sử dụng Voucher #${id}`, "info");
+  $toast.info(`Xem lượt sử dụng Voucher #${id}`); // Sửa props.showToast
 }
 
 function duplicateVoucher(id) {
-  props.showToast(`Nhân bản Voucher #${id}`, "info");
+  $toast.info(`Nhân bản Voucher #${id}`); // Sửa props.showToast
 }
 function getUsagePercent(v) {
-  return (v.used_count / v.quantity) * 100;
+  // Fix: quantity và usage_limit có thể khác nhau giữa voucher và promotion
+  const limit = v.usage_limit || v.max_uses_per_user; 
+  const count = v.used_count || v.usage_count; 
+
+  if (!limit || limit === 0) return 0;
+  return (count / limit) * 100;
 }
 function getProgressColor(p) {
   if (p >= 90) return "bg-danger";
@@ -248,7 +384,7 @@ function getVoucherStatus(v) {
   const start = new Date(v.start_date);
   const end = new Date(v.end_date);
 
-  if (v.used_count >= v.quantity) return { class: "bg-danger", text: "Hết lượt" };
+  if (v.used_count >= v.usage_limit) return { class: "bg-danger", text: "Hết lượt" }; // Sửa v.quantity thành v.usage_limit
   if (v.is_active == false) return { class: "bg-secondary", text: "Không hoạt động" };
 
   if (now > end) return { class: "bg-secondary", text: "Hết hạn" };
@@ -258,6 +394,24 @@ function getVoucherStatus(v) {
 
   return { class: "bg-warning", text: "Chờ kích hoạt" };
 }
+function getPromotionStatus(p) { // Sửa tên biến từ v thành p
+  const now = new Date();
+  const start = new Date(p.time_start);
+  const end = new Date(p.time_end);
+
+  if (p.usage_count >= p.usage_limit) return { class: "bg-danger", text: "Hết lượt" }; // Sửa v.quantity thành v.usage_limit
+  if (p.status === 'inactive') return { class: "bg-secondary", text: "Không hoạt động" }; // Dùng trường status từ API
+
+  if (now > end) return { class: "bg-secondary", text: "Hết hạn" };
+  
+
+  if (p.status === 'active') return { class: "bg-success", text: "Hoạt động" }; // Dùng trường status từ API
+
+  return { class: "bg-warning", text: "Chờ kích hoạt" };
+}
+const handlePageChange = (page) => {
+  (activeTab.value == "promotions") ? promotionStore.fetchPromotions( page):voucherStore.fetchVouchers( page);
+};
 </script>
 
 <template>
@@ -383,14 +537,58 @@ function getVoucherStatus(v) {
       <div class="card-body bg-light-gray">
         <div id="promotionTabContent">
           <div v-if="activeTab === 'promotions'">
+          
             <div class="d-flex justify-content-between align-items-center mb-3">
-              <h6 class="mb-0 text-dark fw-bold">Danh sách chương trình khuyến mãi</h6>
+              <h6 class="mb-0 text-dark fw-bold">
+                Danh sách chương trình khuyến mãi ({{ filteredPromotions.length }} /
+                {{ promotionStore.total }}) 
+              </h6>
               <button class="btn btn-primary btn-sm" @click="createPromotion">
-                <fa :icon="['fas', 'plus']" class="me-2" />Tạo khuyến mãi
+                <fa :icon="['fas', 'plus']" class="me-2" />Tạo chương trình khuyến mãi
               </button>
             </div>
+            
+            <!-- BỘ LỌC MỚI CHO PROMOTIONS -->
+            <div class="row mb-3 p-3 bg-white rounded shadow-sm align-items-center">
+              <div class="col-md-4">
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Tìm kiếm tên chương trình..."
+                  v-model="promotionSearchQuery"
+                />
+              </div>
+              <div class="col-md-3">
+                <select class="form-select" v-model="promotionFilterStatus">
+                  <option value="">Tất cả trạng thái</option>
+                  <option value="Hoạt động">Đang hoạt động</option>
+                  <option value="Hết hạn">Đã hết hạn</option>
+                  <option value="Hết lượt">Đã sử dụng hết</option>
+                  <option value="Không hoạt động">Không hoạt động</option>
+                  <option value="Chờ kích hoạt">Chờ kích hoạt</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <select class="form-select" v-model="promotionFilterType">
+                  <option value="">Tất cả loại</option>
+                  <option value="percentage">Phần trăm</option>
+                  <option value="fixed">Số tiền cố định</option>
+                  <!-- Promotion thường không có shipping, nhưng giữ để đồng bộ -->
+                  <option value="shipping">Miễn phí vận chuyển</option> 
+                </select>
+              </div>
+              <div class="col-md-2">
+                <button
+                  class="btn btn-outline-secondary w-100"
+                  @click="resetPromotionFilters"
+                >
+                  <fa :icon="['fas', 'undo']" /> Reset
+                </button>
+              </div>
+            </div>
+            <!-- KẾT THÚC BỘ LỌC MỚI -->
 
-            <div class="table-responsive bg-white rounded shadow-sm">
+            <div class="table-responsive bg-white rounded shadow-sm mt-3">
               <table class="table table-hover mb-0">
                 <thead class="table-light">
                   <tr>
@@ -403,46 +601,113 @@ function getVoucherStatus(v) {
                     <th>Thao tác</th>
                   </tr>
                 </thead>
+
                 <tbody>
-                  <!-- <tr v-for="promo in mockPromotions" :key="promo.id">
-                    <td>{{ promo.name }}</td>
+                  <tr v-for="promotion in filteredPromotions" :key="promotion.id">
+                    <!-- Fix: Lọc theo filteredPromotions -->
+                    <!-- Ten -->
+                    <td class="fw-bold text-primary">
+                      <code>{{ promotion.name }}</code>
+                    </td>
+                    <!-- Type -->
                     <td>
                       <span
                         class="badge"
-                        :class="promo.type === 'percentage' ? 'bg-info' : 'bg-success'"
+                        :class="
+                          promotion.type === 'percentage'
+                            ? 'bg-info'
+                            : promotion.type === 'fixed'
+                            ? 'bg-warning'
+                            : 'bg-success'
+                        "
                       >
-                        {{ promo.type === "percentage" ? "Phần trăm" : "Cố định" }}
+                        {{promotion.type }}
                       </span>
                     </td>
+
                     <td>
-                      {{ promo.value }}{{ promo.type === "percentage" ? "%" : " VNĐ" }}
+                      <small>
+                        {{ promotion.value_display }}
+                      </small>
                     </td>
-                    <td>{{ promo.time }}</td>
-                    <td>{{ promo.usage }} lần</td>
+                       <!-- Thời hạn -->
+                       <td>
+                      <small>
+                        {{ new Date(promotion.time_start).toLocaleDateString("vi-VN") }}
+                        →
+                        {{ new Date(promotion.time_end).toLocaleDateString("vi-VN") }}
+                      </small>
+                    </td>
+                    <!-- Usage -->
                     <td>
-                      <span class="badge" :class="getStatusBadge(promo.status)">
-                        {{ promo.status }}
+                      <div>
+                        <span
+                          :class="
+                            promotion.usage_count >= promotion.usage_limit
+                              ? 'text-danger fw-bold'
+                              : promotion.usage_count / promotion.usage_limit >= 0.9
+                              ? 'text-danger'
+                              : promotion.usage_count / promotion.usage_limit >= 0.7
+                              ? 'text-warning'
+                              : 'text-success'
+                          "
+                        >
+                        </span>
+                        {{ promotion.usage_limit }}
+                      </div>
+
+                      <!-- Progress bar -->
+                      <div class="progress mt-1" style="height: 4px">
+                        <div
+                          class="progress-bar"
+                          :class="getProgressColor(getUsagePercent(promotion))"
+                          :style="{ width: getUsagePercent(promotion) + '%' }"
+                        ></div>
+                      </div>
+                    </td>
+
+                 
+
+                    <!-- Trạng thái -->
+                    <td>
+                      <span class="badge" :class="getPromotionStatus(promotion).class">
+                        {{ getPromotionStatus(promotion).text }}
                       </span>
                     </td>
+
+                    <!-- Thao tác -->
                     <td>
                       <div class="btn-group btn-group-sm">
                         <button
                           class="btn btn-outline-primary"
-                          @click="editPromotion(promo.id)"
-                          title="Chỉnh sửa"
+                          @click="updateVoucher(promotion.id)"
                         >
                           <fa :icon="['fas', 'edit']" />
                         </button>
+
+                        <button
+                          class="btn btn-outline-info"
+                          @click="viewVoucherUsage(promotion.id)"
+                        >
+                          <fa :icon="['fas', 'users']" />
+                        </button>
+
+                        <button
+                          class="btn btn-outline-warning"
+                          @click="duplicateVoucher(promotion.id)"
+                        >
+                          <fa :icon="['fas', 'copy']" />
+                        </button>
+
                         <button
                           class="btn btn-outline-danger"
-                          @click="deletePromotion(promo.id)"
-                          title="Xóa"
+                          @click="deleteVoucher(promotion.id)"
                         >
                           <fa :icon="['fas', 'trash']" />
                         </button>
                       </div>
                     </td>
-                  </tr> -->
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -471,10 +736,11 @@ function getVoucherStatus(v) {
               <div class="col-md-3">
                 <select class="form-select" v-model="voucherFilterStatus">
                   <option value="">Tất cả trạng thái</option>
-                  <option value="active">Đang hoạt động</option>
-                  <option value="expired">Đã hết hạn</option>
-                  <option value="used">Đã sử dụng hết</option>
-                  <option value="inactive">Không hoạt động</option>
+                  <option value="Hoạt động">Đang hoạt động</option>
+                  <option value="Hết hạn">Đã hết hạn</option>
+                  <option value="Hết lượt">Đã sử dụng hết</option>
+                  <option value="Không hoạt động">Không hoạt động</option>
+                  <option value="Chờ kích hoạt">Chờ kích hoạt</option>
                 </select>
               </div>
               <div class="col-md-3">
@@ -618,7 +884,7 @@ function getVoucherStatus(v) {
                         <button
                           class="btn btn-outline-danger"
                           @click="deleteVoucher(voucher.id)"
-                        >
+                          >
                           <fa :icon="['fas', 'trash']" />
                         </button>
                       </div>
@@ -627,25 +893,43 @@ function getVoucherStatus(v) {
                 </tbody>
               </table>
             </div>
+           
           </div>
+             <!-- PHÂN TRANG CHO PROMOTION -->
+             <BasePagination 
+              v-if="activeTab === 'promotions'"
+              :pagination="promotionPagination" 
+              :on-page-change="handlePageChange" 
+            />
+            <!-- PHÂN TRANG CHO VOUCHER -->
+            <BasePagination 
+              v-if="activeTab === 'vouchers'"
+              :pagination="voucherPagination" 
+              :on-page-change="handlePageChange" 
+            />
         </div>
       </div>
     </div>
-    <!-- Add/Edit Voucher Modal -->
-    <div class="modal fade" id="addVoucherModal" tabindex="-1">
+   <!-- Add/Edit Discount Modal -->
+   <div class="modal fade" id="addVoucherModal" tabindex="-1">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="voucherModalTitle">Thêm voucher giảm giá</h5>
+            <!-- Binding tiêu đề Modal động -->
+            <h5 class="modal-title" id="voucherModalTitle">
+              {{ isEditing ? 'Cập nhật' : 'Thêm' }} {{ activeTab === 'vouchers' ? 'Voucher giảm giá' : 'Chương trình khuyến mãi' }}
+            </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
 
-          <form id="voucherForm" @submit.prevent="saveVoucher">
+          <!-- Sử dụng hàm chung saveDiscount -->
+          <form id="voucherForm" @submit.prevent="saveDiscount"> 
             <div class="modal-body">
               <input type="hidden" id="voucherId" :value="newVoucher.id" />
 
               <div class="row">
-                <div class="col-md-4 mb-3">
+                <!-- Mã Voucher (Chỉ hiện khi activeTab là Voucher) -->
+                <div class="col-md-4 mb-3" v-if="activeTab === 'vouchers'">
                   <label class="form-label"
                     >Mã voucher <span class="text-danger">*</span></label
                   >
@@ -667,13 +951,17 @@ function getVoucherStatus(v) {
                   </div>
                   <div class="form-text">Mã voucher phải là duy nhất</div>
                   <div v-if="formErrors.code" class="text-danger small mt-1">
-                    {{ formErrors.code[0] }}
+                    {{ formErrors.code ? formErrors.code[0] : '' }}
                   </div>
                 </div>
 
-                <div class="col-md-8 mb-3">
+                <!-- Tên Voucher/Promotion -->
+                <div 
+                  :class="activeTab === 'vouchers' ? 'col-md-8' : 'col-md-12'" 
+                  class="mb-3"
+                >
                   <label class="form-label"
-                    >Tên voucher <span class="text-danger">*</span></label
+                    >Tên {{ activeTab === 'vouchers' ? 'voucher' : 'chương trình' }} <span class="text-danger">*</span></label
                   >
                   <input
                     type="text"
@@ -687,8 +975,9 @@ function getVoucherStatus(v) {
                 </div>
               </div>
 
+              <!-- Mô tả -->
               <div class="mb-3">
-                <label class="form-label">Mô tả voucher</label>
+                <label class="form-label">Mô tả {{ activeTab === 'vouchers' ? 'voucher' : 'chương trình' }}</label>
                 <textarea
                   class="form-control"
                   id="voucherDescription"
@@ -697,16 +986,17 @@ function getVoucherStatus(v) {
                   :maxlength="maxLengths.description"
                 ></textarea>
                 <div class="form-text text-end">
-                  <!-- {{ newVoucher.description.length }}/{{ maxLengths.description }} -->
+                  <!-- {{ newVoucher.description.length || 0 }}/{{ maxLengths.description }} -->
                 </div>
                 <div v-if="formErrors.description" class="text-danger small mt-1">
                   {{ formErrors.description[0] }}
                 </div>
               </div>
 
+              <!-- Loại, Giá trị, Đơn hàng tối thiểu -->
               <div class="row">
                 <div class="col-md-4 mb-3">
-                  <label class="form-label">Loại voucher</label>
+                  <label class="form-label">Loại {{ activeTab === 'vouchers' ? 'voucher' : 'giảm giá' }}</label>
                   <select
                     class="form-select"
                     id="voucherType"
@@ -753,10 +1043,11 @@ function getVoucherStatus(v) {
                 </div>
               </div>
 
+              <!-- Giới hạn sử dụng và Khách hàng -->
               <div class="row">
-                <div class="col-md-6 mb-3">
+                <div :class="newVoucher.discount_type === 'percentage' ? 'col-md-4' : 'col-md-6'" class="mb-3">
                   <label class="form-label"
-                    >Số lượng voucher <span class="text-danger">*</span></label
+                    >Giới hạn sử dụng (Tổng) <span class="text-danger">*</span></label
                   >
                   <input
                     type="number"
@@ -769,8 +1060,41 @@ function getVoucherStatus(v) {
                     {{ formErrors.usage_limit[0] }}
                   </div>
                 </div>
+                
+                <!-- Giới hạn sử dụng/Khách hàng (Dùng chung cho cả Voucher và Promotion) -->
+                <div :class="newVoucher.discount_type === 'percentage' ? 'col-md-4' : 'col-md-6'" class="mb-3">
+                  <label class="form-label">Giới hạn/Khách hàng</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="perCustomerLimit"
+                    min="1"
+                    v-model.number="newVoucher.per_customer_limit"
+                  />
+                  <div class="form-text">Số lần tối đa 1 khách hàng có thể sử dụng</div>
+                  <div v-if="formErrors.per_customer_limit" class="text-danger small mt-1">
+                    {{ formErrors.per_customer_limit[0] }}
+                  </div>
+                </div>
+                
+                <!-- Giới hạn giảm tối đa (Chỉ hiện khi là %) -->
+                <div class="col-md-4 mb-3" v-if="newVoucher.discount_type === 'percentage'">
+                  <label class="form-label">Giới hạn giảm tối đa (VNĐ)</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="maxDiscount"
+                    min="0"
+                    v-model.number="newVoucher.max_discount"
+                  />
+                  <div class="form-text">Áp dụng cho giảm theo %</div>
+                  <div v-if="formErrors.max_discount" class="text-danger small mt-1">
+                    {{ formErrors.max_discount[0] }}
+                  </div>
+                </div>
               </div>
 
+              <!-- Thời hạn -->
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label"
@@ -802,6 +1126,79 @@ function getVoucherStatus(v) {
                   </div>
                 </div>
               </div>
+              
+              <!-- Áp dụng sản phẩm/danh mục (chỉ hiện cho Promotion) -->
+              <div v-if="activeTab === 'promotions'" class="mb-3 border p-3 rounded-lg bg-light">
+                  <h6 class="text-primary mt-0 mb-3">Ràng buộc áp dụng</h6>
+                  
+                  <!-- 1. Ràng buộc khách hàng (target_audiences) -->
+                  <div class="mb-3">
+                      <label class="form-label">Nhóm khách hàng áp dụng</label>
+                      <select 
+                          class="form-select mb-2" 
+                          v-model="newVoucher.targetAudienceType"
+                      >
+                          <option value="all">Áp dụng cho TẤT CẢ khách hàng</option>
+                          <option value="specific_groups">Áp dụng cho NHÓM khách hàng cụ thể</option>
+                      </select>
+                      
+                      <div v-if="newVoucher.targetAudienceType === 'specific_groups'">
+                           <!-- Giả định dùng multiple select cho groups ID -->
+                          <select 
+                              class="form-select"
+                              multiple
+                              v-model="newVoucher.target_audiences"
+                          >
+                              <option v-for="group in mockData.userGroups" :key="group.id" :value="group.id">
+                                  {{ group.name }}
+                              </option>
+                          </select>
+                          <div class="form-text">Chọn một hoặc nhiều nhóm khách hàng.</div>
+                          <div v-if="formErrors.target_audiences" class="text-danger small mt-1">
+                              {{ formErrors.target_audiences[0] }}
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- 2. Ràng buộc danh mục (category_ids) -->
+                   <div class="mb-3">
+                      <label class="form-label">Danh mục sản phẩm áp dụng</label>
+                      <select 
+                          class="form-select mb-2" 
+                          v-model="newVoucher.categoryApplyType"
+                      >
+                          <option value="all">Áp dụng cho TẤT CẢ sản phẩm</option>
+                          <option value="specific_categories">Áp dụng cho DANH MỤC cụ thể</option>
+                      </select>
+                      
+                      <div v-if="newVoucher.categoryApplyType === 'specific_categories'">
+                          <!-- Giả định dùng multiple select cho categories ID -->
+                           <select 
+                              class="form-select"
+                              multiple
+                              v-model="newVoucher.applicable_categories"
+                          >
+                              <option v-for="cat in mockData.categories" :key="cat.id" :value="cat.id">
+                                  {{ cat.name }}
+                              </option>
+                          </select>
+                          <div class="form-text">Chọn một hoặc nhiều danh mục sản phẩm.</div>
+                          <div v-if="formErrors.category_ids" class="text-danger small mt-1">
+                              {{ formErrors.category_ids[0] }}
+                          </div>
+                      </div>
+                  </div>
+                  
+                  <!-- 3. Ràng buộc Sản phẩm cụ thể (applicable_products) -->
+                  <!-- <div class="form-text mt-2">
+                      <RouterLink to="#" class="small text-decoration-none">
+                          <fa :icon="['fas', 'tag']" class="me-1" />
+                          Quản lý áp dụng cho sản phẩm cụ thể ({{ newVoucher.applicable_products.length }} sản phẩm)
+                      </RouterLink>
+                  </div> -->
+
+              </div>
+              
               <div class="form-check">
                 <input
                   class="form-check-input"
@@ -810,7 +1207,7 @@ function getVoucherStatus(v) {
                   v-model="newVoucher.is_active"
                 />
                 <label class="form-check-label" for="voucherActive">
-                  Kích hoạt voucher ngay
+                  Kích hoạt {{ activeTab === 'vouchers' ? 'voucher' : 'chương trình' }} ngay
                 </label>
               </div>
             </div>
@@ -827,7 +1224,7 @@ function getVoucherStatus(v) {
 
               <button type="submit" class="btn btn-primary" :disabled="isSaving">
                 <fa :icon="['fas', 'save']" class="me-2" />
-                {{ isSaving ? "Đang lưu..." : "Lưu voucher" }}
+                {{ isSaving ? "Đang lưu..." : "Lưu" }} {{ activeTab === 'vouchers' ? 'voucher' : 'khuyến mãi' }}
               </button>
             </div>
           </form>

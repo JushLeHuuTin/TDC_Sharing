@@ -122,7 +122,7 @@ watch(
                 <button
                   class="absolute top-4 right-4 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors"
                 >
-                  <i class="far fa-heart text-gray-600 hover:text-red-500"></i>
+                      <fa :icon="['fas', 'heart']"  />
                 </button>
                 <button
                   class="absolute top-16 right-4 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors"

@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class CategoryController extends Controller
@@ -113,13 +114,26 @@ class CategoryController extends Controller
                 'breadcrumb' => $breadcrumb,
             ]);
     }
-    public function update(UpdateCategoryRequest $request, Category $category)
+    public function update(UpdateCategoryRequest $request, int $categoryId)
     {
+        try {
+            // 1. TÌM KIẾM THEO ID (Nếu không dùng Route Model Binding tự động)
+            $category = Category::findOrFail($categoryId);
 
-        // 1. PHÂN QUYỀN: Tự động gọi CategoryPolicy@update
-        // Nếu không có quyền, sẽ tự động trả về lỗi 403 Forbidden.
-        $this->authorize('update', $category);
-
+            // 1. PHÂN QUYỀN: Tự động gọi CategoryPolicy@update
+            $this->authorize('update', $category);
+        } catch (ModelNotFoundException $e) {
+            // Lỗi 404 nếu không tìm thấy Category với ID đã cho
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi: Danh mục bạn muốn cập nhật không tồn tại.'
+            ], 404);
+        } catch (AuthorizationException $e) {
+             // Lỗi Policy (Không có quyền)
+            return response()->json([
+                'message' => 'Bạn không có quyền thực hiện thao tác này.',
+            ], 403);
+        }
         // 2. LẤY DỮ LIỆU ĐÃ VALIDATE:
         $validatedData = $request->validated();
         $requestUpdatedAt = $request->input('updated_at');

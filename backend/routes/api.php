@@ -55,7 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/cart', [CartController::class, 'destroy']);
     // 3.4 Dong creat order
     Route::post('/orders', [OrderController::class, 'store']);
-    // Route::post('/checkout/validate-voucher', [VoucherController::class, 'validateVoucher']);
+    Route::post('/checkout/validate-voucher', [VoucherController::class, 'validateVoucher']);
     Route::get('/user/addresses', [AddressController::class, 'index']);
     // Route::post('/orders', [OrderController::class, 'store']);
     Route::post('/momo/ipn', [MomoCallbackController::class, 'handleIpn']);
@@ -67,13 +67,13 @@ Route::middleware('auth:sanctum')->group(function () {
     // 3.8 Dong update voucher
     Route::put('/vouchers/{id}', [VoucherController::class, 'update']);
     // 3.9 Dong delete voucher
-    Route::delete('/vouchers/{voucher}', [VoucherController::class, 'destroy'])
-        ->middleware('can:delete,voucher'); // 'voucher' là tham số model binding
+    Route::delete('/vouchers/{voucher}', [VoucherController::class, 'destroy']);
+        // ->middleware('can:delete,voucher'); // 'voucher' là tham số model binding
     // 3.10 Dong add promotion
     Route::post('/promotions', [PromotionController::class, 'store']);
     // 3.11 Dong display list promotions
-    Route::get('/vouchers/{id}', [VoucherController::class, 'show']);
-    // Route::get('/orders/{id}', [OrderController::class, 'show']); 
+    // API Lấy danh sách chương trình khuyến mãi
+    Route::get('/promotions', [PromotionController::class, 'index']);
     Route::get('/checkout', [CheckoutController::class, 'index']);
     // API Lấy thông tin voucher (trước khi sửa)
     Route::get('/vouchers/{id}', [VoucherController::class, 'show']);

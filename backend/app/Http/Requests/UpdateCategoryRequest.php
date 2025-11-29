@@ -6,6 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Contracts\Validation\Validator; 
 use Illuminate\Http\Exceptions\HttpResponseException;
+use App\Models\Category;
 
 class UpdateCategoryRequest extends FormRequest
 {
@@ -23,8 +24,13 @@ class UpdateCategoryRequest extends FormRequest
      */
     public function rules(): array
     {
-        // Lấy ID của danh mục đang được cập nhật từ route
-        $categoryId = $this->route('category')->id;
+        $categoryParameter = $this->route('category');
+        
+        if ($categoryParameter instanceof Category) {
+            $categoryId = $categoryParameter->id;
+        } else {
+            $categoryId = $this->route('category'); 
+        }
         return [
             'name' => [
                 'required',

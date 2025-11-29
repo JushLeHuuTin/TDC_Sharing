@@ -17,7 +17,13 @@ class StorePromotionRequest extends FormRequest
     {
         return Auth::check(); 
     }
-
+    protected function prepareForValidation()
+    {
+        $this->merge([
+            'name' => strip_tags($this->input('name')),
+            'description' => strip_tags($this->input('description')),
+        ]);
+    }
     /**
      * Định nghĩa các quy tắc validation cho request.
      */
@@ -46,28 +52,28 @@ class StorePromotionRequest extends FormRequest
             // Ràng buộc 7: Ngày bắt đầu
             'start_date' => [
                 'required', 
-                'date_format:Y-m-d H:i:s', 
+                'date_format:Y-m-d', 
                 'before:end_date',
-                'after_or_equal:' . Carbon::now()->subMinutes(1)->format('Y-m-d H:i:s') // Lớn hơn hoặc bằng hiện tại
+                'after_or_equal:' . Carbon::now()->subMinutes(1)->format('Y-m-d') // Lớn hơn hoặc bằng hiện tại
             ],
 
             // Ràng buộc 8: Ngày kết thúc
             'end_date' => [
                 'required', 
-                'date_format:Y-m-d H:i:s', 
+                'date_format:Y-m-d', 
                 'after:start_date',
-                'after_or_equal:' . Carbon::now()->subMinutes(1)->format('Y-m-d H:i:s')
+                'after_or_equal:' . Carbon::now()->subMinutes(1)->format('Y-m-d')
             ],
 
             // Ràng buộc 9: Khách hàng dùng tối đa
-            'max_uses_per_user' => ['required', 'integer', 'min:1'],
+            'per_customer_limit' => ['required', 'integer', 'min:1'],
 
             // Ràng buộc 10: Đối tượng sử dụng
-            'target_audiences' => ['required', 'array', 'min:1'],
+            'target_audiences' => [ 'array'],
             'target_audiences.*' => ['integer', 'exists:users,id'], // Giả định có bảng user_groups
 
             // Ràng buộc 11: Danh mục áp dụng
-            'category_ids' => ['required', 'array', 'min:1'],
+            'category_ids' => [ 'array'],
             'category_ids.*' => ['integer', 'exists:categories,id'], // Kiểm tra ID danh mục tồn tại
         ];
     }
@@ -78,15 +84,18 @@ class StorePromotionRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            $data = $this->all();
-
-            // Ràng buộc 3: Nếu là %, giá trị giảm phải <= 100
-            if ($data['discount_type'] === 'percentage' && $data['discount_value'] > 100) {
+            $discountType = $this->input('discount_type');
+            $discountValue = $this->input('discount_value');
+            $maxDiscount = $this->input('max_discount');
+    
+            // Ràng buộc 3: Nếu discount_type được gửi và là 'percentage'
+            if ($discountType === 'percentage' && $discountValue > 100) {
                 $validator->errors()->add('discount_value', 'Phần trăm giảm không vượt quá 100%.');
             }
             
-            // Ràng buộc 5: Nếu có Giá trị tối đa, nó phải lớn hơn Giá trị giảm (Nếu là Fixed)
-            if ($data['discount_type'] === 'fixed' && isset($data['max_discount']) && $data['max_discount'] < $data['discount_value']) {
+            // Ràng buộc 5: Nếu là 'fixed' và có max_discount
+            // Ta dùng !is_null() để kiểm tra sự tồn tại an toàn
+            if ($discountType === 'fixed' && !is_null($maxDiscount) && $maxDiscount < $discountValue) {
                  $validator->errors()->add('max_discount', 'Giá trị tối đa phải lớn hơn hoặc bằng Giá trị giảm.');
             }
         });

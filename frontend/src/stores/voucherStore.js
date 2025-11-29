@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
 import { useAuthStore } from './auth';
+import { faCommentsDollar } from '@fortawesome/free-solid-svg-icons';
 
 
 export const useVoucherStore = defineStore('voucher', {
@@ -13,11 +14,12 @@ export const useVoucherStore = defineStore('voucher', {
         // --- Voucher list ---
         vouchers: [],
         stats: {},
-        pagination: {
-            current_page: 1,
-            last_page: 1,
-            total: 0,
-            per_page: 0,
+        voucherPagination: {
+            currentPage: 1,
+            perPage: 8,
+            totalItems: 0,
+            totalPages: 1,
+            links: [] // Links chi tiết (First, Last, Next, Previous)
         },
         loadingVouchers: false,
         fetchError: null,
@@ -37,14 +39,13 @@ export const useVoucherStore = defineStore('voucher', {
             this.voucherError = null; // Reset lỗi cũ
 
             try {
-                const response = await fetch('http://127.0.0.1:8000/api/checkout/validate-voucher', {
+                const res = await fetch('http://127.0.0.1:8000/api/checkout/validate-voucher', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ voucher_code: voucherCode }),
                 });
 
-                const data = await response.json();
-
+                const data = await res.json();
                 if (data.valid) {
                     // Thành công: Cập nhật trạng thái Store
                     this.appliedDiscount = data.discount_amount;
@@ -87,15 +88,14 @@ export const useVoucherStore = defineStore('voucher', {
                 this.stats = res.data.stats;
 
                 // Lấy thông tin phân trang
-                this.pagination = {
-                    current_page: res.data.data.current_page,
-                    last_page: res.data.data.last_page,
-                    total: res.data.data.total,
-                    per_page: res.data.data.per_page,
-                };
+                this.voucherPagination.currentPage = res.data.data.current_page;
+                this.voucherPagination.totalPages = res.data.data.last_page;
+                this.voucherPagination.totalItems = res.data.data.total;
+                this.voucherPagination.perPage = res.data.data.per_page;
+                this.voucherPagination.links = res.data.data.links;
 
             } catch (err) {
-                this.fetchError = err.response?.data?.message || "Không tải được danh sách voucher.";
+                this.fetchError = err.res?.data?.message || "Không tải được danh sách voucher.";
             } finally {
                 this.loadingVouchers = false;
             }
@@ -105,13 +105,14 @@ export const useVoucherStore = defineStore('voucher', {
             this.fetchError = null; // Reset lỗi
 
             try {
+
                 const res = await axios.post('http://127.0.0.1:8000/api/vouchers', voucherData);
                 return { success: true, message: res.data.message, voucher: res.data.voucher };
 
             } catch (err) {
                 // Xử lý lỗi từ server (ví dụ: lỗi validation 422)
-                const errorMessage = err.response?.data?.message || "Lỗi không xác định khi tạo voucher.";
-                const validationErrors = err.response?.data?.errors;
+                const errorMessage = err.res?.data?.message || "Lỗi không xác định khi tạo voucher.";
+                const validationErrors = err.res?.data?.errors;
 
                 this.fetchError = errorMessage;
 
@@ -142,24 +143,13 @@ export const useVoucherStore = defineStore('voucher', {
             this.fetchError = null;
 
             try {
-                console.log("=== Debug: updateVoucher start ===");
-                console.log("Voucher ID:", id);
-                console.log("Original voucherData:", voucherData);
-
-                // Chuyển object JSON thành FormData
                 const formData = new FormData();
                 for (const key in voucherData) {
                     if (voucherData[key] !== null && voucherData[key] !== undefined) {
                         formData.append(key, voucherData[key]);
                     }
                 }
-                formData.append('_method', 'PUT');
-
-                console.log("FormData to send:");
-                for (let pair of formData.entries()) {
-                    console.log(pair[0], ":", pair[1]);
-                }
-
+            formData.append('_method', 'PUT');
                 const res = await axios.post(
                     `http://127.0.0.1:8000/api/vouchers/${id}`,
                     formData,
@@ -170,48 +160,58 @@ export const useVoucherStore = defineStore('voucher', {
                         },
                     }
                 );
-
-                console.log("=== Debug: Response from server ===");
-                console.log(res.data);
-
                 return { success: true, message: res.data.message, voucher: res.data.data };
             } catch (err) {
-                console.log("=== Debug: Caught error ===");
-                console.log(err);
+                console.log(err.response);
                 const errorMessage =
                     err?.response?.data?.message || `Lỗi không xác định khi cập nhật voucher #${id}.`;
                 const validationErrors = err?.response?.data?.errors || null;
-
                 this.fetchError = errorMessage;
-
-                console.log("Error message:", errorMessage);
-                console.log("Validation errors:", validationErrors);
-
                 return { success: false, message: errorMessage, errors: validationErrors };
             } finally {
                 this.loadingVouchers = false;
-                console.log("=== Debug: updateVoucher end ===");
             }
-        }
-        ,
-
+        },
         async deleteVoucher(id) {
-            this.loadingVouchers = true;
-            this.fetchError = null;
-
             try {
                 const res = await axios.delete(`http://127.0.0.1:8000/api/vouchers/${id}`);
-                this.vouchers = this.vouchers.filter(v => v.id !== id);
                 return { success: true, message: res.data.message };
-            } catch (err) {
-                const errorMessage = err.response?.data?.message || `Lỗi không xác định khi xóa voucher #${id}.`;
-
-                this.fetchError = errorMessage;
-
-                return { success: false, message: "Voucher không tồn tại !" };
-            } finally {
+            } catch (error) {
+                let errorMessage = 'Lỗi hệ thống không xác định.';
+                let errorData = null;
+                if (error.response) {
+                    const status = error.response.status;
+                    const data = error.response.data;
+                    if (status === 403) {
+                        errorMessage = data.message || 'Bạn không có quyền thực hiện thao tác này.';
+                    } else if (status === 400 || status === 404) {
+                        errorMessage = data.message || 'Lỗi dữ liệu.';
+                    } else if (status === 401) {
+                        errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                    } else {
+                        errorMessage = data.message || `Lỗi server (${status}).`;
+                    }
+                    errorData = data.errors; // Lấy lỗi validation nếu có
+                }
+                throw { success: false, message: errorMessage, errors: errorData };
+            } 
+            finally {
                 this.loadingVouchers = false;
             }
+        },
+        handleBackendError(error, authStore) {
+            if (error.res) {
+                // Backend trả về lỗi validation
+                const data = error.res.data;
+                if (data.errors) {
+                    this.submissionError = data.errors;
+                } else if (data.message) {
+                    this.submissionError = { general: [data.message] };
+                }
+            } else {
+                this.submissionError = { general: ['Lỗi kết nối hoặc không xác định'] };
+            }
+
         },
 
     },
