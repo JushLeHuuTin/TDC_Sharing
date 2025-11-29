@@ -1,6 +1,7 @@
 # ====== BACKEND (Laravel) ======
 /vendor/
 /.env
+backend/vendor/
 .env.*
 /bootstrap/cache/
 /storage/logs/
