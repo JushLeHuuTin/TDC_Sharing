@@ -1,0 +1,87 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+use App\Models\Voucher;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
+
+class VoucherSeeder extends Seeder
+{
+    public function run()
+    {
+        $vouchers = [
+            [
+                'code' => 'NEWUSER2024',
+                'name' => "voucher sv",
+                'description' => 'Giảm 10% cho khách hàng mới',
+                'discount_type' => 'percentage',
+                'discount_value' => 10.00,
+                'min_purchase' => 500000.00,
+                'start_date' => Carbon::now()->subDays(10),
+                'end_date' => Carbon::now()->addMonths(3),
+                'usage_limit' => 100,
+                'used_count' => 15,
+                'is_active' =>1
+            ],
+            [
+                'code' => 'SALE500K',
+                'name' => "voucher sv",
+                'description' => 'Giảm 500.000đ cho đơn hàng từ 5 triệu',
+                'discount_type' => 'fixed',
+                'discount_value' => 500000.00,
+                'min_purchase' => 5000000.00,
+                'start_date' => Carbon::now()->subDays(5),
+                'end_date' => Carbon::now()->addMonths(2),
+                'usage_limit' => 50,
+                'used_count' => 8,
+                'is_active' =>1
+            ],
+            [
+                'code' => 'FREESHIP',
+                'name' => "voucher sv",
+                'description' => 'Miễn phí vận chuyển cho đơn từ 1 triệu',
+                'discount_type' => 'fixed',
+                'discount_value' => 50000.00,
+                'min_purchase' => 1000000.00,
+                'start_date' => Carbon::now()->subDays(20),
+                'end_date' => Carbon::now()->addMonths(1),
+                'usage_limit' => 200,
+                'used_count' => 45,
+                'is_active' =>1
+            ],
+            [
+                'code' => 'TECH2024',
+                'name' => "voucher sv",
+                'description' => 'Giảm 15% cho sản phẩm công nghệ',
+                'discount_type' => 'percentage',
+                'discount_value' => 15.00,
+                'min_purchase' => 2000000.00,
+                'start_date' => Carbon::now()->subDays(15),
+                'end_date' => Carbon::now()->addMonths(4),
+                'usage_limit' => 150,
+                'used_count' => 32,
+                'is_active' =>1
+            ],
+            [
+                'code' => 'EXPIRED2023',
+                'name' => "voucher sv",
+                'description' => 'Voucher đã hết hạn',
+                'discount_type' => 'percentage',
+                'discount_value' => 20.00,
+                'min_purchase' => 1000000.00,
+                'start_date' => Carbon::now()->subMonths(3),
+                'end_date' => Carbon::now()->subDays(1),
+                'usage_limit' => 100,
+                'used_count' => 100,
+                'is_active' =>0
+            ],
+        ];
+
+        foreach ($vouchers as $voucher) {
+            Voucher::create($voucher);
+        }
+    }
+}

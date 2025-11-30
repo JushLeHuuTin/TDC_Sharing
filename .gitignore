@@ -1,0 +1,44 @@
+/backend/storage/logs/
+/backend/.env
+/backend/storage/*.log
+# Bỏ qua file cache và log của Laravel
+/bootstrap/cache/
+/storage/logs/
+/storage/framework/
+/storage/*.key
+/public/storage
+/public/hot
+/public/build
+
+# ====== FRONTEND (Vue + Vite) ======
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+frontend/npm-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/.eslintcache
+frontend/.tsbuildinfo
+
+# Cypress / Vitest
+frontend/cypress/videos/
+frontend/cypress/screenshots/
+frontend/__screenshots__/
+
+# ====== ROOT LEVEL ======
+node_modules/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ====== SYSTEM FILES ======
+.DS_Store
+Thumbs.db
+
+# ====== IDE FILES ======
+.idea/
+.vscode/
