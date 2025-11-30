@@ -56,7 +56,7 @@ class ProductController extends Controller
     {
         // Gọi scope đã định nghĩa và phân trang
         $product = Product::activeAndReady();
-        
+
         // 2. Lấy sản phẩm trong danh mục (và các danh mục con) rồi phân trang
         // lọc theo giá
         if ($request->filled('price_min')) {
@@ -68,7 +68,7 @@ class ProductController extends Controller
         if (trim($request->input('q', ''))) {
             // die();
             $keyword = $request->q;
-            $product->search(trim($request->input('q', ''))); 
+            $product->search(trim($request->input('q', '')));
         }
         $products = $product->paginate(8);
         // Trả về dữ liệu qua API Resource như cũ
@@ -76,23 +76,23 @@ class ProductController extends Controller
     }
     public function getMyProduct(Request $request)
     {
-        $status = $request->query('status', 'active'); 
-        $sortBy = $request->query('sort_by', 'newest'); 
-        $order = $request->query('order', 'desc'); 
+        $status = $request->query('status', 'active');
+        $sortBy = $request->query('sort_by', 'newest');
+        $order = $request->query('order', 'desc');
         $perPage = $request->query('per_page', 8);
 
-        $productsQuery = Product::myProducts(); 
+        $productsQuery = Product::myProducts();
         if (in_array($status, ['active', 'draft', 'pending', 'sold', 'hidden'])) {
             $productsQuery->where('status', $status);
         } else {
-             $productsQuery->where('status', 'active'); 
+            $productsQuery->where('status', 'active');
         }
         $sortColumn = match ($sortBy) {
             'price_high', 'price_low' => 'price',
             'views' => 'views_count',
             default => 'created_at', // Mới nhất/Cũ nhất
         };
-        
+
         $sortOrder = ($sortBy === 'price_low' || $sortBy === 'oldest') ? 'asc' : 'desc';
 
         $productsQuery->orderBy($sortColumn, $sortOrder);
@@ -239,7 +239,7 @@ class ProductController extends Controller
     public function store(StoreProductRequest $request)
     {
         DB::beginTransaction();
-        $uploadedImages = []; 
+        $uploadedImages = [];
 
         try {
             // ... (Tạo Slug và Product Model) ...
@@ -249,7 +249,7 @@ class ProductController extends Controller
                 'title' => $request->title,
                 'description' => $request->description,
                 'price' => $request->price,
-                'stocks' => $request->stocks, 
+                'stocks' => $request->stocks,
                 'status' => $request->status ?? 'active',
                 'is_visible' => true,
                 'is_featured' => $request->is_featured ?? false,
@@ -265,7 +265,7 @@ class ProductController extends Controller
                 $product->images()->createMany($uploadedImages);
             }
 
-            $rawAttributes = $request->input('attributes'); 
+            $rawAttributes = $request->input('attributes');
 
             if (!empty($rawAttributes)) {
                 $attributesData = collect($rawAttributes)
@@ -273,7 +273,7 @@ class ProductController extends Controller
                         'attribute_id' => $attr['attribute_id'],
                         'value'        => $attr['value']
                     ])
-                    ->values(); 
+                    ->values();
                 $product->productAttributes()->createMany($attributesData->all());
             }
             DB::commit();
@@ -374,7 +374,7 @@ class ProductController extends Controller
         $product->increment('views_count');
 
         // 2. Eager load các mối quan hệ cần thiết để tối ưu truy vấn
-        $product->load(['images', 'seller','attributes']);
+        $product->load(['images', 'seller', 'attributes']);
 
         // 3. Trả về dữ liệu đã được định dạng qua ProductDetailResource
         return new ProductDetailResource($product);
@@ -391,25 +391,32 @@ class ProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateProductRequest $request, Product $product)
+    public function update(UpdateProductRequest $request, int $id)
     {
-        // 1. PHÂN QUYỀN: Tự động gọi ProductPolicy@update
         try {
+            $product = Product::findOrFail($id);
             $this->authorize('update', $product);
-        } catch (Exception $e) {
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            // Bắt lỗi khi findOrFail không tìm thấy sản phẩm
             return response()->json([
                 'success' => false,
-                'message' => 'Không có quyền .',
+                'message' => 'Sản phẩm không tồn tại trong hệ thống.',
             ], 404);
+        } catch (Exception $e) {
+            // Bắt lỗi Phân quyền (Policy)
+            return response()->json([
+                'success' => false,
+                'message' => 'Không có quyền.',
+            ], 403); // Nên dùng 403 cho lỗi phân quyền
         }
 
         // 2. LẤY DỮ LIỆU ĐÃ VALIDATE:
         $validatedData = $request->validated();
-        $requestUpdatedAt = $request->input('updated_at'); 
-    
+        $requestUpdatedAt = $request->input('updated_at');
+
         $currentUpdatedAt = $product->updated_at ? strtotime($product->updated_at) : null;
         $requestUpdatedAtTimestamp = $requestUpdatedAt ? strtotime($requestUpdatedAt) : null;
-    
+
         // ✨ KIỂM TRA OPTIMISTIC LOCKING
         if ($requestUpdatedAtTimestamp && $currentUpdatedAt && $requestUpdatedAtTimestamp < $currentUpdatedAt) {
             return response()->json([
@@ -458,7 +465,7 @@ class ProductController extends Controller
     {
         try {
             $product = Product::find($id);
-    
+
             if (!$product) {
                 return response()->json([
                     'success' => false,
@@ -467,34 +474,31 @@ class ProductController extends Controller
             }
             $this->authorize('delete', $product);
             DB::beginTransaction();
-    
+
             $product->delete();
-    
+
             DB::commit();
-    
+
             // 4️⃣ Trả kết quả
             return response()->json([
                 'success' => true,
                 'message' => 'Sản phẩm đã được xóa thành công.'
             ], 200);
-    
         } catch (AuthorizationException $e) {
             // Không có quyền xoá
             return response()->json([
                 'success' => false,
                 'message' => 'Bạn không có quyền xóa sản phẩm này.'
             ], 403);
-    
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Sản phẩm không tồn tại hoặc đã bị xóa.'
             ], 404);
-    
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Lỗi khi xóa sản phẩm: ' . $e->getMessage());
-    
+
             return response()->json([
                 'success' => false,
                 'message' => 'Đã có lỗi xảy ra, không thể xóa sản phẩm.'
@@ -502,25 +506,25 @@ class ProductController extends Controller
         }
     }
     public function getMyProductStatusCounts()
-{
-    $userId = Auth::id();
+    {
+        $userId = Auth::id();
 
-    $counts = Product::query()
-        ->where('user_id', $userId) // Lọc theo người dùng đang đăng nhập
-        ->select('status', DB::raw('count(*) as count'))
-        ->groupBy('status')
-        ->pluck('count', 'status') 
-        ->toArray();
+        $counts = Product::query()
+            ->where('user_id', $userId) // Lọc theo người dùng đang đăng nhập
+            ->select('status', DB::raw('count(*) as count'))
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
 
-    $statuses = ['active', 'draft', 'pending', 'sold', 'hidden'];
-    $finalCounts = [];
-    foreach ($statuses as $status) {
-        $finalCounts[$status] = $counts[$status] ?? 0;
+        $statuses = ['active', 'draft', 'pending', 'sold', 'hidden'];
+        $finalCounts = [];
+        foreach ($statuses as $status) {
+            $finalCounts[$status] = $counts[$status] ?? 0;
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $finalCounts
+        ]);
     }
-
-    return response()->json([
-        'status' => 'success',
-        'data' => $finalCounts 
-    ]);
-}
 }

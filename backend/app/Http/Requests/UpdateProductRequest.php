@@ -47,16 +47,14 @@ class UpdateProductRequest extends FormRequest
             'status.in' => 'Vui lòng chọn trạng thái hợp lệ.',
         ];
     }
-
     protected function prepareForValidation()
     {
-        // Trim whitespace và clean input
         if ($this->has('title')) {
             $this->merge([
-                'title' => trim($this->title)
+                'title' => trim(strip_tags($this->title)) 
             ]);
         }
-
+    
         if ($this->has('description')) {
             $this->merge([
                 'description' => trim(strip_tags($this->description))

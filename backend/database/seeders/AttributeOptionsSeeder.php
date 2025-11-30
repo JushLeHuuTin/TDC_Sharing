@@ -20,7 +20,7 @@ class AttributeOptionsSeeder extends Seeder
             ],
             [
                 'attribute_id' => 1,
-                'value' => "trang"
+                'value' => "Moi"
             ],
             [
                 'attribute_id' => 2,
@@ -28,7 +28,7 @@ class AttributeOptionsSeeder extends Seeder
             ],
             [
                 'attribute_id' => 1,
-                'value' => "den"
+                'value' => "Da su dung"
             ],
         ];
 

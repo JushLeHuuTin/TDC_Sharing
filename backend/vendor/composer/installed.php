@@ -3,7 +3,11 @@
         'name' => 'laravel/laravel',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
+<<<<<<< HEAD
         'reference' => '26744e5fe94e2126775ff18689066582e005c8d7',
+=======
+        'reference' => 'ac07b48395523031c84553b71c49e648403b6330',
+>>>>>>> hanh/f1/add-reviews
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -394,7 +398,11 @@
         'laravel/laravel' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
+<<<<<<< HEAD
             'reference' => '26744e5fe94e2126775ff18689066582e005c8d7',
+=======
+            'reference' => 'ac07b48395523031c84553b71c49e648403b6330',
+>>>>>>> hanh/f1/add-reviews
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

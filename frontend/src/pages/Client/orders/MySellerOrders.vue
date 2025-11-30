@@ -3,401 +3,489 @@ import { ref, onMounted, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useSellerOrderStore } from '@/stores/sellerOrderStore';
 import { useRouter } from 'vue-router';
+import Swal from 'sweetalert2';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import BasePagination from '@/components/BasePagination.vue';
 
-// --- INIT ---
-const orderStore = useSellerOrderStore();
-const { orders, isLoading, error, currentOrder, isDetailLoading } = storeToRefs(orderStore);
+
+// 1. Khởi tạo Store & Router
+const sellerOrderStore = useSellerOrderStore();
+const { orders, isLoading, currentOrder, isDetailLoading, pagination } = storeToRefs(sellerOrderStore);
 const router = useRouter();
 
-const props = defineProps({
-    showToast: Function,
-});
-
-// --- STATE ---
-// Hàm tiện ích để định dạng ngày thành YYYY-MM-DD
-const formatDate = (date) => {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+// Helper: Lấy ngày đầu tháng và cuối tháng
+const getFirstDayOfMonth = () => {
+    const date = new Date();
+    return new Date(date.getFullYear(), date.getMonth(), 1).toISOString().split('T')[0];
 };
 
-// 1. Khởi tạo ngày hiện tại và ngày một tháng sau
-const today = new Date();
-const oneMonthLater = new Date();
-oneMonthLater.setMonth(today.getMonth() + 1); // Tăng thêm 1 tháng
+const getLastDayOfMonth = () => {
+    const date = new Date();
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).toISOString().split('T')[0]; // Ngày cuối tháng
+};
 
-// 2. Định dạng và gán giá trị mặc định cho filters
+// 2. Định nghĩa State (Filters) - Mặc định từ đầu tháng đến cuối tháng
 const filters = ref({
     status: '',
-    from_date: formatDate(today),
-    to_date: formatDate(oneMonthLater),
-    search: ''
+    search: '',
+    from_date: '',
+    to_date: '',
+    page: 1
 });
-const showModal = ref(false); // Modal Xác nhận
-const showDetailModal = ref(false); // Modal Chi tiết
-const selectedOrder = ref(null);
-const modalAction = ref(''); 
+const handlePageChange = (page) => {
+    // 1. Cập nhật khóa 'page' trong đối tượng filters
+    filters.value.page = page; 
 
-// --- COMPUTED ---
-const filteredOrders = computed(() => {
-    const apiFilteredList = orders.value || [];
-    if (!filters.value.search) return apiFilteredList;
+    // 2. Chỉ truyền đối tượng filters (đã có page mới)
+    sellerOrderStore.fetchOrders(filters.value); 
+};
+const showDetailModal = ref(false);
 
-    const searchTerm = filters.value.search.toLowerCase().trim();
-    return apiFilteredList.filter(order => {
-        const code = String(order.order_code || '').toLowerCase();
-        const name = String(order.customer_name || '').toLowerCase();
-        return code.includes(searchTerm) || name.includes(searchTerm);
-    });
-});
+// 3. Định nghĩa các hàm (Methods)
 
-// --- LIFECYCLE ---
-onMounted(() => {
-    orderStore.fetchOrders();
-});
-
-// --- METHODS ---
-function handleApplyFilters() {
-    const activeFilters = {};
-    if (filters.value.status) activeFilters.status = filters.value.status;
-    if (filters.value.from_date) activeFilters.from_date = filters.value.from_date;
-    if (filters.value.to_date) activeFilters.to_date = filters.value.to_date;
-    orderStore.fetchOrders(activeFilters);
+function fetchData() {
+    sellerOrderStore.fetchOrders(filters.value);
 }
 
-// Modal Xác nhận
-function openConfirmationModal(action, order) {
-    selectedOrder.value = order;
-    modalAction.value = action;
-    showModal.value = true;
+function handleFilter() {
+    filters.value.page = 1;
+    fetchData();
 }
 
-function closeModal() {
-    showModal.value = false;
-    selectedOrder.value = null;
-    modalAction.value = '';
-}
-
-async function handleConfirmAction() {
-    if (!selectedOrder.value) return;
-    const orderId = selectedOrder.value.id || selectedOrder.value.order_code; 
-    let success = false;
-
-    if (modalAction.value === 'approve') {
-        success = await orderStore.approveOrder(orderId);
-        if (success && props.showToast) props.showToast('Đã duyệt đơn hàng!', 'success');
-        else if (props.showToast) props.showToast(`Lỗi: ${orderStore.error}`, 'error');
-    } else if (modalAction.value === 'reject') {
-        success = await orderStore.rejectOrder(orderId);
-         if (success && props.showToast) props.showToast('Đã từ chối đơn hàng.', 'warning');
-        else if (props.showToast) props.showToast(`Lỗi: ${orderStore.error}`, 'error');
+function changePage(page) {
+    if (page >= 1 && page <= pagination.value.last_page) {
+        filters.value.page = page;
+        fetchData();
     }
-    closeModal();
 }
 
-// --- XỬ LÝ NÚT XEM (MỞ MODAL) ---
-async function handleViewOrder(orderId) {
+async function openDetail(orderId) {
     showDetailModal.value = true;
-    await orderStore.fetchOrderDetail(orderId);
+    await sellerOrderStore.fetchOrderDetail(orderId);
 }
 
-function closeDetailModal() {
+function closeDetail() {
     showDetailModal.value = false;
-    orderStore.currentOrder = null;
+    sellerOrderStore.currentOrder = null;
 }
 
-// --- HELPER ---
+// 1. DUYỆT ĐƠN (Pending -> Processing)
+async function handleApprove(order) {
+    const result = await Swal.fire({
+        title: 'Duyệt đơn hàng?',
+        text: `Xác nhận duyệt đơn #${order.order_code || order.id}? Trạng thái sẽ chuyển sang "đã duyệt".`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Duyệt ngay',
+        cancelButtonText: 'Hủy',
+        confirmButtonColor: '#3b82f6', // Xanh dương
+        cancelButtonColor: '#6b7280'
+    });
+
+    if (result.isConfirmed) {
+        // Gọi API duyệt đơn
+        const res = await sellerOrderStore.approveOrder(order.id);
+        
+        if (res.success) {
+            Swal.fire({
+                title: 'Thành công!', 
+                text: 'Đơn hàng đang được xử lý (Processing).', 
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false
+            });
+            // Cập nhật lại danh sách để thấy trạng thái mới
+            fetchData(); 
+        } else {
+            Swal.fire('Lỗi!', res.message, 'error');
+        }
+    }
+}
+
+// 2. GIAO HÀNG (Processing -> Shipped)
+async function handleShip(order) {
+    const result = await Swal.fire({
+        title: 'Giao hàng?',
+        text: `Xác nhận giao đơn #${order.order_code || order.id} cho đơn vị vận chuyển? Trạng thái sẽ chuyển sang "Đang giao".`,
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'Xác nhận giao',
+        cancelButtonText: 'Hủy',
+        confirmButtonColor: '#8b5cf6', // Màu tím
+        cancelButtonColor: '#6b7280'
+    });
+
+    if (result.isConfirmed) {
+        // Gọi API giao hàng (cần đảm bảo store có hàm shipOrder)
+        // Nếu store chưa có shipOrder, bạn có thể dùng tạm approveOrder nếu backend tự xử lý logic chuyển tiếp
+        // Nhưng tốt nhất là có endpoint riêng hoặc tham số riêng.
+        // Giả sử store có hàm shipOrder như đã bàn trước đó:
+        const res = await sellerOrderStore.shipOrder(order.id);
+        
+        if (res.success) {
+            Swal.fire({
+                title: 'Đang giao!', 
+                text: 'Đơn hàng đã chuyển sang trạng thái giao hàng (Shipped).', 
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false
+            });
+            fetchData();
+        } else {
+            Swal.fire('Lỗi!', res.message, 'error');
+        }
+    }
+}
+
+// 3. TỪ CHỐI (Pending -> Cancelled)
+async function handleReject(order) {
+    const result = await Swal.fire({
+        title: 'Từ chối đơn hàng?',
+        text: `Hủy đơn hàng #${order.order_code || order.id}? Hành động này không thể hoàn tác.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Từ chối',
+        cancelButtonText: 'Quay lại',
+        confirmButtonColor: '#ef4444', // Đỏ
+        cancelButtonColor: '#6b7280'
+    });
+
+    if (result.isConfirmed) {
+        const res = await sellerOrderStore.rejectOrder(order.id);
+        if (res.success) {
+            Swal.fire({
+                title: 'Đã hủy!', 
+                text: 'Đơn hàng đã bị từ chối.', 
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false
+            });
+            fetchData();
+        } else {
+            Swal.fire('Lỗi!', res.message, 'error');
+        }
+    }
+}
+
+// Helper: Badge màu trạng thái
+function getStatusBadge(status) {
+    switch(status) {
+        case 'pending': return 'bg-amber-100 text-amber-800 border border-amber-200'; // Vàng cam
+        case 'processing': return 'bg-blue-50 text-blue-700 border border-blue-200'; // Xanh nhạt
+        case 'shipped': 
+        case 'delivering': return 'bg-purple-100 text-purple-700 border border-purple-200'; // Tím
+        case 'delivered': 
+        case 'completed': return 'bg-emerald-100 text-emerald-700 border border-emerald-200'; // Xanh lá
+        case 'cancelled': 
+        case 'rejected': return 'bg-red-50 text-red-700 border border-red-200'; // Đỏ nhạt
+        default: return 'bg-gray-100 text-gray-600 border border-gray-200';
+    }
+}
+
 function getStatusText(status) {
-    const statusMap = { 'pending': 'Chờ duyệt', 'processing': 'Đã duyệt', 'shipped': 'Đang giao', 'delivered': 'Đã giao', 'rejected': 'Đã hủy', 'cancelled': 'Đã hủy' };
-    return statusMap[status] || status;
+    const map = {
+        'pending': 'Chờ duyệt',
+        'processing': 'đã duyệt',
+        'shipped': 'Đang giao',
+        'delivered': 'Hoàn thành',
+        'cancelled': 'Đã hủy',
+        'rejected': 'Đã từ chối'
+    };
+    return map[status] || status;
 }
-function getStatusBadgeClass(status) {
-    const statusClassMap = { 'pending': 'status-pending', 'processing': 'status-approved', 'shipped': 'status-processing', 'delivered': 'status-approved', 'rejected': 'status-rejected', 'cancelled': 'status-rejected' };
-    return statusClassMap[status] || 'bg-gray-200 text-gray-800';
-}
+
+// 4. Lifecycle Hooks
+onMounted(() => {
+    fetchData();
+});
 </script>
 
 <template>
     <AppLayout>
-        <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-            
-            <!-- Lời chào Seller -->
-            <div class="mb-8">
-                <SellerWelcome />
-            </div>
+        <div class="bg-gray-50 min-h-screen pb-12">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+                
+                <!-- Header -->
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold text-gray-900 flex items-center">
+                        <fa :icon="['fas', 'box-open']" class="mr-3 text-blue-600" />
+                        Quản lý đơn hàng của tôi (Seller)
+                    </h1>
+                    <p class="text-gray-500 text-sm mt-1">Theo dõi và xử lý các đơn hàng khách mua từ shop của bạn.</p>
+                </div>
 
-            <!-- BỘ LỌC TÌM KIẾM -->
-            <div class="filter-card rounded-lg p-6 mb-8 table-shadow">
-                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Bộ lọc tìm kiếm</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label> 
-                        <select v-model="filters.status" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">Tất cả</option>
-                            <option value="pending">Chờ duyệt</option>
-                            <option value="processing">Đã duyệt</option>
-                            <option value="shipped">Đang giao</option>
-                            <option value="delivered">Đã giao</option>
-                            <option value="cancelled">Đã hủy</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Từ ngày</label> 
-                        <input v-model="filters.from_date" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Đến ngày</label> 
-                        <input v-model="filters.to_date" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label> 
-                        <input v-model="filters.search" type="text" placeholder="Mã đơn hàng, khách hàng..." class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div class="flex items-end">
-                        <button @click="handleApplyFilters" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                            <span v-if="isLoading">Đang tải...</span>
-                            <span v-else>Áp dụng</span>
-                        </button>
+                <!-- 1. BỘ LỌC (Filter Bar) -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
+                        
+                        <!-- Tìm kiếm -->
+                        <div class="lg:col-span-4">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Tìm kiếm</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <fa :icon="['fas', 'search']" class="text-gray-400" />
+                                </div>
+                                <input v-model="filters.search" type="text" 
+                                    class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out"
+                                    placeholder="Mã đơn, tên khách hàng..."
+                                    @keyup.enter="handleFilter">
+                            </div>
+                        </div>
+
+                        <!-- Trạng thái -->
+                        <div class="lg:col-span-2">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Trạng thái</label>
+                            <select v-model="filters.status" 
+                                class="block w-full pl-3 pr-10 py-2.5 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg bg-gray-50">
+                                <option value="">Tất cả</option>
+                                <option value="pending">Chờ duyệt</option>
+                                <option value="processing">đã duyệt</option>
+                                <option value="shipped">Đang giao</option>
+                                <option value="delivered">Hoàn thành</option>
+                                <option value="cancelled">Đã hủy</option>
+                            </select>
+                        </div>
+
+                        <!-- Từ ngày -->
+                        <div class="lg:col-span-2">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Từ ngày</label>
+                            <input v-model="filters.from_date" type="date" class="block w-full pl-3 pr-3 py-2.5 border-gray-300 focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg">
+                        </div>
+
+                        <!-- Đến ngày -->
+                        <div class="lg:col-span-2">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Đến ngày</label>
+                            <input v-model="filters.to_date" type="date" class="block w-full pl-3 pr-3 py-2.5 border-gray-300 focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg">
+                        </div>
+
+                        <!-- Nút Lọc -->
+                        <div class="lg:col-span-2">
+                            <button @click="handleFilter" 
+                                class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors h-[42px]">
+                                <fa :icon="['fas', 'filter']" class="mr-2" /> Lọc
+                            </button>
+                        </div>
                     </div>
                 </div>
-                 <div v-if="error" class="text-red-600 mt-4">{{ error }}</div>
-            </div>
-    
-            <!-- BẢNG DỮ LIỆU -->
-            <div v-if="!error" class="bg-white rounded-lg table-shadow overflow-hidden">
-                <div class="overflow-x-auto custom-scrollbar">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã đơn hàng</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Khách hàng</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sản phẩm</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tạo</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <tr v-if="isLoading">
-                                <td colspan="7" class="p-6 text-center text-gray-500">Đang tải dữ liệu...</td>
-                            </tr>
-                            <tr v-else-if="filteredOrders.length === 0">
-                                <td colspan="7" class="p-6 text-center text-gray-500">Không tìm thấy đơn hàng nào.</td>
-                            </tr>
-                            <tr v-for="order in filteredOrders" :key="order.id || order.order_code" class="table-row">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900">#{{ order.order_code }}</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">{{ order.customer_name || 'N/A' }}</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">{{ order.items ? order.items.length : 1 }} sản phẩm</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-semibold text-gray-900">{{ (order.final_amount) }}</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="status-badge" :class="getStatusBadgeClass(order.status)">
-                                        {{ getStatusText(order.status) }}
+
+                <!-- 2. DANH SÁCH ĐƠN HÀNG -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50 text-gray-700 uppercase font-semibold text-xs">
+                                <tr>
+                                    <th class="px-6 py-3 text-left tracking-wider">Mã đơn</th>
+                                    <th class="px-6 py-3 text-left tracking-wider">Khách hàng</th>
+                                    <th class="px-6 py-3 text-left tracking-wider">Ngày đặt</th>
+                                    <th class="px-6 py-3 text-left tracking-wider">Tổng tiền</th>
+                                    <th class="px-6 py-3 text-center tracking-wider">Trạng thái</th>
+                                    <th class="px-6 py-3 text-right tracking-wider">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr v-if="isLoading">
+                                    <td colspan="6" class="px-6 py-12 text-center">
+                                        <fa :icon="['fas', 'spinner']" spin class="text-3xl text-blue-500" />
+                                        <p class="mt-2 text-sm text-gray-500">Đang tải dữ liệu...</p>
+                                    </td>
+                                </tr>
+                                <tr v-else-if="orders.length === 0">
+                                    <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                                        <fa :icon="['far', 'folder-open']" class="text-4xl text-gray-300 mb-3" />
+                                        <p>Không tìm thấy đơn hàng nào.</p>
+                                    </td>
+                                </tr>
+                                
+                                <tr v-for="order in orders" :key="order.id" class="hover:bg-gray-50 transition-colors group">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-bold text-blue-600">#{{ order.order_code || order.id }}</div>
+                                        <div class="text-xs text-gray-400 mt-0.5">{{ order.items_count }} sản phẩm</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-bold">
+                                                {{ order.customer_name ? order.customer_name.charAt(0).toUpperCase() : '?' }}
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-gray-900">{{ order.customer_name || 'Khách lẻ' }}</div>
+                                                <div class="text-xs text-gray-500">{{ order.customer_phone }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-900">{{ order.created_date }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-bold text-gray-900">{{ order.final_amount }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', getStatusBadge(order.status)]">
+                                            {{ getStatusText(order.status) }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <div class="flex justify-end space-x-2">
+                                            <!-- Nút Xem -->
+                                            <button @click="openDetail(order.id)" 
+                                                class="text-gray-400 hover:text-blue-600 p-1.5 rounded-md hover:bg-blue-50 transition-colors" 
+                                                title="Xem chi tiết">
+                                                <fa :icon="['fas', 'eye']" />
+                                            </button>
+
+                                            <!-- Hành động cho đơn Pending -->
+                                            <template v-if="order.status === 'pending'">
+                                                <button @click="handleApprove(order)" 
+                                                    class="text-blue-500 hover:text-blue-700 p-1.5 rounded-md hover:bg-blue-50 transition-colors" 
+                                                    title="Duyệt đơn (Chuyển sang đã duyệt)">
+                                                    <fa :icon="['fas', 'check']" />
+                                                </button>
+                                                <button @click="handleReject(order)" 
+                                                    class="text-red-400 hover:text-red-600 p-1.5 rounded-md hover:bg-red-50 transition-colors" 
+                                                    title="Từ chối">
+                                                    <fa :icon="['fas', 'times']" />
+                                                </button>
+                                            </template>
+
+                                            <!-- Hành động cho đơn Processing (Mới thêm) -->
+                                            <template v-if="order.status === 'processing'">
+                                                <button @click="handleShip(order)" 
+                                                    class="text-purple-500 hover:text-purple-700 p-1.5 rounded-md hover:bg-purple-50 transition-colors" 
+                                                    title="Giao hàng (Chuyển sang Đang giao)">
+                                                    <fa :icon="['fas', 'truck']" />
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                                <BasePagination :pagination="pagination" :on-page-change="handlePageChange" />
+
+                    <!-- Phân trang -->
+                    <!-- <div v-if="pagination.last_page > 1" class="bg-white px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
+                        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm text-gray-700">
+                                    Hiển thị trang <span class="font-medium">{{ pagination.currentPage }}</span> trong <span class="font-medium">{{ pagination.lastPage }}</span>
+                                </p>
+                            </div>
+                            <div>
+                                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                    <button @click="changePage(pagination.currentPage - 1)" :disabled="pagination.currentPage === 1" 
+                                        class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
+                                        <span class="sr-only">Previous</span>
+                                        <fa :icon="['fas', 'chevron-left']" class="h-3 w-3" />
+                                    </button>
+                                    
+                                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                        {{ pagination.currentPage }}
                                     </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-500">{{ (order.created_date) }}</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <div class="flex space-x-2">
-                                        <template v-if="order.status === 'pending'">
-                                            <button @click="openConfirmationModal('approve', order)" class="action-btn bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md">
-                                                Duyệt
-                                            </button>
-                                            <button @click="openConfirmationModal('reject', order)" class="action-btn bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md">
-                                                Từ chối
-                                            </button>
-                                        </template>
-                                        <button @click="handleViewOrder(order.id || order.order_code)" class="action-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md">
-                                            Xem
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
-    
-        <!-- 1. MODAL XÁC NHẬN (GIAO DIỆN ĐẸP - GIỐNG ẢNH) -->
-        <div v-if="showModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all scale-100">
-                <div class="p-6 text-center">
-                    <!-- Icon -->
-                    <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full mb-5"
-                         :class="modalAction === 'approve' ? 'bg-green-100' : 'bg-red-100'">
-                        <fa v-if="modalAction === 'approve'" :icon="['fas', 'check']" class="h-8 w-8 text-green-600" />
-                        <fa v-else :icon="['fas', 'times']" class="h-8 w-8 text-red-600" />
-                    </div>
-                    
-                    <!-- Tiêu đề -->
-                    <h3 class="text-2xl font-bold text-gray-900 mb-2">
-                        {{ modalAction === 'approve' ? 'Xác nhận đơn hàng' : 'Từ chối đơn hàng' }}
-                    </h3>
-                    
-                    <!-- Mô tả -->
-                    <p class="text-gray-500 mb-6">
-                        Bạn có chắc chắn muốn 
-                        <strong :class="modalAction === 'approve' ? 'text-green-600' : 'text-red-600'">
-                            {{ modalAction === 'approve' ? 'xác nhận' : 'từ chối' }}
-                        </strong> 
-                        đơn hàng này không?
-                    </p>
 
-                    <!-- Box thông tin đơn hàng -->
-                    <div class="bg-gray-50 rounded-lg p-4 text-left mb-6 border border-gray-100">
-                        <div class="flex justify-between mb-2">
-                            <span class="text-gray-500 text-sm">Mã đơn hàng:</span>
-                            <span class="font-bold text-gray-800">#{{ selectedOrder.order_code }}</span>
+                                    <button @click="changePage(pagination.currentPage + 1)" :disabled="pagination.currentPage === pagination.lastPage" 
+                                        class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
+                                        <span class="sr-only">Next</span>
+                                        <fa :icon="['fas', 'chevron-right']" class="h-3 w-3" />
+                                    </button>
+                                </nav>
+                            </div>
                         </div>
-                        <div class="flex justify-between mb-2">
-                            <span class="text-gray-500 text-sm">Khách hàng:</span>
-                            <span class="font-bold text-gray-800">{{ selectedOrder.customer_name }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-500 text-sm">Giá trị:</span>
-                            <span class="font-bold text-blue-600">{{ selectedOrder.final_amount || selectedOrder.total_amount }}</span>
-                        </div>
-                    </div>
-
-                    <!-- Nút bấm -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <button @click="closeModal" 
-                                class="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors">
-                            Hủy
-                        </button>
-                        <button @click="handleConfirmAction" 
-                                :class="[
-                                    'w-full py-3 px-4 text-white font-bold rounded-lg transition-colors shadow-md',
-                                    modalAction === 'approve' ? 'bg-green-600 hover:bg-green-700 shadow-green-200' : 'bg-red-600 hover:bg-red-700 shadow-red-200'
-                                ]">
-                            {{ modalAction === 'approve' ? 'Xác nhận' : 'Từ chối' }}
-                        </button>
-                    </div>
+                    </div> -->
                 </div>
             </div>
         </div>
 
-        <!-- 2. MODAL CHI TIẾT ĐƠN HÀNG (GIAO DIỆN ĐẸP) -->
-        <div v-if="showDetailModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
-                <!-- ... (Giữ nguyên code modal chi tiết của bạn) ... -->
+        <!-- 3. MODAL CHI TIẾT ĐƠN HÀNG -->
+        <div v-if="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm" @click.self="closeDetail">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col animate__animated animate__fadeInUp">
                 <!-- Header Modal -->
-                <div class="flex justify-between items-center px-6 py-4 border-b bg-white">
-                    <h3 class="text-lg font-bold text-gray-800 flex items-center">
-                        <fa :icon="['fas', 'file-invoice']" class="mr-2 text-gray-600" />
-                        Chi tiết đơn hàng {{ currentOrder?.order_code }}
+                <div class="p-5 border-b flex justify-between items-center bg-gray-50">
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center">
+                        <fa :icon="['fas', 'file-invoice-dollar']" class="mr-2 text-blue-600" />
+                        Chi tiết đơn hàng #{{ currentOrder?.order_code || '...' }}
                     </h3>
-                    <button @click="closeDetailModal" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                    <button @click="closeDetail" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                </div>
+
+                <!-- Body Modal -->
+                <div class="p-6 overflow-y-auto flex-1" v-if="currentOrder">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <!-- Thông tin khách hàng -->
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                            <h4 class="font-bold text-blue-800 mb-3 uppercase text-xs tracking-wider">Thông tin khách hàng</h4>
+                            <div class="space-y-2 text-sm text-gray-700">
+                                <p><span class="font-medium text-gray-500">Họ tên:</span> {{ currentOrder.customer_name }}</p>
+                                <p><span class="font-medium text-gray-500">SĐT:</span> {{ currentOrder.customer_phone }}</p>
+                                <p><span class="font-medium text-gray-500">Email:</span> {{ currentOrder.customer_email }}</p>
+                                <p><span class="font-medium text-gray-500">Địa chỉ:</span> {{ currentOrder.shipping_address }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Thông tin đơn hàng -->
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <h4 class="font-bold text-gray-800 mb-3 uppercase text-xs tracking-wider">Thông tin đơn hàng</h4>
+                            <div class="space-y-2 text-sm text-gray-700">
+                                <p><span class="font-medium text-gray-500">Ngày đặt:</span> {{ currentOrder.created_date }}</p>
+                                <p><span class="font-medium text-gray-500">Thanh toán:</span> {{ currentOrder.payment_method === 'cod' ? 'Tiền mặt (COD)' : 'Chuyển khoản' }}</p>
+                                <div class="flex items-center">
+                                    <span class="font-medium text-gray-500 mr-2">Trạng thái:</span> 
+                                    <span :class="['px-2 py-0.5 rounded text-xs font-bold uppercase', getStatusBadge(currentOrder.status)]">
+                                        {{ getStatusText(currentOrder.status) }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Danh sách sản phẩm -->
+                    <h4 class="font-bold text-gray-800 mb-3">Sản phẩm ({{ currentOrder.items?.length || 0 }})</h4>
+                    <div class="border rounded-lg overflow-hidden">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-100 text-gray-700">
+                                <tr>
+                                    <th class="p-3 text-left text-xs font-medium uppercase">Sản phẩm</th>
+                                    <th class="p-3 text-center text-xs font-medium uppercase">SL</th>
+                                    <th class="p-3 text-right text-xs font-medium uppercase">Đơn giá</th>
+                                    <th class="p-3 text-right text-xs font-medium uppercase">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                <tr v-for="item in currentOrder.items" :key="item.id">
+                                    <td class="p-3 text-sm font-medium text-gray-900">{{ item.product_name }}</td>
+                                    <td class="p-3 text-sm text-center text-gray-500">{{ item.quantity }}</td>
+                                    <td class="p-3 text-sm text-right text-gray-500">{{ Number(item.price).toLocaleString() }} đ</td>
+                                    <td class="p-3 text-sm text-right font-bold text-gray-900">{{ Number(item.subtotal).toLocaleString() }} đ</td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="bg-gray-50 font-bold">
+                                <tr>
+                                    <td colspan="3" class="p-3 text-right text-sm">Tổng cộng:</td>
+                                    <td class="p-3 text-right text-lg text-red-600">{{ currentOrder.final_amount }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
                 </div>
                 
-                <!-- Body Modal -->
-                <div class="p-6 overflow-y-auto bg-gray-50">
-                    <div v-if="isDetailLoading" class="text-center py-10">
-                        <div class="spinner-border text-blue-600" role="status"><span class="visually-hidden">Loading...</span></div>
-                        <p class="text-gray-500 mt-2">Đang tải thông tin...</p>
-                    </div>
-                    
-                    <div v-else-if="currentOrder">
-                        <!-- Thông tin chung (2 Cột) -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <!-- Cột Trái: Khách hàng -->
-                            <div class="p-4 bg-white shadow-sm rounded-lg">
-                                <h4 class="text-sm font-bold text-gray-700 uppercase mb-3 pb-1 border-b">Thông tin khách hàng</h4>
-                                <div class="space-y-2 text-sm text-gray-600">
-                                    <p><strong class="text-gray-900">Tên:</strong> {{ currentOrder.customer_name }}</p>
-                                    <p><strong class="text-gray-900">Email:</strong> {{ currentOrder.customer_email }}</p>
-                                    <p><strong class="text-gray-900">SĐT:</strong> {{ currentOrder.customer_phone }}</p>
-                                    <p><strong class="text-gray-900">Địa chỉ:</strong> {{ currentOrder.shipping_address }}</p>
-                                </div>
-                            </div>
-
-                            <!-- Cột Phải: Đơn hàng -->
-                            <div class="p-4 bg-white shadow-sm rounded-lg">
-                                <h4 class="text-sm font-bold text-gray-700 uppercase mb-3 pb-1 border-b">Thông tin đơn hàng</h4>
-                                <div class="space-y-2 text-sm text-gray-600">
-                                    <p><strong class="text-gray-900">Mã đơn:</strong> #{{ currentOrder.order_code }}</p>
-                                    <p><strong class="text-gray-900">Ngày đặt:</strong> {{ currentOrder.order_date }}</p>
-                                    <p><strong class="text-gray-900">Thanh toán:</strong> {{ currentOrder.payment_method }}</p>
-                                    <p class="flex items-center">
-                                        <strong class="text-gray-900 mr-2">Trạng thái:</strong> 
-                                        <span class="px-2 py-0.5 rounded text-xs font-bold uppercase" :class="getStatusBadgeClass(currentOrder.status)">
-                                            {{ getStatusText(currentOrder.status) }}
-                                        </span>
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Danh sách sản phẩm -->
-                        <div class="bg-white shadow-sm rounded-lg overflow-hidden mb-6">
-                            <div class="px-4 py-3 bg-gray-100 border-b border-gray-200 font-bold text-gray-700 text-sm">Sản phẩm</div>
-                            <table class="w-full text-sm text-left">
-                                <thead class="bg-gray-50 text-gray-600 font-medium border-b">
-                                    <tr>
-                                        <th class="p-3 text-left">Sản phẩm</th>
-                                        <th class="p-3 text-center">Số lượng</th>
-                                        <th class="p-3 text-right">Đơn giá</th>
-                                        <th class="p-3 text-right">Thành tiền</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    <tr v-for="(item, idx) in currentOrder.products" :key="idx">
-                                        <td class="p-3 font-medium text-gray-900">{{ item.product_name }}</td>
-                                        <td class="p-3 text-center">{{ item.quantity }}</td>
-                                        <td class="p-3 text-right">{{ item.price }}</td>
-                                        <td class="p-3 text-right font-bold text-gray-900">{{ item.subtotal }}</td>
-                                    </tr>
-                                </tbody>
-                                <tfoot>
-                                    <tr class="bg-gray-50 font-bold">
-                                        <td colspan="3" class="p-3 text-right">Tổng cộng:</td>
-                                        <td class="p-3 text-right text-red-600 text-lg">{{ currentOrder.total_amount }}</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <div v-else class="text-center text-red-500 py-10">
-                        Không tìm thấy thông tin chi tiết.
-                    </div>
+                <div v-else-if="isDetailLoading" class="p-10 text-center">
+                     <fa :icon="['fas', 'spinner']" spin class="text-4xl text-blue-500" />
                 </div>
 
                 <!-- Footer Modal -->
-                <div class="p-4 border-t bg-white text-right">
-                    <button @click="closeDetailModal" class="bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-700">Đóng</button>
+                <div class="p-4 border-t bg-gray-50 flex justify-end space-x-3" v-if="currentOrder">
+                    <button @click="closeDetail" class="px-4 py-2 bg-white border rounded-lg text-gray-700 hover:bg-gray-100 transition-colors text-sm font-medium">Đóng</button>
+                    
+                    <!-- Hành động trong Modal -->
+                    <template v-if="currentOrder.status === 'pending'">
+                        <button @click="handleReject(currentOrder)" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium shadow-sm">Từ chối</button>
+                        <button @click="handleApprove(currentOrder)" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm">Duyệt đơn</button>
+                    </template>
+                    
+                    <template v-if="currentOrder.status === 'processing'">
+                        <button @click="handleShip(currentOrder)" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium shadow-sm">Giao hàng</button>
+                    </template>
                 </div>
             </div>
         </div>
     </AppLayout>
-</template>
-
-<style scoped>
-/* CSS giữ nguyên */
-.custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-.table-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-.filter-card { background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1px solid #e2e8f0; }
-.status-badge { font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.75rem; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.025em; }
-.status-pending { background-color: #fef3c7; color: #92400e; }
-.status-approved { background-color: #d1fae5; color: #065f46; }
-.status-rejected { background-color: #fee2e2; color: #991b1b; }
-.status-processing { background-color: #dbeafe; color: #1e40af; }
-.action-btn { transition: all 0.2s ease-in-out; font-weight: 500; font-size: 0.875rem; }
-.action-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); }
-.table-row:hover { background-color: #f8fafc; transition: background-color 0.15s ease-in-out; }
-.stats-card { background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%); border-left: 4px solid #3b82f6; }
-</style>
+</template> 

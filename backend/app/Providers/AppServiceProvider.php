@@ -36,7 +36,6 @@ class AppServiceProvider extends ServiceProvider
                     Auth::login($user);
                 }
             }
-
         }catch(Exception $e){
 
         }
