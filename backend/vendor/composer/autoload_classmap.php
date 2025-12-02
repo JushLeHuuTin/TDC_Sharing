@@ -57,6 +57,7 @@ return array(
     'App\\Http\\Requests\\ValidateVoucherRequest' => $baseDir . '/app/Http/Requests/ValidateVoucherRequest.php',
     'App\\Http\\Requests\\VoucherIndexRequest' => $baseDir . '/app/Http/Requests/VoucherIndexRequest.php',
     'App\\Http\\Resources\\Admin\\NotificationResource' => $baseDir . '/app/Http/Resources/Admin/NotificationResource.php',
+    'App\\Http\\Resources\\Admin\\OrderDetailResource' => $baseDir . '/app/Http/Resources/Admin/OrderDetailResource.php',
     'App\\Http\\Resources\\Admin\\OrderResource' => $baseDir . '/app/Http/Resources/Admin/OrderResource.php',
     'App\\Http\\Resources\\BreadcrumbResource' => $baseDir . '/app/Http/Resources/BreadcrumbResource.php',
     'App\\Http\\Resources\\CategoryTreeResource' => $baseDir . '/app/Http/Resources/CategoryTreeResource.php',

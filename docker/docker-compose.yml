@@ -33,11 +33,6 @@ services:
       - db_data:/var/lib/mysql
     networks:
       - laravel_net
-    # BỎ healthcheck vì không được depends_on sử dụng
-    # healthcheck:
-    #   test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
-    #   timeout: 20s
-    #   retries: 10
 
   # phpMyAdmin container
   phpmyadmin:
@@ -59,7 +54,7 @@ services:
       container_name: vue_frontend
       working_dir: /app
       volumes:
-        - ../frontend:/app  # Ánh xạ thư mục frontend
+        - ../frontend  # Ánh xạ thư mục frontend
       ports:
         - "5173:5173" # Port mặc định của Vite (HMR)
       networks:
