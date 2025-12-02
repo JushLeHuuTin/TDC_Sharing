@@ -435,7 +435,7 @@ onMounted(() => {
                                                         class="d-flex justify-content-between align-items-center text-muted small">
                                                         <span>
                                                             <fa :icon="['fas', 'calendar']" class="me-1" />{{
-                                                                formatTime(product.created_date) }}
+                                                                (product.created_date) }}
                                                         </span>
                                                         <!-- <span>
                                                             <fa :icon="['fas', 'map-marker-alt']" class="me-1" />{{

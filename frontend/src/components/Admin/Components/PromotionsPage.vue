@@ -358,17 +358,15 @@ function updateVoucher(id) {
   voucherModal.show();
 }
 
-// Thêm hàm Dummy cho các nút thao tác mới (nếu bạn chưa có)
 function viewVoucherUsage(id) {
-  $toast.info(`Xem lượt sử dụng Voucher #${id}`); // Sửa props.showToast
+  $toast.info(`Xem lượt sử dụng Voucher #${id}`); 
 }
 
 function duplicateVoucher(id) {
-  $toast.info(`Nhân bản Voucher #${id}`); // Sửa props.showToast
+  $toast.info(`Nhân bản Voucher #${id}`); 
 }
 function getUsagePercent(v) {
-  // Fix: quantity và usage_limit có thể khác nhau giữa voucher và promotion
-  const limit = v.usage_limit || v.max_uses_per_user; 
+  const limit = v.quantity || v.max_uses_per_user; 
   const count = v.used_count || v.usage_count; 
 
   if (!limit || limit === 0) return 0;

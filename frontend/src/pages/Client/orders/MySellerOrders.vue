@@ -360,7 +360,7 @@ onMounted(() => {
                             </tbody>
                         </table>
                     </div>
-                                <BasePagination :pagination="pagination" :on-page-change="handlePageChange" />
+                           
 
                     <!-- Phân trang -->
                     <!-- <div v-if="pagination.last_page > 1" class="bg-white px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
@@ -392,6 +392,7 @@ onMounted(() => {
                         </div>
                     </div> -->
                 </div>
+                <BasePagination :pagination="pagination" :on-page-change="handlePageChange" />
             </div>
         </div>
 
