@@ -1,9 +1,7 @@
 /backend/storage/logs/
 /backend/.env
-backend/vendor/
-/backend/storage/*.log
 /backend/vendor/
-# Bỏ qua file cache và log của Laravel
+/backend/storage/*.log
 /bootstrap/cache/
 /storage/logs/
 /storage/framework/

@@ -3,137 +3,114 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\StoreNotificationRequest;
 use App\Models\Notification;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use App\Http\Requests\Admin\UpdateNotificationRequest;
-use App\Http\Resources\Admin\NotificationResource;
+use App\Models\User; // Import User
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use App\Http\Resources\Admin\NotificationResource;
 
 class NotificationController extends Controller
 {
-     /**
-     * Display a listing of the resource.
-     */
+    // 1. Lấy danh sách (Kèm Lọc & Phân trang)
     public function index(Request $request): JsonResponse
     {
-        $this->authorize('viewAny', Notification::class);
+        // Eager load 'user' để lấy tên người nhận
+        $query = Notification::with('user')->latest();
 
-        $notificationsQuery = Notification::with('user')->latest();
+        // Lọc theo nội dung
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where('content', 'like', "%{$search}%")
+                  ->orWhereHas('user', function($q) use ($search) {
+                      $q->where('full_name', 'like', "%{$search}%"); // Tìm theo tên người nhận
+                  });
+        }
 
-        $notifications = $notificationsQuery->paginate(15);
+        // Lọc theo loại
+        if ($request->filled('type') && $request->type !== '') {
+            $query->where('type', $request->type);
+        }
+
+        $notifications = $query->paginate(10);
 
         return response()->json([
             'success' => true,
-            'data'    => NotificationResource::collection($notifications)
+            'data' => NotificationResource::collection($notifications),
+            'meta' => [
+                'current_page' => $notifications->currentPage(),
+                'last_page' => $notifications->lastPage(),
+                'total' => $notifications->total(),
+                'per_page' => $notifications->perPage(),
+                'from' => $notifications->firstItem(),
+                'to' => $notifications->lastItem(),
+            ]
         ]);
     }
-    /**
-     * Store a newly created notification in storage.
-     * API để Admin tạo thông báo mới cho nhiều người dùng.
-     */
-    public function store(StoreNotificationRequest $request): JsonResponse
+
+    // 2. Thêm mới
+    public function store(Request $request): JsonResponse
     {
-        // 1. Kiểm tra quyền hạn thông qua Policy
-        // This will automatically check the 'create' method in NotificationPolicy
-        $this->authorize('create', Notification::class);
+        $validated = $request->validate([
+            'user_id' => 'nullable|integer|exists:users,id', // Cho phép null (Gửi tất cả) hoặc phải là ID tồn tại
+            'type'    => 'required|string|in:system,promotion,order,warning,message',
+            'content' => 'required|string|max:255',
+        ]);
 
-        // 2. Lấy dữ liệu đã được validate từ file Request
-        $validatedData = $request->validated();
+        $validated['is_read'] = false; // Mặc định chưa xem
 
-        // 3. Sử dụng transaction để đảm bảo an toàn dữ liệu
-        DB::beginTransaction();
-        try {
-            $notifications = [];
-            $userCount = count($validatedData['user_ids']);
+        $notification = Notification::create($validated);
 
-            foreach ($validatedData['user_ids'] as $userId) {
-                $notifications[] = [
-                    'user_id'    => $userId,
-                    'type'       => $validatedData['type'],
-                    'content'    => $validatedData['content'],
-                    'is_read'    => false, // Mặc định là chưa đọc
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-            }
-            // Dùng insert() để tăng hiệu năng khi thêm nhiều bản ghi
-            Notification::insert($notifications);
-            
-            
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => "Đã tạo thông báo thành công cho {$userCount} người dùng."
-            ], 201); // 201 Created
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Lỗi khi tạo thông báo: ' . $e->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Tạo thông báo thất bại, vui lòng thử lại.'
-            ], 500); // Internal Server Error
-        }
-    }
-      /**
-     * Update the specified notification in storage.
-     * Đảm bảo hàm này sử dụng UpdateNotificationRequest
-     */
-    public function update(UpdateNotificationRequest $request, Notification $notification): JsonResponse
-    {
-        // 1. Kiểm tra quyền hạn thông qua Policy
-        $this->authorize('update', $notification);
-
-        // 2. Lấy dữ liệu đã được validate từ UpdateNotificationRequest
-        $validatedData = $request->validated();
-
-        // 3. Thực hiện cập nhật
-        try {
-            $notification->update($validatedData);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Cập nhật thông báo thành công.',
-                // Trả về Resource để nhất quán
-                'data'    => new NotificationResource($notification->fresh())
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Lỗi khi cập nhật thông báo: ' . $e->getMessage());
-            return response()->json(['success' => false,'message' => 'Cập nhật thông báo thất bại, vui lòng thử lại.'], 500);
-        }
-    }
-     /**
-     * Remove the specified notification from storage.
-     * API để Admin xóa một thông báo.
-     */
-    public function destroy(Notification $notification): JsonResponse
-    {
-        // 1. Kiểm tra quyền hạn thông qua Policy
-        $this->authorize('delete', $notification);
-
-        // 2. Thực hiện xóa
-        try {
-            $notification->delete();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Xóa thông báo thành công.'
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Lỗi khi xóa thông báo: ' . $e->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Xóa thông báo thất bại, vui lòng thử lại.'
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Tạo thông báo thành công.',
+            'data' => new NotificationResource($notification)
+        ]);
     }
 
+    // 3. Cập nhật
+    public function update(Request $request, $id): JsonResponse
+    {
+        $notification = Notification::find($id);
+
+        if (!$notification) {
+            return response()->json(['success' => false, 'message' => 'Thông báo không tồn tại.'], 404);
+        }
+
+        $validated = $request->validate([
+            'user_id' => 'nullable|integer|exists:users,id',
+            'type'    => 'sometimes|string|in:system,promotion,order,warning,message',
+            'content' => 'sometimes|string|max:255',
+            'is_read' => 'boolean'
+        ]);
+
+        $notification->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật thành công.',
+            'data' => new NotificationResource($notification)
+        ]);
+    }
+
+    // 4. Xóa
+    public function destroy($id): JsonResponse
+    {
+        $notification = Notification::find($id);
+        if (!$notification) {
+            return response()->json(['success' => false, 'message' => 'Thông báo không tồn tại.'], 404);
+        }
+
+        $notification->delete();
+        return response()->json(['success' => true, 'message' => 'Đã xóa thông báo.']);
+    }
+
+    // 5. API phụ: Lấy danh sách User để hiển thị trong dropdown chọn người nhận
+    public function getUsersForSelect(): JsonResponse
+    {
+        $users = User::select('id', 'full_name', 'email')->orderBy('id', 'desc')->get();
+        return response()->json([
+            'success' => true,
+            'data' => $users
+        ]);
+    }
 }

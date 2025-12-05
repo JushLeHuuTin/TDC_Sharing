@@ -20,7 +20,6 @@ class FilterSellerOrdersRequest extends FormRequest
 
      public function rules(): array
     {
-        die('a');
         return [
             // SỬA LỖI: Cập nhật các giá trị Rule::in cho đúng với ENUM trong database
             'status'    => ['nullable', 'string', Rule::in(['pending', 'processing', 'shipped', 'delivered', 'cancelled'])],

@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardControll
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\MomoCallbackController;
+use App\Http\Controllers\Api\NotificationController; // Import controller mới
 
 Route::get('/products/create', [ProductController::class, function () {
     return view('page.products.create');
@@ -125,6 +126,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy']);
     // 2.4.HANH update reviews 
     Route::put('/reviews/{review}', [ReviewController::class, 'update']);
+      // --- THÔNG BÁO CLIENT ---
+    Route::get('/my-notifications', [NotificationController::class, 'index']);
+    Route::put('/my-notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::put('/my-notifications/read-all', [NotificationController::class, 'markAllRead']);
     // action for admin
     Route::prefix('admin')->name('admin.')->group(function () {
         // 2.5.HANH display order for seller
@@ -132,6 +137,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/orders/{id}', [AdminOrderController::class, 'show'])->name('orders.show');
         Route::delete('/orders/{id}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
 
+
+        // THÊM DÒNG NÀY ĐỂ LẤY DANH SÁCH USER
+        Route::get('/notifications/users', [AdminNotificationController::class, 'getUsersForSelect']);
         // 2.6.HANH add notifications
         Route::post('/notifications', [AdminNotificationController::class, 'store'])->name('notifications.store');
         // 2.7.Hanh update notifictions

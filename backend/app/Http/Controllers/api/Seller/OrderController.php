@@ -81,7 +81,7 @@ class OrderController extends Controller
     public function approve($id)
     {
         $sellerId = Auth::id();
-$order = Order::where('seller_id', $sellerId)->find($id);
+        $order = Order::where('seller_id', $sellerId)->find($id);
 
         if (!$order) return response()->json(['success' => false, 'message' => 'Không tìm thấy đơn hàng.'], 404);
         if ($order->status !== 'pending') return response()->json(['success' => false, 'message' => 'Đơn hàng không ở trạng thái chờ duyệt.'], 400);

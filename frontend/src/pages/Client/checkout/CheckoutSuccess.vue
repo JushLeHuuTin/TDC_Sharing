@@ -50,11 +50,11 @@ const handleNavigate = (name) => {
 
       <div class="bg-gray-50 p-6 rounded-xl text-left space-y-3 border border-gray-100">
         <p class="text-sm font-semibold text-gray-700">
-          Mã giao dịch MoMo:
-          <span class="font-normal text-gray-900">{{ momoTransId || "Không có / Thanh toán COD" }}</span>
+          Giao dịch:
+          <span class="font-normal text-gray-900">{{ momoOrderId ? "Momo" : "Không có / Thanh toán COD"}}</span>
         </p>
         <p class="text-sm font-semibold text-gray-700">
-          OrderId MoMo:
+          Mã giao dịch MoMo::
           <span class="font-normal text-gray-900">{{ momoOrderId || "Không có" }}</span>
         </p>
         <p class="text-sm font-semibold text-gray-700">

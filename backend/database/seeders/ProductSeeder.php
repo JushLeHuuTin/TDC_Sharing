@@ -19,7 +19,7 @@ class ProductSeeder extends Seeder
 
         // --- USER 1 ---
         // 10 sp active category 5
-        for ($i = 1; $i <= 10; $i++) {
+        for ($i = 1; $i <= 50; $i++) {
             $title = "Giáo trình chuyên ngành số $i";
             $products[] = [
                 'user_id' => 1,

@@ -129,7 +129,8 @@ class OrderController extends Controller
         $orderIdsString = implode(',', $orderIds); // Chuỗi IDs cho orderInfo
 
         // Cần URL returnUrl và ipnUrl hợp lệ
-        $baseUrl = 'https://loise-unpirated-pseudoangelically.ngrok-free.dev';
+        // $baseUrl = 'https://loise-unpirated-pseudoangelically.ngrok-free .dev';
+        $baseUrl = 'https://bella-joyless-goniometrically.ngrok-free.dev';
 
         $returnUrl = $baseUrl . '/checkout/momo/return';
         $notifyUrl = $baseUrl . '/api/momo/ipn';

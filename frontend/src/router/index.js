@@ -29,7 +29,6 @@ import CartView from '@/pages/Client/cart/CartView.vue';
 import ProductWishlist from '@/pages/Client/products/ProductWishlist.vue';
 // Cần import các Page khác ở đây khi chuyển đổi chúng (ví dụ: ProductView, AdminDashboard,...)
 
-
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [

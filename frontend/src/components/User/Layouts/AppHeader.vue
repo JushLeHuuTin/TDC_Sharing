@@ -1,18 +1,13 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useAuthStore } from "@/stores/auth";
-// Cần import useRoute và useRouter để xử lý logic Logo phức tạp (nếu cần)
+import { useNotificationStore } from "@/stores/notificationStore"; // Import Store Thông báo
 import { useRouter } from "vue-router";
 import logo from "@/assets/logo.png";
-// Giả định v-click-away đã được đăng ký toàn cục (hoặc import tại đây)
-// import { vClickAway } from '@vueuse/components'; // ví dụ
 
-const router = useRouter(); // Khai báo Router
+const router = useRouter();
 const authStore = useAuthStore();
-
-function handleLogout() {
-  authStore.logout(); // ⬅️ GỌI TRỰC TIẾP HÀM TỪ STORE
-}
+const notificationStore = useNotificationStore(); // Khởi tạo store
 
 // 1. IMPORT COMPONENT
 import SearchBar from "@/components/search-bar.vue";
@@ -23,46 +18,77 @@ const isLoggedIn = computed(() => !!authStore.user);
 const isNotificationsOpen = ref(false);
 const isUserMenuOpen = ref(false);
 
-// Hàm đóng tất cả menu khi click ra ngoài
+// Lấy dữ liệu từ Store thay vì Mock Data
+const notifications = computed(() => notificationStore.notifications);
+const unreadCount = computed(() => notificationStore.unreadCount);
+
+// --- LIFECYCLE ---
+onMounted(() => {
+  if (isLoggedIn.value) {
+    notificationStore.fetchNotifications(); // Tải thông báo khi load trang
+    
+    // Tự động tải lại mỗi 60s (Polling)
+    // const interval = setInterval(() => notificationStore.fetchNotifications(), 60000);
+    // onUnmounted(() => clearInterval(interval));
+  }
+});
+
+// --- ACTION ---
+function handleLogout() {
+  authStore.logout();
+}
+
+// Xử lý khi click vào thông báo
+const handleNotificationClick = async (notification) => {
+  // 1. Đánh dấu đã đọc (Store sẽ cập nhật UI ngay lập tức)
+  if (!notification.is_read) {
+    await notificationStore.markAsRead(notification.id);
+  }
+  
+  // 2. Điều hướng (Nếu cần) - Ví dụ:
+  // if (notification.type === 'order') router.push(...)
+};
+
 const closeAllMenus = () => {
   isNotificationsOpen.value = false;
   isUserMenuOpen.value = false;
 };
 
-// --- DỮ LIỆU GIẢ/MOCK DATA CHO NOTIFICATIONS ---
-const userNotifications = ref([
-  {
-    id: 1,
-    message: 'Sản phẩm "iPhone 13" của bạn đã được bán!',
-    isRead: false,
-    time: "1 phút trước",
-  },
-  {
-    id: 2,
-    message: "Bạn có tin nhắn mới từ Nguyễn Văn A.",
-    isRead: true,
-    time: "3 giờ trước",
-  },
-]);
+const toggleNotifications = () => {
+  isNotificationsOpen.value = !isNotificationsOpen.value;
+  isUserMenuOpen.value = false;
+  if (isNotificationsOpen.value) {
+      notificationStore.fetchNotifications(); // Tải lại cho mới khi mở
+  }
+};
 
-const unreadNotificationsCount = computed(() => {
-  return userNotifications.value.filter((n) => !n.isRead).length;
-});
+// Helper: Format thời gian
+const formatTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffSeconds = Math.floor((now - date) / 1000);
 
-// --- XỬ LÝ ĐỊNH TUYẾN LOGO (Giải quyết vấn đề Ngrok/Dev Host) ---
+    if (diffSeconds < 60) return 'Vừa xong';
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    if (diffMinutes < 60) return `${diffMinutes} phút trước`;
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+    
+    return date.toLocaleDateString('vi-VN');
+};
+
+// Xử lý Logo
 const navigateToHome = (event) => {
-  // Ngăn chặn hành vi mặc định của thẻ <a> (nếu đây là <a>)
   event.preventDefault();
-
-  // Kiểm tra Host hiện tại có phải là Host Dev Server không
   if (
     window.location.host !== "localhost:5173" &&
     window.location.host !== "127.0.0.1:5173"
   ) {
-    // Nếu đang ở Ngrok/URL công khai, buộc chuyển về Host Dev Server
     window.location.href = "http://localhost:5173/";
   } else {
-    // Nếu đã ở Dev Server, dùng Vue Router để điều hướng về trang chủ
     router.push({ name: "home.index" });
   }
 };
@@ -74,12 +100,10 @@ const navigateToHome = (event) => {
       <div class="flex justify-between items-center h-16">
         <!-- Logo -->
         <div class="flex items-center">
-          <!-- SỬA: Dùng @click để kiểm soát lỗi chuyển Host -->
           <a href="#" @click="navigateToHome" class="flex items-center">
             <div
               class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3"
             >
-              <!-- Giả định logo là một biến string/object đã import -->
               <img :src="logo" alt="Vue Logo" />
             </div>
             <span class="text-xl font-bold text-blue-600 hidden sm:block"
@@ -115,51 +139,85 @@ const navigateToHome = (event) => {
             <!-- Hiển thị khi ĐÃ ĐĂNG NHẬP -->
 
             <!-- Notifications -->
-            <!-- Giả định v-click-away đã được đăng ký và hoạt động -->
             <div class="relative" v-click-away="closeAllMenus">
               <button
-                @click="
-                  isNotificationsOpen = !isNotificationsOpen;
-                  isUserMenuOpen = false;
-                "
-                class="relative p-2 text-gray-600 hover:text-blue-600"
+                @click="toggleNotifications"
+                class="relative p-2 text-gray-600 hover:text-blue-600 transition-colors"
               >
                 <fa :icon="['fas', 'bell']" class="text-lg" />
+                
+                <!-- Badge số lượng -->
                 <span
-                  v-if="unreadNotificationsCount > 0"
-                  class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+                  v-if="unreadCount > 0"
+                  class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center border-2 border-white"
                 >
-                  {{ unreadNotificationsCount }}
+                  {{ unreadCount > 99 ? '99+' : unreadCount }}
                 </span>
               </button>
 
               <!-- Menu Thông báo -->
               <div
                 v-show="isNotificationsOpen"
-                class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg py-1 z-50"
+                class="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 overflow-hidden"
               >
-                <div class="px-4 py-2 border-b">
-                  <h3 class="text-sm font-semibold text-gray-900">Thông báo</h3>
+                <div class="px-4 py-3 border-b flex justify-between items-center bg-gray-50">
+                  <h3 class="text-sm font-bold text-gray-900">Thông báo</h3>
+                  <button 
+                    v-if="unreadCount > 0" 
+                    @click="notificationStore.markAllRead()" 
+                    class="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    Đánh dấu đã đọc hết
+                  </button>
                 </div>
-                <div class="max-h-64 overflow-y-auto">
-                  <template v-if="userNotifications.length > 0">
-                    <a
-                      v-for="notification in userNotifications"
-                      :key="notification.id"
-                      href="#"
-                      class="block px-4 py-3 hover:bg-gray-50"
-                      :class="{ 'bg-blue-50': !notification.isRead }"
-                    >
-                      <p class="text-sm text-gray-900">{{ notification.message }}</p>
-                      <p class="text-xs text-gray-500 mt-1">{{ notification.time }}</p>
-                    </a>
-                  </template>
-                  <div v-else class="px-4 py-3 text-sm text-gray-500 text-center">
-                    Không có thông báo nào
+
+                <div class="max-h-[400px] overflow-y-auto custom-scrollbar">
+                  <!-- Loading -->
+                  <div v-if="notificationStore.isLoading && notifications.length === 0" class="p-4 text-center text-gray-500">
+                      Đang tải...
                   </div>
+
+                  <!-- Empty -->
+                  <div v-else-if="notifications.length === 0" class="p-8 text-center text-gray-500 flex flex-col items-center">
+                      <fa :icon="['far', 'bell-slash']" class="text-2xl mb-2 text-gray-300" />
+                      <p class="text-sm">Bạn không có thông báo nào</p>
+                  </div>
+
+                  <!-- List -->
+                  <template v-else>
+                    <div
+                      v-for="notification in notifications"
+                      :key="notification.id"
+                      @click="handleNotificationClick(notification)"
+                      class="block px-4 py-3 cursor-pointer border-b border-gray-50 last:border-0 transition-colors duration-200"
+                      :class="notification.is_read ? 'bg-white hover:bg-gray-50' : 'bg-blue-50 hover:bg-blue-100'"
+                    >
+                      <div class="flex items-start">
+                          <!-- Icon Status -->
+                          <div class="flex-shrink-0 mt-1 mr-3">
+                             <div v-if="!notification.is_read" class="w-2 h-2 bg-blue-600 rounded-full"></div>
+                             <div v-else class="w-2 h-2 bg-gray-300 rounded-full"></div>
+                          </div>
+                          
+                          <div class="flex-1">
+                              <p 
+                                class="text-sm text-gray-900 leading-snug"
+                                :class="{ 'font-semibold': !notification.is_read }"
+                              >
+                                {{ notification.content }}
+                              </p>
+                              <p class="text-xs text-gray-500 mt-1.5 flex items-center">
+                                <fa :icon="['far', 'clock']" class="mr-1 text-[10px]" />
+                                {{ formatTime(notification.created_at) }}
+                              </p>
+                          </div>
+                      </div>
+                    </div>
+                  </template>
                 </div>
-                <div class="border-t px-4 py-2">
-                  <a href="#" class="text-sm text-blue-600 hover:text-blue-800">
+                
+                <div class="border-t px-4 py-2 bg-gray-50 text-center">
+                  <a href="#" class="text-xs font-bold text-blue-600 hover:text-blue-800 uppercase tracking-wide">
                     Xem tất cả
                   </a>
                 </div>
@@ -189,59 +247,52 @@ const navigateToHome = (event) => {
                 "
                 class="flex items-center space-x-2 text-gray-700 hover:text-blue-600"
               >
-                <!-- Giả định user object có avatar và name -->
+                <!-- Avatar -->
                 <img
-                  :src="user?.avatar || 'https://ui-avatars.com/api/?name=tin'"
+                  :src="user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random`"
                   :alt="user?.name || 'User'"
-                  class="w-8 h-8 rounded-full"
+                  class="w-8 h-8 rounded-full border border-gray-200"
                 />
-                <span class="hidden md:block">{{ user?.name || "tin" }}</span>
+                <span class="hidden md:block font-medium">{{ user?.name || "Thành viên" }}</span>
                 <fa :icon="['fas', 'chevron-down']" class="text-xs" />
               </button>
 
               <!-- Dropdown Menu -->
               <div
                 v-show="isUserMenuOpen"
-                class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50"
+                class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-2 z-50 border border-gray-100 animate__animated animate__fadeIn"
               >
+                <div class="px-4 py-2 border-b border-gray-100 mb-2">
+                    <p class="text-sm font-bold text-gray-900">{{ user?.name }}</p>
+                    <p class="text-xs text-gray-500 truncate">{{ user?.email }}</p>
+                </div>
+
                 <a
                   href="#"
-                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                 >
-                  <fa :icon="['fas', 'user']" class="mr-2" />Hồ sơ
+                  <fa :icon="['fas', 'user']" class="mr-2 w-4 text-center" />Hồ sơ cá nhân
                 </a>
                 <router-link
                   :to="{ name: 'products.my' }"
-                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                 >
-                  <fa :icon="['fas', 'box']" class="mr-2" />Sản phẩm của tôi
+                  <fa :icon="['fas', 'box']" class="mr-2 w-4 text-center" />Sản phẩm của tôi
                 </router-link>
                 <router-link
                   :to="{ name: 'orders.view' }"
-                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                 >
-                  <fa :icon="['fas', 'shopping-cart']" class="mr-2" />Quản lý Đơn hàng
+                  <fa :icon="['fas', 'shopping-cart']" class="mr-2 w-4 text-center" />Quản lý Đơn hàng
                 </router-link>
-                  <!-- <a
-                    href="#"
-                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    <fa :icon="['fas', 'plus']" class="mr-2" />Đăng sản phẩm
-                  </a> -->
-                <a
-                  href="#"
-                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  <fa :icon="['fas', 'cog']" class="mr-2" />Cài đặt
-                </a>
-                <div class="border-t border-gray-100"></div>
-                <!-- Sử dụng @click.prevent để ngăn chặn hành vi mặc định của form/a -->
+                
+                <div class="border-t border-gray-100 my-1"></div>
+                
                 <button
                   @click.prevent="handleLogout"
-                  type="submit"
-                  class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                 >
-                  <fa :icon="['fas', 'sign-out-alt']" class="mr-2" />Đăng xuất
+                  <fa :icon="['fas', 'sign-out-alt']" class="mr-2 w-4 text-center" />Đăng xuất
                 </button>
               </div>
             </div>
@@ -251,3 +302,10 @@ const navigateToHome = (event) => {
     </div>
   </header>
 </template>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar { width: 5px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>

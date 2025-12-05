@@ -1,493 +1,342 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, reactive, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAdminNotificationStore } from '@/stores/adminNotificationStore';
+import Swal from 'sweetalert2';
 
-// --- 1. KHỞI TẠO STORE & STATE ---
+// 1. Init Store
 const notificationStore = useAdminNotificationStore();
-const { notifications, isLoading, error, paginationData } = storeToRefs(notificationStore);
+const { notifications, users, isLoading, paginationData } = storeToRefs(notificationStore);
 
-// State cho Modal (Tạo/Sửa)
+// 2. State
+const filters = ref({ search: '', type: '', page: 1 });
 const showModal = ref(false);
 const isEditMode = ref(false);
-const currentNotification = ref({
+
+const form = reactive({
     id: null,
-    user_ids: '', 
-    type: 'promotion', 
+    user_id: '',
+    type: 'system',
     content: '',
     is_read: false
 });
 
-// State cho Modal Xóa
-const showDeleteModal = ref(false);
-const notificationToDelete = ref(null);
-
-// State cho Phân trang
-const currentPage = ref(1);
-
-// --- 2. LIFECYCLE ---
-onMounted(() => {
-    notificationStore.fetchNotifications({ page: currentPage.value });
+// --- TÍNH TOÁN HIỂN THỊ PHÂN TRANG ---
+const fromEntry = computed(() => {
+    if (!notifications.value || notifications.value.length === 0) return 0;
+    if (paginationData.value && paginationData.value.from) return paginationData.value.from;
+    return ((paginationData.value?.current_page || 1) - 1) * (paginationData.value?.per_page || 10) + 1;
 });
 
-// --- 3. METHODS (CRUD) ---
+const toEntry = computed(() => {
+    if (!notifications.value || notifications.value.length === 0) return 0;
+    if (paginationData.value && paginationData.value.to) return paginationData.value.to;
+    
+    // Fallback tính toán
+    const calculatedTo = fromEntry.value + notifications.value.length - 1;
+    return paginationData.value?.total && calculatedTo > paginationData.value.total ? paginationData.value.total : calculatedTo;
+});
 
-// Mở modal Tạo
+// 3. Methods
+function fetchData() { 
+    notificationStore.fetchNotifications(filters.value); 
+}
+
+function handleFilter() {
+    filters.value.page = 1;
+    fetchData();
+}
+
+function changePage(page) {
+    if (paginationData.value && page >= 1 && page <= paginationData.value.last_page) {
+        filters.value.page = page;
+        fetchData();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
+// --- MODAL ---
 function openCreateModal() {
     isEditMode.value = false;
-    currentNotification.value = { 
-        id: null, 
-        user_ids: '', 
-        type: 'promotion', 
-        content: '', 
-        is_read: false // Mặc định là chưa đọc
-    };
-    notificationStore.error = null;
+    Object.assign(form, { id: null, user_id: '', type: 'system', content: '', is_read: false });
     showModal.value = true;
 }
 
-// Mở modal Sửa
-function openEditModal(notification) {
+function openEditModal(item) {
     isEditMode.value = true;
-    // Hiển thị ID để sửa
-    const userIdsString = notification.user_id ? String(notification.user_id) : (notification.user_ids ? notification.user_ids.join(',') : '');
-    
-    currentNotification.value = { 
-        ...notification, 
-        user_ids: userIdsString 
-    };
-    notificationStore.error = null;
+    Object.assign(form, { 
+        id: item.id, 
+        user_id: item.user_id ? item.user_id : '', // Nếu null (toàn hệ thống) thì set rỗng để select default
+        type: item.type, 
+        content: item.content, 
+        is_read: Boolean(item.is_read) 
+    });
     showModal.value = true;
 }
 
-function closeModal() {
-    showModal.value = false;
-}
-
-async function handleModalSubmit() {
-    // 1. Chuẩn bị data
-    const dataToSubmit = {
-        type: currentNotification.value.type,
-        content: currentNotification.value.content,
-        is_read: currentNotification.value.is_read,
-        user_ids: currentNotification.value.user_ids.split(',')
-            .map(id => parseInt(id.trim()))
-            .filter(id => !isNaN(id) && id > 0)
-    };
-    
-    if (isEditMode.value || dataToSubmit.user_ids.length === 0) {
-        delete dataToSubmit.user_ids;
+async function handleSave() {
+    if (!form.content.trim()) {
+        Swal.fire('Lỗi', 'Vui lòng nhập nội dung thông báo', 'warning');
+        return;
     }
 
-    let success = false;
-    if (isEditMode.value) {
-        // SỬA
-        success = await notificationStore.updateNotification(currentNotification.value.id, dataToSubmit);
+    const payload = { 
+        ...form, 
+        user_id: form.user_id === '' ? null : form.user_id 
+    };
+
+    const result = isEditMode.value 
+        ? await notificationStore.updateNotification(form.id, payload)
+        : await notificationStore.createNotification(payload);
+
+    if (result.success) {
+        showModal.value = false;
+        Swal.fire({
+            icon: 'success',
+            title: 'Thành công!',
+            text: isEditMode.value ? 'Đã cập nhật thông báo.' : 'Đã tạo thông báo mới.',
+            timer: 1500,
+            showConfirmButton: false
+        });
+        fetchData();
     } else {
-        // TẠO MỚI (Luôn là chưa đọc, API mặc định false)
-        delete dataToSubmit.is_read; 
-        success = await notificationStore.createNotification(dataToSubmit);
-    }
-
-    if (success) {
-        closeModal();
+        Swal.fire('Lỗi', result.message, 'error');
     }
 }
 
-// Modal Xóa
-function openDeleteModal(notification) {
-    notificationToDelete.value = notification;
-    showDeleteModal.value = true;
-}
-
-function closeDeleteModal() {
-    notificationToDelete.value = null;
-    showDeleteModal.value = false;
-}
-
-async function confirmDelete() {
-    if (notificationToDelete.value) {
-        await notificationStore.deleteNotification(notificationToDelete.value.id);
-        closeDeleteModal();
+async function handleDelete(id) {
+    const res = await Swal.fire({
+        title: 'Xóa thông báo?', icon: 'warning', showCancelButton: true,
+        confirmButtonText: 'Xóa', cancelButtonText: 'Hủy', confirmButtonColor: '#ef4444'
+    });
+    if (res.isConfirmed) {
+        const result = await notificationStore.deleteNotification(id);
+        if (result.success) {
+            Swal.fire('Đã xóa', '', 'success');
+            if(notifications.value.length === 0 && filters.value.page > 1) {
+                filters.value.page--;
+                fetchData();
+            } else {
+                fetchData();
+            }
+        } else {
+             Swal.fire('Lỗi', result.message, 'error');
+        }
     }
 }
 
-// Hàm "Đánh dấu đã đọc"
-async function handleMarkAsRead(notification) {
-    const dataToUpdate = {
-        type: notification.type,
-        content: notification.content,
-        is_read: true 
+// Helpers
+const typeLabels = { system: 'Hệ thống', promotion: 'Khuyến mãi', order: 'Đơn hàng', warning: 'Cảnh báo', message: 'Tin nhắn' };
+function getTypeText(t) { return typeLabels[t] || t; }
+
+function getTypeBadge(t) {
+    const map = { 
+        system: 'bg-blue-100 text-blue-800',
+        promotion: 'bg-red-100 text-red-800 border border-red-200', 
+        order: 'bg-green-100 text-green-800', 
+        warning: 'bg-yellow-100 text-yellow-800', 
+        message: 'bg-gray-100 text-gray-800' 
     };
-    await notificationStore.updateNotification(notification.id, dataToUpdate);
+    return map[t] || 'bg-gray-100 text-gray-600';
 }
+function getReadText(isRead) { return isRead ? 'Đã xem' : 'Chưa xem'; }
+function getReadBadge(isRead) { return isRead ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'; }
 
-// Phân trang
-function changePage(page) {
-    if (!paginationData.value || page < 1 || page > paginationData.value.last_page) return;
-    currentPage.value = page;
-    notificationStore.fetchNotifications({ page: currentPage.value });
-}
-
-// --- 5. HELPER FUNCTIONS (Style) ---
-function getStatusBadgeClass(is_read) {
-    return is_read ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
-}
-function getStatusText(is_read) {
-    return is_read ? 'Đã đọc' : 'Chưa đọc';
-}
-function getTypeBadgeClass(type) {
-    switch (type) {
-        case 'system': return 'status-processing'; 
-        case 'promotion': return 'status-pending'; 
-        case 'order': return 'status-approved'; 
-        case 'message': return 'status-processing'; 
-        default: return 'bg-gray-100 text-gray-700';
-    }
-}
+onMounted(async () => {
+    await Promise.all([fetchData(), notificationStore.fetchUsers()]);
+});
 </script>
 
 <template>
-    <div class="page-container p-6">
-         <div class="page-header">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item">
-                            <RouterLink to="/admin/dashboard">Dashboard</RouterLink>
-                        </li>
-                        <li class="breadcrumb-item active" aria-current="page">Quản lý thông báo</li>
-                    </ol>
-                </nav>
-                <h2 class="mb-0">Quản lý thông báo</h2>
-                <p class="text-muted mb-0">Tổ chức và quản lý thông báo</p>
-            </div>
-            <button class="btn btn-primary" @click="openAddModal()">
-                <fa :icon="['fas', 'plus']" class="me-2" />Thêm danh mục
-            </button>
-        </div>
-    </div>
-        <!-- Header -->
-        <!-- <div class="flex justify-between items-center mb-6">
-            <div>
-                <h2 class="text-2xl font-semibold text-gray-800">Quản lý Thông báo</h2>
-                <p class="text-sm text-gray-500">Gửi và quản lý thông báo hệ thống</p>
-            </div>
-            <button @click="openCreateModal" class="action-btn bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium flex items-center">
-                <fa :icon="['fas', 'plus']" class="h-4 w-4 mr-2" />
-                Tạo thông báo
-            </button>
-        </div> -->
-        
-        <!-- BẢNG DỮ LIỆU -->
-        <div class="bg-white rounded-lg table-shadow overflow-hidden">
-            <div class="overflow-x-auto custom-scrollbar">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Người nhận</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nội dung</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Loại</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày tạo</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-if="isLoading && !showModal && !showDeleteModal">
-                            <td colspan="7" class="p-6 text-center text-gray-500">Đang tải dữ liệu...</td>
-                        </tr>
-                        <tr v-else-if="!notifications || notifications.length === 0">
-                            <td colspan="7" class="p-6 text-center text-gray-500">Không tìm thấy thông báo nào.</td>
-                        </tr>
-
-                        <tr v-for="noti in notifications" :key="noti.id" class="table-row">
-                            <td class="px-6 py-4">#{{ noti.id }}</td>
-                            <td class="px-6 py-4">{{ noti.recipient_name || 'N/A' }}</td>
-                            <td class="px-6 py-4 max-w-sm truncate" :title="noti.content">
-                                {{ noti.content }}
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="status-badge" :class="getTypeBadgeClass(noti.type)">{{ noti.type }}</span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="status-badge" :class="getStatusBadgeClass(noti.is_read)">
-                                    {{ getStatusText(noti.is_read) }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4">{{ noti.created_at }}</td>
-                            
-                            <td class="px-6 py-4 text-sm font-medium">
-                                <div class="flex space-x-2">
-                                    <button v-if="!noti.is_read" @click="handleMarkAsRead(noti)" class="action-btn bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md" title="Đánh dấu đã đọc">
-                                        <fa :icon="['fas', 'eye']" class="h-4 w-4" />
-                                    </button>
-                                    <button v-else class="action-btn bg-gray-300 text-gray-500 px-3 py-1 rounded-md cursor-not-allowed" title="Đã đọc" disabled>
-                                        <fa :icon="['fas', 'eye-slash']" class="h-4 w-4" />
-                                    </button>
-                                    <button @click="openEditModal(noti)" class="action-btn bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-md" title="Sửa">
-                                        <fa :icon="['fas', 'pencil-alt']" class="h-4 w-4" />
-                                    </button>
-                                    <button @click="openDeleteModal(noti)" class="action-btn bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md" title="Xóa">
-                                        <fa :icon="['fas', 'trash']" class="h-4 w-4" />
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Phân trang -->
-            <div class="bg-white px-6 py-3 border-t border-gray-200" v-if="!isLoading && paginationData && paginationData.last_page > 1">
-                 <nav class="flex justify-center">
-                    <ul class="flex items-center -space-x-px h-8 text-sm">
-                        <!-- (Code phân trang) -->
-                    </ul>
-                </nav>
-            </div>
-        </div>
-
-        <!-- MODAL TẠO/SỬA -->
-        <div v-if="showModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-lg shadow-xl max-w-lg w-full">
-                <div class="flex justify-between items-center p-5 border-b">
-                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-                        <fa :icon="['fas', 'edit']" class="text-gray-500 mr-3" v-if="isEditMode" />
-                        <fa :icon="['fas', 'plus']" class="text-gray-500 mr-3" v-else />
-                        {{ isEditMode ? 'Chỉnh sửa Thông báo' : 'Tạo Thông báo mới' }}
-                    </h3>
-                    <button @click="closeModal" class="text-gray-400 hover:text-gray-600">
-                        <fa :icon="['fas', 'times']" class="h-5 w-5" />
-                    </button>
+    <div class="p-6 bg-gray-50 min-h-screen">
+        <div class="max-w-7xl mx-auto">
+            <!-- Header -->
+            <div class="mb-8 flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 flex items-center">
+                        <fa :icon="['fas', 'bell']" class="mr-3 text-indigo-600" /> Quản lý Thông báo
+                    </h1>
+                    <p class="text-gray-500 text-sm mt-1">Gửi thông báo cho người dùng hoặc toàn hệ thống.</p>
                 </div>
+                <button @click="openCreateModal" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 shadow-sm flex items-center font-medium transition-colors">
+                    <fa :icon="['fas', 'plus']" class="mr-2" /> Tạo mới
+                </button>
+            </div>
 
-                <div class="p-6 space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Người nhận (User IDs) <span class="text-red-500">*</span></label>
-                        <input v-model="currentNotification.user_ids" type="text" 
-                               :placeholder="isEditMode ? 'Nhập ID để sửa (1,2,3)' : 'Nhập User IDs (1,2,3)...'"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <small class="text-gray-500">Nhập ID người dùng (vì chưa có API lấy danh sách User).</small>
+            <!-- Bộ lọc -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Tìm kiếm nội dung/người nhận</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <fa :icon="['fas', 'magnifying-glass']" class="text-gray-400" />
+                            </div>
+                            <input v-model="filters.search" type="text" class="pl-10 w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-sm" placeholder="Nhập nội dung hoặc tên người nhận..." @keyup.enter="handleFilter">
+                        </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Loại thông báo <span class="text-red-500">*</span></label>
-                        <select v-model="currentNotification.type" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="promotion">Khuyến mãi</option>
-                            <option value="system">Hệ thống</option>
-                            <option value="order">Đơn hàng</option>
-                            <option value="message">Tin nhắn</option>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Loại</label>
+                        <select v-model="filters.type" class="w-full border rounded-lg p-2.5 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white" @change="handleFilter">
+                            <option value="">Tất cả</option>
+                            <option v-for="(label, key) in typeLabels" :key="key" :value="key">{{ label }}</option>
                         </select>
                     </div>
-                    <div class="relative">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nội dung thông báo <span class="text-red-500">*</span></label>
-                        <textarea v-model="currentNotification.content" rows="4" placeholder="Nhập nội dung thông báo..."
-                                  class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-                        <small class="absolute bottom-2 right-2 text-gray-400">
-                            {{ currentNotification.content.length }}/255 ký tự
-                        </small>
+                </div>
+            </div>
+
+            <!-- Danh sách -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50 text-gray-600 text-xs uppercase font-semibold">
+                            <tr>
+                                <th class="px-6 py-4 text-left tracking-wider">ID</th>
+                                <th class="px-6 py-4 text-left tracking-wider">Người nhận</th>
+                                <th class="px-6 py-4 text-left tracking-wider">Loại</th>
+                                <th class="px-6 py-4 text-left tracking-wider" style="width: 30%">Nội dung</th>
+                                <th class="px-6 py-4 text-center tracking-wider">Trạng thái</th>
+                                <th class="px-6 py-4 text-left tracking-wider">Ngày tạo</th>
+                                <th class="px-6 py-4 text-right tracking-wider">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 bg-white">
+                            <tr v-if="isLoading">
+                                <td colspan="7" class="p-8 text-center text-gray-500">
+                                    <div class="flex justify-center items-center">
+                                        <fa :icon="['fas', 'spinner']" spin class="text-3xl text-indigo-500 mr-2" />
+                                        <span>Đang tải dữ liệu...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-else-if="!notifications.length">
+                                <td colspan="7" class="p-8 text-center text-gray-500">
+                                    <div class="flex flex-col items-center">
+                                        <fa :icon="['far', 'bell-slash']" class="text-4xl text-gray-300 mb-3" />
+                                        <p>Chưa có thông báo nào.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <tr v-for="item in notifications" :key="item.id" class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 font-bold text-indigo-600 text-sm">#{{ item.id }}</td>
+                                <td class="px-6 py-4">
+                                    <!-- HIỂN THỊ TÊN NGƯỜI DÙNG RÕ RÀNG -->
+                                    <div class="text-sm font-bold text-gray-900">
+                                        {{ item.recipient_name }}
+                                    </div>
+                                    <!-- Hiển thị ID bên dưới để tiện tra cứu -->
+                                    <div v-if="item.user_id" class="text-xs text-gray-500 mt-0.5">
+                                        ID: {{ item.user_id }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide', getTypeBadge(item.type)]">
+                                        {{ getTypeText(item.type) }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-600 truncate max-w-xs" :title="item.content">
+                                    {{ item.content }}
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <span v-if="item.is_read" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-700 border border-green-200">
+                                        <fa :icon="['fas', 'check']" class="mr-1" /> Đã đọc
+                                    </span>
+                                    <span v-else class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200">
+                                        Chưa đọc
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-500">{{ item.created_at }}</td>
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex justify-end space-x-2">
+                                        <button @click="openEditModal(item)" class="text-blue-600 hover:bg-blue-50 p-2 rounded-md transition-colors" title="Sửa">
+                                            <fa :icon="['fas', 'edit']" />
+                                        </button>
+                                        <button @click="handleDelete(item.id)" class="text-red-600 hover:bg-red-50 p-2 rounded-md transition-colors" title="Xóa">
+                                            <fa :icon="['fas', 'trash-alt']" />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Phân trang -->
+                <div v-if="paginationData" class="bg-white px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                    <div class="text-sm text-gray-700">
+                        tổng số <span class="font-medium">{{ paginationData.total }}</span> thông báo
                     </div>
                     
-                    <div class="flex justify-between">
-                        <!-- CHECKBOX TRẠNG THÁI: Disabled nếu là Tạo mới -->
-                        <label class="flex items-center cursor-pointer">
-                            <input v-model="currentNotification.is_read" type="checkbox" class="sr-only peer" :disabled="!isEditMode">
-                            <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 transition-colors peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all" :class="{'opacity-50 cursor-not-allowed': !isEditMode}"></div>
-                            <span class="ml-3 text-sm font-medium text-gray-700">
-                                {{ !isEditMode ? 'Mặc định: Chưa đọc' : (currentNotification.is_read ? 'Trạng thái: Đã đọc' : 'Trạng thái: Chưa đọc') }}
-                            </span>
-                        </label>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        <button @click="changePage(paginationData.current_page - 1)" 
+                            :disabled="paginationData.current_page === 1" 
+                            class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span class="sr-only">Previous</span>
+                            <fa :icon="['fas', 'chevron-left']" class="h-3 w-3" />
+                        </button>
                         
-                        <label class="flex items-center cursor-pointer">
-                            <input type="checkbox" checked class="sr-only peer" disabled> 
-                            <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 transition-colors peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-                            <span class="ml-3 text-sm font-medium text-gray-700">Gửi ngay</span>
-                        </label>
-                    </div>
+                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                            Trang {{ paginationData.current_page }} / {{ paginationData.last_page }}
+                        </span>
 
-                    <div v-if="error" class="text-red-600 text-sm p-3 bg-red-50 rounded-md">
-                        Lỗi: {{ error }}
-                    </div>
+                        <button @click="changePage(paginationData.current_page + 1)" 
+                            :disabled="paginationData.current_page === paginationData.last_page" 
+                            class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span class="sr-only">Next</span>
+                            <fa :icon="['fas', 'chevron-right']" class="h-4 w-4" />
+                        </button>
+                    </nav>
                 </div>
+            </div>
 
-                <div class="p-4 bg-gray-50 border-t flex justify-end space-x-3">
-                    <button @click="closeModal" class="px-5 py-2 text-sm font-medium text-gray-700 bg-white border rounded-lg hover:bg-gray-100">
-                        Hủy
-                    </button>
-                    <button @click="handleModalSubmit" :disabled="isLoading" class="px-5 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center">
-                        <fa :icon="['fas', 'save']" class="h-4 w-4 mr-2" />
-                        <span v-if="isLoading">Đang lưu...</span>
-                        <span v-else>Lưu thông báo</span>
-                    </button>
+            <!-- Modal -->
+            <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm" @click.self="showModal=false">
+                <div class="bg-white rounded-lg shadow-xl w-full max-w-lg animate__animated animate__fadeInDown">
+                    <div class="p-5 border-b flex justify-between items-center bg-white rounded-t-lg">
+                        <h3 class="text-lg font-bold text-gray-800">{{ isEditMode ? 'Sửa thông báo' : 'Tạo thông báo mới' }}</h3>
+                        <button @click="showModal=false" class="text-gray-500 hover:text-gray-700 transition-colors text-xl">&times;</button>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <!-- CHỌN USER (Dropdown) -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Người nhận <span class="text-red-500">*</span></label>
+                            <select v-model="form.user_id" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white transition">
+                                <option v-for="u in users" :key="u.id" :value="u.id">{{ u.full_name }} (ID: {{ u.id }})</option>
+                            </select>
+                            <p class="text-xs text-gray-400 mt-1">Chọn người dùng cụ thể hoặc để trống để gửi cho tất cả.</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Loại thông báo <span class="text-red-500">*</span></label>
+                            <select v-model="form.type" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white transition">
+                                <option v-for="(label, key) in typeLabels" :key="key" :value="key">{{ label }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nội dung <span class="text-red-500">*</span></label>
+                            <textarea v-model="form.content" rows="4" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition" placeholder="Nhập nội dung thông báo..."></textarea>
+                        </div>
+                         <div v-if="isEditMode" class="flex items-center mt-2">
+                             <input id="read" v-model="form.is_read" type="checkbox" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer">
+                             <label for="read" class="ml-2 text-sm font-medium text-gray-900 cursor-pointer">Đánh dấu là đã đọc</label>
+                        </div>
+                    </div>
+                    <div class="p-4 border-t flex justify-end space-x-2 bg-gray-50 rounded-b-lg">
+                        <button @click="showModal=false" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors text-sm font-medium">Hủy</button>
+                        <button @click="handleSave" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-sm transition-colors text-sm font-medium flex items-center">
+                            <fa v-if="isLoading" :icon="['fas', 'spinner']" spin class="mr-2" />
+                            <span>{{ isEditMode ? 'Cập nhật' : 'Lưu lại' }}</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <!-- MODAL XÁC NHẬN XÓA -->
-        <div v-if="showDeleteModal && notificationToDelete" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
-            <!-- (Giữ nguyên code modal xóa) -->
-             <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
-                <div class="flex justify-between items-center p-4 border-b border-red-200 bg-red-50 rounded-t-lg">
-                    <h3 class="text-lg font-semibold text-red-700 flex items-center">
-                        <fa :icon="['fas', 'exclamation-triangle']" class="h-5 w-5 text-red-600 mr-2" />
-                        Xác nhận xóa thông báo
-                    </h3>
-                    <button @click="closeDeleteModal" class="text-gray-400 hover:text-gray-600">
-                        <fa :icon="['fas', 'times']" class="h-5 w-5" />
-                    </button>
-                </div>
-                <div class="p-6">
-                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert">
-                        <strong class="font-bold">CẢNH BÁO: Hành động không thể hoàn tác!</strong>
-                        <span class="block sm:inline">Bạn có chắc chắn muốn xóa thông báo này?</span>
-                    </div>
-                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-left mt-4 text-sm">
-                        <p class="mb-2"><strong class="text-gray-600 w-24 inline-block">ID:</strong> <span class="font-medium text-gray-900">#{{ notificationToDelete.id }}</span></p>
-                        <p class="mb-2"><strong class="text-gray-600 w-24 inline-block">Người nhận:</strong> <span class="font-medium text-gray-900">{{ notificationToDelete.recipient_name }}</span></p>
-                        <p><strong class="text-gray-600 w-24 inline-block">Nội dung:</strong> <span class="text-gray-800">{{ notificationToDelete.content }}</span></p>
-                    </div>
-                </div>
-                <div class="p-4 bg-gray-50 border-t flex justify-end space-x-3 rounded-b-lg">
-                    <button @click="closeDeleteModal" class="px-5 py-2 text-sm font-medium text-gray-700 bg-white border rounded-lg hover:bg-gray-100">
-                        Hủy bỏ
-                    </button>
-                    <button @click="confirmDelete" :disabled="isLoading" class="px-5 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center">
-                        <fa :icon="['fas', 'trash']" class="h-4 w-4 mr-2" />
-                        Xác nhận xóa
-                    </button>
-                </div>
-            </div>
-        </div>
-
     </div>
 </template>
 
 <style scoped>
-.custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-.table-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-.filter-card { background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1px solid #e2e8f0; }
-.status-badge { font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.75rem; border-radius: 9999px; text-transform: uppercase; }
-.status-pending { background-color: #fef3c7; color: #92400e; }
-.status-approved { background-color: #d1fae5; color: #065f46; }
-.status-rejected { background-color: #fee2e2; color: #991b1b; }
-.status-processing { background-color: #dbeafe; color: #1e40af; }
-.action-btn { transition: all 0.2s ease-in-out; font-weight: 500; font-size: 0.875rem; padding-top: 0.25rem; padding-bottom: 0.25rem; }
-.action-btn:hover { transform: translateY(-1px); }
-.table-row:hover { background-color: #f8fafc; }
-
-.page-header {
-    background: white;
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.stats-card {
-    border: none;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease;
-}
-
-.stats-card:hover {
-    transform: translateY(-5px);
-}
-
-/* -------------------------------------- */
-/* CSS CỦA CATEGORIES PANEL */
-/* -------------------------------------- */
-
-.category-tree {
-    background: white;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.category-item {
-    padding: 10px 15px;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    margin-bottom: 8px;
-    background: white;
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-.category-item:hover {
-    background-color: #f8f9fa;
-    border-color: #0d6efd;
-}
-
-.category-level-1 {
-    border-left: 4px solid #0d6efd;
-    font-weight: 600;
-}
-
-.category-level-2 {
-    /* Điều chỉnh margin-left và border để tạo cấp độ */
-    margin-left: 40px;
-    border-left: 4px solid #6c757d;
-    background-color: #f8f9fa;
-    /* Loại bỏ padding-left: 15px !important; vì nó đã được xử lý bởi margin-left */
-}
-
-.category-actions {
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.category-item:hover .category-actions {
-    opacity: 1;
-}
-
-.breadcrumb-item a {
-    color: #667eea;
-    /* Màu primary */
-    text-decoration: none;
-}
-
-/* Icon toggle button */
-.category-toggle-btn {
-    border: none;
-    background: none;
-    line-height: 1;
-    margin-top: 2px;
-}
-/* Hiệu ứng loading */
-.btn-loading {
-    position: relative;
-    pointer-events: none;
-    opacity: 0.9;
-}
-
-/* Spinner nằm trong nút */
-.btn-loading .spinner {
-    display: inline-block;
-    width: 1rem;
-    height: 1rem;
-    margin-right: 8px;
-    border: 2px solid rgba(255, 255, 255, 0.35);
-    border-top-color: #fff; /* màu xoay */
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-    vertical-align: middle;
-}
-
-/* Text mờ nhẹ khi loading */
-.btn-loading .btn-text {
-    opacity: 0.6;
-}
-
-/* Animation */
-@keyframes spin {
-    100% {
-        transform: rotate(360deg);
-    }
-}
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.table-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
 </style>

@@ -50,4 +50,3 @@ Route::middleware('auth:sanctum')->group(function () {
     // API Lấy danh sách chương trình khuyến mãi
     Route::get('/promotions', [PromotionController::class, 'index']);
 });
-

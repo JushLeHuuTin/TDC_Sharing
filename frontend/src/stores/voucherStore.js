@@ -105,7 +105,6 @@ export const useVoucherStore = defineStore('voucher', {
             this.fetchError = null; // Reset lỗi
 
             try {
-
                 const res = await axios.post('http://127.0.0.1:8000/api/vouchers', voucherData);
                 return { success: true, message: res.data.message, voucher: res.data.voucher };
 

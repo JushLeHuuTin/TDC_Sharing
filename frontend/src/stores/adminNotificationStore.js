@@ -2,11 +2,12 @@ import { defineStore } from 'pinia';
 import axios from 'axios';
 import { useAuthStore } from '@/stores/auth';
 
-const API_URL = 'http://127.0.0.1:8000/api/admin/notifications';
+const API_BASE_URL = 'http://127.0.0.1:8000/api/admin';
 
 export const useAdminNotificationStore = defineStore('adminNotification', {
     state: () => ({
         notifications: [],
+        users: [], 
         isLoading: false,
         error: null,
         paginationData: null
@@ -30,7 +31,7 @@ export const useAdminNotificationStore = defineStore('adminNotification', {
                     headers: { 'Authorization': `Bearer ${token}` },
                     params: filters 
                 };
-                const response = await axios.get(API_URL, config);
+                const response = await axios.get(`${API_BASE_URL}/notifications`, config);
                 
                 if (response.data && response.data.success) {
                     this.notifications = response.data.data;
@@ -44,54 +45,32 @@ export const useAdminNotificationStore = defineStore('adminNotification', {
             }
         },
 
-        async deleteNotification(id) {
-            this.isLoading = true;
-            this.error = null;
+        // FIX: Gọi đúng API lấy danh sách user
+        async fetchUsers() {
             const authStore = useAuthStore();
-            const token = authStore.token;
-
             try {
-                const config = { headers: { 'Authorization': `Bearer ${token}` } };
-                await axios.delete(`${API_URL}/${id}`, config);
-                
-                this.notifications = this.notifications.filter(noti => noti.id !== id);
-                return true;
-                
+                const response = await axios.get(`${API_BASE_URL}/notifications/users`, {
+                    headers: { 'Authorization': `Bearer ${authStore.token}` }
+                });
+                if (response.data.success) {
+                    this.users = response.data.data;
+                }
             } catch (err) {
-                this.error = 'Lỗi khi xóa thông báo.';
-                console.error('Lỗi deleteNotification:', err);
-                return false;
-            } finally {
-                this.isLoading = false;
+                console.error('Lỗi lấy danh sách user:', err);
             }
         },
 
         async createNotification(data) {
             this.isLoading = true;
-            this.error = null;
             const authStore = useAuthStore();
-            const token = authStore.token;
-
             try {
-                const config = { headers: { 'Authorization': `Bearer ${token}` } };
-                const response = await axios.post(API_URL, data, config);
-
-                if (response.data && response.data.success) {
-                    // Tạo xong thì tải lại danh sách ngay
-                    await this.fetchNotifications(); 
-                    return true;
-                } else {
-                    this.error = 'API tạo mới không trả về dữ liệu.';
-                    return false;
-                }
+                const response = await axios.post(`${API_BASE_URL}/notifications`, data, {
+                    headers: { 'Authorization': `Bearer ${authStore.token}` }
+                });
+                await this.fetchNotifications(); 
+                return { success: true };
             } catch (err) {
-                if (err.response && err.response.status === 422) {
-                    this.error = "Dữ liệu không hợp lệ (ID người dùng không tồn tại?).";
-                } else {
-                    this.error = 'Lỗi khi tạo thông báo.';
-                }
-                console.error('Lỗi createNotification:', err);
-                return false;
+                return { success: false, message: err.response?.data?.message || 'Lỗi tạo mới' };
             } finally {
                 this.isLoading = false;
             }
@@ -99,32 +78,30 @@ export const useAdminNotificationStore = defineStore('adminNotification', {
 
         async updateNotification(id, data) {
             this.isLoading = true;
-            this.error = null;
             const authStore = useAuthStore();
-            const token = authStore.token;
-            
             try {
-                const config = { headers: { 'Authorization': `Bearer ${token}` } };
-                const response = await axios.put(`${API_URL}/${id}`, data, config);
-
-                if (response.data && response.data.success) {
-                    // Sửa xong thì tải lại danh sách ngay
-                    await this.fetchNotifications();
-                    return true;
-                } else {
-                     this.error = 'API cập nhật không trả về dữ liệu.';
-                    return false;
-                }
+                const response = await axios.put(`${API_BASE_URL}/notifications/${id}`, data, {
+                    headers: { 'Authorization': `Bearer ${authStore.token}` }
+                });
+                await this.fetchNotifications();
+                return { success: true };
             } catch (err) {
-                 if (err.response && err.response.status === 422) {
-                    this.error = "Dữ liệu cập nhật không hợp lệ.";
-                } else {
-                    this.error = 'Lỗi khi cập nhật thông báo.';
-                }
-                console.error('Lỗi updateNotification:', err);
-                return false;
+                return { success: false, message: err.response?.data?.message || 'Lỗi cập nhật' };
             } finally {
                 this.isLoading = false;
+            }
+        },
+
+        async deleteNotification(id) {
+            const authStore = useAuthStore();
+            try {
+                await axios.delete(`${API_BASE_URL}/notifications/${id}`, {
+                    headers: { 'Authorization': `Bearer ${authStore.token}` }
+                });
+                this.notifications = this.notifications.filter(n => n.id !== id);
+                return { success: true };
+            } catch (err) {
+                return { success: false, message: 'Lỗi xóa' };
             }
         }
     }

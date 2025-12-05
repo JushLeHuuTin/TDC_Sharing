@@ -35,6 +35,14 @@ const showEditModal = ref(false);
 const editingReview = ref(null);
 const pendingReviews = ref([]);
 
+// --- STATE MỚI: Theo dõi lỗi tải ảnh ---
+const imageErrors = ref({});
+
+const handleImageError = (reviewId) => {
+    // Khi ảnh lỗi, đánh dấu reviewId này vào danh sách lỗi để ẩn ảnh và hiện avatar chữ
+    imageErrors.value[reviewId] = true;
+};
+
 const averageRating = computed(() => {
     if (reviews.value.length === 0) return 0;
     const sum = reviews.value.reduce((acc, review) => acc + review.rating, 0);
@@ -299,7 +307,25 @@ async function handleUpdateReview() {
             
             <div v-for="review in reviews" :key="review.id" class="border-b border-gray-100 pb-6 last:border-0">
                 <div class="flex items-start space-x-4">
-                    <img :src="review.user_avatar" class="h-12 w-12 rounded-full object-cover border" alt="Avatar">
+                    
+                    <!-- AVATAR: ĐÃ SỬA: Thêm @error để bắt lỗi ảnh hỏng -->
+                    <div class="flex-shrink-0">
+                        <img 
+                            v-if="review.user_avatar && !imageErrors[review.id]" 
+                            :src="review.user_avatar" 
+                            @error="handleImageError(review.id)"
+                            class="h-12 w-12 rounded-full object-cover border border-gray-200" 
+                            alt="Avatar"
+                        >
+                        <!-- Fallback: Icon chữ cái -->
+                        <div 
+                            v-else 
+                            class="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-xl uppercase border border-gray-200"
+                        >
+                            {{ review.user_name ? review.user_name.charAt(0) : '?' }}
+                        </div>
+                    </div>
+
                     <div class="flex-grow">
                         <div class="flex justify-between">
                             <div>

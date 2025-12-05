@@ -50,12 +50,14 @@ function fetchData() {
 function handleFilter() {
     filters.value.page = 1;
     fetchData();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function changePage(page) {
-    if (page >= 1 && page <= pagination.value.last_page) {
-        filters.value.page = page;
-        fetchData();
+    if (pagination.value && page >= 1 && page <= pagination.value.lastPage) {
+        filters.value.page = page; 
+        fetchData(); 
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 }
 
@@ -83,18 +85,9 @@ async function handleApprove(order) {
     });
 
     if (result.isConfirmed) {
-        // Gọi API duyệt đơn
         const res = await sellerOrderStore.approveOrder(order.id);
-        
         if (res.success) {
-            Swal.fire({
-                title: 'Thành công!', 
-                text: 'Đơn hàng đang được xử lý (Processing).', 
-                icon: 'success',
-                timer: 1500,
-                showConfirmButton: false
-            });
-            // Cập nhật lại danh sách để thấy trạng thái mới
+            Swal.fire('Thành công!', 'Đơn hàng đang được xử lý.', 'success');
             fetchData(); 
         } else {
             Swal.fire('Lỗi!', res.message, 'error');
@@ -111,25 +104,14 @@ async function handleShip(order) {
         showCancelButton: true,
         confirmButtonText: 'Xác nhận giao',
         cancelButtonText: 'Hủy',
-        confirmButtonColor: '#8b5cf6', // Màu tím
+        confirmButtonColor: '#3b82f6', // Đổi sang Xanh dương (Blue)
         cancelButtonColor: '#6b7280'
     });
 
     if (result.isConfirmed) {
-        // Gọi API giao hàng (cần đảm bảo store có hàm shipOrder)
-        // Nếu store chưa có shipOrder, bạn có thể dùng tạm approveOrder nếu backend tự xử lý logic chuyển tiếp
-        // Nhưng tốt nhất là có endpoint riêng hoặc tham số riêng.
-        // Giả sử store có hàm shipOrder như đã bàn trước đó:
         const res = await sellerOrderStore.shipOrder(order.id);
-        
         if (res.success) {
-            Swal.fire({
-                title: 'Đang giao!', 
-                text: 'Đơn hàng đã chuyển sang trạng thái giao hàng (Shipped).', 
-                icon: 'success',
-                timer: 1500,
-                showConfirmButton: false
-            });
+            Swal.fire('Đang giao!', 'Đơn hàng đã chuyển sang trạng thái giao hàng.', 'success');
             fetchData();
         } else {
             Swal.fire('Lỗi!', res.message, 'error');
@@ -153,13 +135,7 @@ async function handleReject(order) {
     if (result.isConfirmed) {
         const res = await sellerOrderStore.rejectOrder(order.id);
         if (res.success) {
-            Swal.fire({
-                title: 'Đã hủy!', 
-                text: 'Đơn hàng đã bị từ chối.', 
-                icon: 'success',
-                timer: 1500,
-                showConfirmButton: false
-            });
+            Swal.fire('Đã hủy!', 'Đơn hàng đã bị từ chối.', 'success');
             fetchData();
         } else {
             Swal.fire('Lỗi!', res.message, 'error');
@@ -171,9 +147,9 @@ async function handleReject(order) {
 function getStatusBadge(status) {
     switch(status) {
         case 'pending': return 'bg-amber-100 text-amber-800 border border-amber-200'; // Vàng cam
-        case 'processing': return 'bg-blue-50 text-blue-700 border border-blue-200'; // Xanh nhạt
+        case 'processing': return 'bg-blue-100 text-blue-700 border border-blue-200'; // Xanh nhạt
         case 'shipped': 
-        case 'delivering': return 'bg-purple-100 text-purple-700 border border-purple-200'; // Tím
+        case 'delivering': return 'bg-sky-100 text-sky-700 border border-sky-200'; // Xanh nước biển nhẹ (Đang giao)
         case 'delivered': 
         case 'completed': return 'bg-emerald-100 text-emerald-700 border border-emerald-200'; // Xanh lá
         case 'cancelled': 
@@ -332,11 +308,11 @@ onMounted(() => {
                                                 <fa :icon="['fas', 'eye']" />
                                             </button>
 
-                                            <!-- Hành động cho đơn Pending -->
+                                            <!-- Nút Duyệt / Từ chối (Chỉ hiện khi Pending) -->
                                             <template v-if="order.status === 'pending'">
                                                 <button @click="handleApprove(order)" 
                                                     class="text-blue-500 hover:text-blue-700 p-1.5 rounded-md hover:bg-blue-50 transition-colors" 
-                                                    title="Duyệt đơn (Chuyển sang đã duyệt)">
+                                                    title="Duyệt đơn">
                                                     <fa :icon="['fas', 'check']" />
                                                 </button>
                                                 <button @click="handleReject(order)" 
@@ -346,11 +322,11 @@ onMounted(() => {
                                                 </button>
                                             </template>
 
-                                            <!-- Hành động cho đơn Processing (Mới thêm) -->
+                                            <!-- Nút Giao hàng (Chỉ hiện khi Processing) -->
                                             <template v-if="order.status === 'processing'">
                                                 <button @click="handleShip(order)" 
-                                                    class="text-purple-500 hover:text-purple-700 p-1.5 rounded-md hover:bg-purple-50 transition-colors" 
-                                                    title="Giao hàng (Chuyển sang Đang giao)">
+                                                    class="text-blue-500 hover:text-blue-700 p-1.5 rounded-md hover:bg-blue-50 transition-colors" 
+                                                    title="Giao hàng">
                                                     <fa :icon="['fas', 'truck']" />
                                                 </button>
                                             </template>
@@ -483,10 +459,10 @@ onMounted(() => {
                     </template>
                     
                     <template v-if="currentOrder.status === 'processing'">
-                        <button @click="handleShip(currentOrder)" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium shadow-sm">Giao hàng</button>
+                        <button @click="handleShip(currentOrder)" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm">Giao hàng</button>
                     </template>
                 </div>
             </div>
         </div>
     </AppLayout>
-</template> 
+</template>
