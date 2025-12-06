@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreNotificationRequest;
+use App\Http\Requests\Admin\UpdateNotificationRequest;
 use App\Models\Notification;
 use App\Models\User; // Import User
 use Illuminate\Http\Request;
@@ -48,7 +50,7 @@ class NotificationController extends Controller
     }
 
     // 2. Thêm mới
-    public function store(Request $request): JsonResponse
+    public function store(StoreNotificationRequest $request): JsonResponse
     {
         $validated = $request->validate([
             'user_id' => 'nullable|integer|exists:users,id', // Cho phép null (Gửi tất cả) hoặc phải là ID tồn tại
@@ -68,14 +70,19 @@ class NotificationController extends Controller
     }
 
     // 3. Cập nhật
-    public function update(Request $request, $id): JsonResponse
+    public function update(UpdateNotificationRequest $request, $id): JsonResponse
     {
         $notification = Notification::find($id);
 
         if (!$notification) {
             return response()->json(['success' => false, 'message' => 'Thông báo không tồn tại.'], 404);
         }
-
+        if ($request->has('updated_at') && $request->input('updated_at') != $notification->updated_at->toISOString()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Dữ liệu đã bị thay đổi, vui lòng tải lại.'
+            ], 409); // 409 Conflict
+        }
         $validated = $request->validate([
             'user_id' => 'nullable|integer|exists:users,id',
             'type'    => 'sometimes|string|in:system,promotion,order,warning,message',

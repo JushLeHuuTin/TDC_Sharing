@@ -34,7 +34,12 @@ class StoreReviewRequest extends FormRequest
             'comment'    => 'nullable|string|max:300',
         ];
     }
- 
+    protected function prepareForValidation()
+    {
+        $this->merge([
+            'comment' => trim(strip_tags($this->input('comment', '')))
+        ]);
+    }
     /**
      * Get the custom error messages for validator failures.
      */

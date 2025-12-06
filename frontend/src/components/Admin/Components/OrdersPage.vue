@@ -133,6 +133,7 @@ function getStatusBadge(status) {
 function getStatusText(status) {
   const map = {
     pending: "Chờ duyệt",
+    paid: "đã thanh toán",
     processing: "đã duyệt",
     shipped: "Đang giao",
     delivered: "Hoàn thành",

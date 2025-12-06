@@ -34,7 +34,20 @@ class StoreNotificationRequest extends FormRequest
             'content'    => ['required', 'string', 'max:255'],
         ];
     }
-
+    protected function prepareForValidation()
+    {
+        // ✨ CẬP NHẬT: strip_tags và trim cho cả name và description
+        if ($this->has('content')) {
+            $this->merge([
+                'content' => trim(strip_tags($this->content))
+            ]);
+        }
+        // if ($this->has('name')) {
+        //     $this->merge([
+        //         'name' => trim(strip_tags($this->name))
+        //     ]);
+        // }
+    }
      /**
      * Get custom messages for validator errors.
      *

@@ -22,6 +22,7 @@ class NotificationResource extends JsonResource
             'type'           => $this->type,
             'is_read'        => (bool) $this->is_read,
             'created_at'     => $this->created_at ? $this->created_at->format('d/m/Y H:i') : '--',
+            'updated_at' => $this->updated_at,
         ];
     }
 }

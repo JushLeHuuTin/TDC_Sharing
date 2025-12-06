@@ -31,7 +31,12 @@ class UpdateNotificationRequest extends FormRequest // Tên class đúng
         ];
         // 'sometimes' nghĩa là chỉ validate nếu trường đó được gửi lên
     }
-
+    protected function prepareForValidation()
+    {
+        $this->merge([
+            'content' => trim(strip_tags($this->input('content', '')))
+        ]);
+    }
      /**
      * Get custom messages for validator errors.
      */

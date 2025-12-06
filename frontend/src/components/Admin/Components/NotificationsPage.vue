@@ -69,6 +69,7 @@ function openEditModal(item) {
         user_id: item.user_id ? item.user_id : '', // Nếu null (toàn hệ thống) thì set rỗng để select default
         type: item.type, 
         content: item.content, 
+        updated_at: item.updated_at ,
         is_read: Boolean(item.is_read) 
     });
     showModal.value = true;

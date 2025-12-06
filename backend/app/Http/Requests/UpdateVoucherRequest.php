@@ -31,6 +31,9 @@ class UpdateVoucherRequest extends FormRequest
             'discount_max' => $this->input('discount_max', null),
             'min_purchase' => $this->input('min_purchase', 0),
             'usage_limit' => $this->input('usage_limit', 0),
+            'name' => strip_tags($this->input('name', '')),
+        'description' => strip_tags($this->input('description', '')),
+        'code' => strip_tags($this->input('code', '')),
         ]);
 
         // Convert string -> float nếu cần
