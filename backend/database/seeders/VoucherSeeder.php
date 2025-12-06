@@ -79,9 +79,10 @@ class VoucherSeeder extends Seeder
                 'is_active' =>0
             ],
         ];
-
         foreach ($vouchers as $voucher) {
-            Voucher::create($voucher);
+            if (!Voucher::where('code', $voucher['code'])->exists()) {
+                Voucher::create($voucher);
+            }
         }
     }
 }

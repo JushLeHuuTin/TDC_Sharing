@@ -146,30 +146,27 @@ class Product extends Model
     public function scopeSearch(Builder $query, ?string $keyword): Builder
     {
         if (!$keyword) {
-            // Nếu không có keyword, chỉ preload và lọc status
             return $query->where('status', 'active')
                 ->with(['seller', 'featuredImage'])
                 ->latest();
         }
-
-        return $query->where('status', 'active')
+    
+        // Keyword dùng cho BOOLEAN MODE
+        $booleanKeyword = $keyword . '*';
+    
+        return $query
+            ->selectRaw("
+                products.*,
+                MATCH(title, description) AGAINST(? IN BOOLEAN MODE) AS score
+            ", [$booleanKeyword])
+            ->where('status', 'active')
+            ->whereRaw("MATCH(title, description) AGAINST(? IN BOOLEAN MODE)", [$booleanKeyword])
             ->with(['seller', 'featuredImage'])
-            ->where(function (Builder $q) use ($keyword) {
-                // 1. Fulltext search trên title + description (nếu đã có fulltext index)
-                $q->whereRaw(
-                    "MATCH(title, description) AGAINST(? IN BOOLEAN MODE)",
-                    [$keyword]
-                )
-                    // 2. OR fallback LIKE trên title + description
-                    ->orWhere('title', 'like', "%{$keyword}%")
-                    ->orWhere('description', 'like', "%{$keyword}%")
-                    // 3. OR search theo tên người bán qua quan hệ
-                    ->orWhereHas('seller', function (Builder $sellerQuery) use ($keyword) {
-                        $sellerQuery->where('full_name', 'like', "%{$keyword}%");
-                    });
-            })
-            ->latest();
+            ->orderByDesc('score')
+            ->latest('products.id');
     }
+    
+    
     public function scopeActiveAndReady(Builder $query): Builder
     {
         return $query->where('is_visible', '1')->where('status', 'active')

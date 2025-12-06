@@ -126,7 +126,7 @@ async function handleDelete(id) {
 }
 
 // Helpers
-const typeLabels = { system: 'Hệ thống', promotion: 'Khuyến mãi', order: 'Đơn hàng', warning: 'Cảnh báo', message: 'Tin nhắn' };
+const typeLabels = { system: 'Hệ thống', promotion: 'Khuyến mãi', order: 'Đơn hàng', message: 'Tin nhắn' };
 function getTypeText(t) { return typeLabels[t] || t; }
 
 function getTypeBadge(t) {

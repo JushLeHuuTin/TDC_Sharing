@@ -78,7 +78,7 @@ const handleNavigate = (name) => {
 
       <div class="mt-8 flex flex-col md:flex-row justify-center gap-4">
         <button
-          @click="handleNavigate('home')"
+          @click="handleNavigate('products.index')"
           class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition duration-150"
         >
           Tiếp tục mua sắm
