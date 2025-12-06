@@ -54,23 +54,32 @@ class ProductController extends Controller
     }
     public function index(Request $request)
     {
-        // Gọi scope đã định nghĩa và phân trang
-        $product = Product::activeAndReady();
+        $productQuery = Product::activeAndReady();
 
-        // 2. Lấy sản phẩm trong danh mục (và các danh mục con) rồi phân trang
+        // 1. Áp dụng TÌM KIẾM (Search) nếu có keyword
+        if (trim($request->input('q', ''))) {
+            $keyword = trim($request->input('q', ''));
+            
+            // GÁN LẠI KẾT QUẢ CỦA SCOPE SEARCH CHO $productQuery
+            $productQuery = $productQuery->search($keyword); 
+        }
+    
+        // 2. Áp dụng LỌC (Filter)
         // lọc theo giá
         if ($request->filled('price_min')) {
-            $product->where('price', '>=', $request->price_min);
+            $productQuery->where('price', '>=', $request->price_min);
         }
         if ($request->filled('price_max')) {
-            $product->where('price', '<=', $request->price_max);
+            $productQuery->where('price', '<=', $request->price_max);
         }
-        if (trim($request->input('q', ''))) {
-            // die();
-            $keyword = $request->q;
-            $product->search(trim($request->input('q', '')));
+        $productQuery->with(['seller', 'featuredImage']);
+
+        // Nếu không có tìm kiếm, sắp xếp theo newest/id
+        if (!isset($keyword)) { 
+            $productQuery->latest('products.id'); 
         }
-        $products = $product->paginate(8);
+
+        $products = $productQuery->paginate(8);
         // Trả về dữ liệu qua API Resource như cũ
         return ProductResource::collection($products);
     }

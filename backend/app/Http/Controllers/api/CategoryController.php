@@ -97,7 +97,7 @@ class CategoryController extends Controller
         }
         if ($request->filled('q')) {
             $keyword = $request->q;
-            $query->search($keyword);
+            $query = $query->search($keyword);
         }
         $products = $query->paginate(8);
         if ($products->isEmpty() && $request->query('page', 1) == 1) {

@@ -31,7 +31,7 @@ export const useCategoryStore = defineStore('category', {
         // 🎯 Chỉ cần lưu trữ data dạng cây (vì nó chứa tất cả thông tin)
         categoriesTree: [],
         expandedCategories: [],
-        isLoading: false,
+        isLoading: true,
         error: null,
         isLoadingAttributes: true,
         dynamicAttributes: [],

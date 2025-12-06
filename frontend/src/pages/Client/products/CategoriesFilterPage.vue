@@ -22,11 +22,6 @@ const currentView = ref('grid');
 const slug = computed(() => route.params.categorySlug || null);
 onMounted(async () => {
     await categoryStore.fetchCategories();
-    // await categoryStore.fetchProductsBySlug(slug.value);
-    console.log(slug.value);
-    setTimeout(() => {
-        isLoading.value = false;
-    }, 1500);
 });
 // // 1. Tên Danh mục cho Breadcrumb
 const currentCategoryName = computed(() => {
@@ -64,10 +59,11 @@ const filteredProducts = computed(() => {
     };
     return list.slice().sort(sorters[sortBy.value] || sorters['newest']);
 });
-const handleApplyFilters = async () => {
+const handleApplyFilters = async (page = 1) => { 
     try {
         isLoading.value = true;
-        await categoryStore.fetchProductsBySlug(slug.value, 1);
+        // Gọi Store với slug hiện tại và trang cần tải
+        await categoryStore.fetchProductsBySlug(slug.value, page); 
     } catch (error) {
         console.error('Lỗi khi áp dụng bộ lọc:', error);
     } finally {
@@ -102,7 +98,15 @@ const handlePageChange = (page) => {
 // Theo dõi categorySlug VÀ Route Name để bắt được khi chuyển từ trang khác sang /products
 watch(() => [route.params.categorySlug, route.name], ([newSlug, newName]) => {
     if (newName === 'products.index' || newName === 'category.products') {
-        categoryStore.fetchProductsBySlug(newSlug || null,1);
+        
+        if (newSlug && flattenedCategories.value.length > 0) {
+            const category = flattenedCategories.value.find(c => c.slug === newSlug);
+            categoryStore.filters.categoryId = category ? category.id : null;
+        } else {
+            categoryStore.filters.categoryId = null;
+        }
+
+        handleApplyFilters(1);
     }
 }, { immediate: true });
 </script>

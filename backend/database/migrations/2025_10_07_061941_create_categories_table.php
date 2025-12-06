@@ -21,6 +21,7 @@ return new class extends Migration
             $table->integer('display_order')->default(0);
             $table->boolean('is_visible')->default(true);
             $table->string('slug', 100)->unique();
+            $table->unsignedBigInteger('products_count')->default(0);
             $table->timestamps();
             
             $table->index('parent_id');
@@ -34,5 +35,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('categories');
+        Schema::table('categories', function (Blueprint $table) {
+            $table->dropColumn('products_count');
+        });
     }
 };

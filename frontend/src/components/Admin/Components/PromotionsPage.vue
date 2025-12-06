@@ -1060,7 +1060,7 @@ const handlePageChange = (page) => {
                 </div>
                 
                 <!-- Giới hạn sử dụng/Khách hàng (Dùng chung cho cả Voucher và Promotion) -->
-                <div :class="newVoucher.discount_type === 'percentage' ? 'col-md-4' : 'col-md-6'" class="mb-3">
+                <div v-if="activeTab === 'promotions'" :class="newVoucher.discount_type === 'percentage' ? 'col-md-4' : 'col-md-6'" class="mb-3">
                   <label class="form-label">Giới hạn/Khách hàng</label>
                   <input
                     type="number"
@@ -1076,7 +1076,7 @@ const handlePageChange = (page) => {
                 </div>
                 
                 <!-- Giới hạn giảm tối đa (Chỉ hiện khi là %) -->
-                <div class="col-md-4 mb-3" v-if="newVoucher.discount_type === 'percentage'">
+                <div  class="col-md-4 mb-3" v-if="newVoucher.discount_type === 'percentage' && activeTab === 'promotions' ">
                   <label class="form-label">Giới hạn giảm tối đa (VNĐ)</label>
                   <input
                     type="number"
@@ -1124,79 +1124,6 @@ const handlePageChange = (page) => {
                   </div>
                 </div>
               </div>
-              
-              <!-- Áp dụng sản phẩm/danh mục (chỉ hiện cho Promotion) -->
-              <div v-if="activeTab === 'promotions'" class="mb-3 border p-3 rounded-lg bg-light">
-                  <h6 class="text-primary mt-0 mb-3">Ràng buộc áp dụng</h6>
-                  
-                  <!-- 1. Ràng buộc khách hàng (target_audiences) -->
-                  <div class="mb-3">
-                      <label class="form-label">Nhóm khách hàng áp dụng</label>
-                      <select 
-                          class="form-select mb-2" 
-                          v-model="newVoucher.targetAudienceType"
-                      >
-                          <option value="all">Áp dụng cho TẤT CẢ khách hàng</option>
-                          <option value="specific_groups">Áp dụng cho NHÓM khách hàng cụ thể</option>
-                      </select>
-                      
-                      <div v-if="newVoucher.targetAudienceType === 'specific_groups'">
-                           <!-- Giả định dùng multiple select cho groups ID -->
-                          <select 
-                              class="form-select"
-                              multiple
-                              v-model="newVoucher.target_audiences"
-                          >
-                              <option v-for="group in mockData.userGroups" :key="group.id" :value="group.id">
-                                  {{ group.name }}
-                              </option>
-                          </select>
-                          <div class="form-text">Chọn một hoặc nhiều nhóm khách hàng.</div>
-                          <div v-if="formErrors.target_audiences" class="text-danger small mt-1">
-                              {{ formErrors.target_audiences[0] }}
-                          </div>
-                      </div>
-                  </div>
-
-                  <!-- 2. Ràng buộc danh mục (category_ids) -->
-                   <div class="mb-3">
-                      <label class="form-label">Danh mục sản phẩm áp dụng</label>
-                      <select 
-                          class="form-select mb-2" 
-                          v-model="newVoucher.categoryApplyType"
-                      >
-                          <option value="all">Áp dụng cho TẤT CẢ sản phẩm</option>
-                          <option value="specific_categories">Áp dụng cho DANH MỤC cụ thể</option>
-                      </select>
-                      
-                      <div v-if="newVoucher.categoryApplyType === 'specific_categories'">
-                          <!-- Giả định dùng multiple select cho categories ID -->
-                           <select 
-                              class="form-select"
-                              multiple
-                              v-model="newVoucher.applicable_categories"
-                          >
-                              <option v-for="cat in mockData.categories" :key="cat.id" :value="cat.id">
-                                  {{ cat.name }}
-                              </option>
-                          </select>
-                          <div class="form-text">Chọn một hoặc nhiều danh mục sản phẩm.</div>
-                          <div v-if="formErrors.category_ids" class="text-danger small mt-1">
-                              {{ formErrors.category_ids[0] }}
-                          </div>
-                      </div>
-                  </div>
-                  
-                  <!-- 3. Ràng buộc Sản phẩm cụ thể (applicable_products) -->
-                  <!-- <div class="form-text mt-2">
-                      <RouterLink to="#" class="small text-decoration-none">
-                          <fa :icon="['fas', 'tag']" class="me-1" />
-                          Quản lý áp dụng cho sản phẩm cụ thể ({{ newVoucher.applicable_products.length }} sản phẩm)
-                      </RouterLink>
-                  </div> -->
-
-              </div>
-              
               <div class="form-check">
                 <input
                   class="form-check-input"

@@ -408,11 +408,6 @@ async function confirmDeleteCategory() {
                                 {{ submissionError.is_visible[0] }}
                             </div>
                         </div>
-                        
-                        <!-- LỖI CHUNG (409 Conflict hoặc lỗi không thuộc field cụ thể) -->
-                        <div v-if="submissionError?.general" class="alert alert-danger mt-3" role="alert">
-                            <p class="mb-0" v-for="(msg, index) in submissionError.general" :key="index">{{ msg }}</p>
-                        </div>
                     </div>
 
                     <div class="modal-footer">

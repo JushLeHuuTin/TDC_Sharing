@@ -161,9 +161,9 @@ class Product extends Model
             ", [$booleanKeyword])
             ->where('status', 'active')
             ->whereRaw("MATCH(title, description) AGAINST(? IN BOOLEAN MODE)", [$booleanKeyword])
-            ->with(['seller', 'featuredImage'])
-            ->orderByDesc('score')
-            ->latest('products.id');
+            // ->with(['seller', 'featuredImage'])
+            ->orderByDesc('score');
+            // ->latest('products.id');
     }
     
     
@@ -191,7 +191,7 @@ class Product extends Model
     {
         $categoryIds = $category->getAllChildIds();
         return $query->whereIn('category_id', $categoryIds)
-            ->activeAndReady(); // Tái sử dụng scope đã có để lấy sản phẩm active và eager load
+            ->activeAndReady();
     }
     public function favoredByUsers(): BelongsToMany
     {
