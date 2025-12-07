@@ -28,8 +28,6 @@ class StoreNotificationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_ids'   => ['required', 'array', 'min:1'],
-            'user_ids.*' => ['required', 'integer', 'exists:users,id'], // Mỗi user_id phải tồn tại trong bảng users
             'type'       => ['required', 'string', Rule::in(['order', 'promotion', 'system', 'message'])],
             'content'    => ['required', 'string', 'max:255'],
         ];
@@ -56,7 +54,6 @@ class StoreNotificationRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'user_ids.required' => 'Vui lòng chọn người nhận.',
             'type.required' => 'Vui lòng chọn loại thông báo.',
             'content.required' => 'Vui lòng nhập nội dung thông báo.',
             'content.max' => 'Nội dung thông báo không vượt quá 255 ký tự.',

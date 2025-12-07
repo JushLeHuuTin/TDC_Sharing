@@ -18,7 +18,7 @@ const detailProductStore = useDetailProductStore();
 const reviewStore = useReviewStore();
 const cartStore = useCartStore();
 
-const { product } = storeToRefs(detailProductStore);
+const { product,error } = storeToRefs(detailProductStore);
 const mainImage = computed(() => detailProductStore.mainImage);
 
 onMounted(() => {
@@ -358,5 +358,27 @@ watch(
       </div>
     </AppLayout>
   </div>
-  <div v-else class="text-center py-20">Loading...</div>
+  <div v-else-if="detailProductStore.isLoading" class="text-center py-20">
+    <fa :icon="['fas', 'spinner']" spin class="text-4xl text-blue-500 mr-2" />
+    <span>Đang tải...</span>
+</div>
+
+<div v-else-if="error === '404_NOT_FOUND'" class="text-center py-20">
+    <div class="max-w-md mx-auto p-8 bg-white rounded-xl shadow-lg border border-gray-200">
+        <fa :icon="['fas', 'bomb']" class="text-6xl text-red-500 mb-4" />
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">404 - Sản phẩm không tìm thấy</h1>
+        <p class="text-gray-600 mb-6">Xin lỗi, sản phẩm bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
+        <router-link to="/" class="text-blue-600 hover:underline font-medium">
+            <fa :icon="['fas', 'arrow-left']" class="mr-2" /> Quay về trang chủ
+        </router-link>
+    </div>
+</div>
+
+<div v-else-if="error" class="text-center py-20">
+    <div class="max-w-md mx-auto p-8 bg-white rounded-xl shadow-lg border border-gray-200">
+        <fa :icon="['fas', 'exclamation-triangle']" class="text-6xl text-yellow-500 mb-4" />
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Lỗi tải dữ liệu</h1>
+        <p class="text-gray-600 mb-6">{{ error }}. Vui lòng kiểm tra kết nối hoặc thử lại sau.</p>
+    </div>
+</div>
 </template>

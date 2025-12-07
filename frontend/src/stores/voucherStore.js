@@ -110,8 +110,8 @@ export const useVoucherStore = defineStore('voucher', {
 
             } catch (err) {
                 // Xử lý lỗi từ server (ví dụ: lỗi validation 422)
-                const errorMessage = err.res?.data?.message || "Lỗi không xác định khi tạo voucher.";
-                const validationErrors = err.res?.data?.errors;
+                const errorMessage = err.response?.data?.message || "Lỗi không xác định khi tạo voucher.";
+                const validationErrors = err.response?.data?.errors;
 
                 this.fetchError = errorMessage;
 

@@ -138,16 +138,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/my-notifications/read-all', [NotificationController::class, 'markAllRead']);
     // action for admin
     Route::prefix('admin')->name('admin.')->group(function () {
+        Route::post('/notifications', [AdminNotificationController::class, 'store'])->name('notifications.store');
         // 2.5.HANH display order for seller
         Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/{id}', [AdminOrderController::class, 'show'])->name('orders.show');
         Route::delete('/orders/{id}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
-
+        
 
         // THÊM DÒNG NÀY ĐỂ LẤY DANH SÁCH USER
         Route::get('/notifications/users', [AdminNotificationController::class, 'getUsersForSelect']);
         // 2.6.HANH add notifications
-        Route::post('/notifications', [AdminNotificationController::class, 'store'])->name('notifications.store');
         // 2.7.Hanh update notifictions
         Route::put('/notifications/{notification}', [AdminNotificationController::class, 'update'])->name('notifications.update');
         // 2.8.HANH display notifications admin

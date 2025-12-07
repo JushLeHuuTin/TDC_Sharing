@@ -74,7 +74,7 @@ export const useReviewStore = defineStore('reviewStore', {
             };
 
             this.reviews.unshift(newReviewFrontend);
-            
+            await this.fetchReviews(reviewData.product_id);
             return { success: true };
         } catch (err) {
             const msg = err.response?.data?.message || 'Lỗi khi gửi đánh giá';
@@ -94,14 +94,15 @@ export const useReviewStore = defineStore('reviewStore', {
         const originalReview = { ...this.reviews[index] };
 
         // 2. Optimistic Update
-        this.reviews[index].rating = reviewData.rating;
-        this.reviews[index].comment = reviewData.comment;
+        // this.reviews[index].rating = reviewData.rating;
+        // this.reviews[index].comment = reviewData.comment;
 
         // 3. API Call
         try {
             await axios.put(`http://127.0.0.1:8000/api/reviews/${reviewId}`, reviewData, {
                 headers: { Authorization: `Bearer ${authStore.token}` }
             });
+            await this.fetchReviews(reviewData.product_id);
             return { success: true };
         } catch (err) {
             this.reviews[index] = originalReview;
