@@ -75,7 +75,7 @@ const submitForm = async (action) => {
     });
     form.attributes.forEach((attr, index) => {
         const def = dynamicAttributes.value[index];
-        const value = attr.value?.trim() ?? '';
+        const value = attr.value ?? '';
 
         // Kiểm tra bắt buộc
         if (def.required && value === '') {
@@ -338,7 +338,7 @@ onMounted(() => {
                                         </select>
                                     </template>
 
-                                    <template v-else-if="attr.data_type === 'NUMBER'">
+                                    <template v-else-if="attr.data_type === 'number'">
                                         <input type="number" :id="attr.name" v-model="form.attributes[index].value"
                                             class="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                             :placeholder="attr.placeholder || 'Nhập số'" />

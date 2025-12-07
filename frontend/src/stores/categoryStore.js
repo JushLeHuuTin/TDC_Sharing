@@ -1,8 +1,7 @@
 // stores/categoryStore.js
-import { defineStore } from 'pinia';
+import { defineStore, storeToRefs } from 'pinia';
 import axios from 'axios';
 import { useAuthStore } from './auth';
-
 
 
 // Hàm đệ quy để làm phẳng cây danh mục
@@ -68,10 +67,8 @@ export const useCategoryStore = defineStore('category', {
         async fetchCategories(isTree = false) { // Sử dụng một action chung với cờ isTree
             // Sử dụng categoriesTree để cache data lớn nhất
             this.expandedCategories = [];
-
             this.isLoading = true;
             this.error = null;
-
             try {
                 // Nếu isTree là false, mặc định sẽ gọi API top-five
                 const endpoint = isTree

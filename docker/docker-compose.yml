@@ -50,13 +50,13 @@ services:
     networks:
       - laravel_net
   frontend:
-      image: node:24 # Hoặc phiên bản Node.js phù hợp với dự án
+      image: node:24 
       container_name: vue_frontend
       working_dir: /app
       volumes:
-        - ../frontend  # Ánh xạ thư mục frontend
+        - ../frontend  
       ports:
-        - "5173:5173" # Port mặc định của Vite (HMR)
+        - "5173:5173" 
       networks:
         - laravel_net
 volumes:

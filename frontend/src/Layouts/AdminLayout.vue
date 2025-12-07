@@ -81,8 +81,8 @@ const currentPageComponent = computed(() => {
 });
 // --- LIFECYCLE VÀ KHỞI TẠO ---
 onMounted(() => {
-    categoryStore.fetchCategories(true);
-    console.log(categoriesTree);
+    // categoryStore.fetchCategories(true);
+    // console.log(categoriesTree);
 });
 const category = computed(() => {
   return categoriesTree.value

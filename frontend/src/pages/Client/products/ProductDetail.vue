@@ -49,6 +49,7 @@ watch(
 </script>
 
 <template>
+
   <!-- Kiểm tra product tồn tại trước khi render để tránh lỗi undefined -->
   <div v-if="product">
     <AppLayout>

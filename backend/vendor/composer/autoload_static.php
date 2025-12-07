@@ -544,6 +544,7 @@ class ComposerStaticInitfa5739a68a391a79456428bed2f94df4
     );
 
     public static $classMap = array (
+        'App\\Console\\Commands\\RecalculateCategoryCounts' => __DIR__ . '/../..' . '/app/Console/Commands/RecalculateCategoryCounts.php',
         'App\\Exceptions\\ConflictException' => __DIR__ . '/../..' . '/app/Exceptions/ConflictException.php',
         'App\\Exceptions\\Handler' => __DIR__ . '/../..' . '/app/Exceptions/Handler.php',
         'App\\Http\\Controllers\\AdminController' => __DIR__ . '/../..' . '/app/Http/Controllers/AdminController.php',
@@ -556,6 +557,7 @@ class ComposerStaticInitfa5739a68a391a79456428bed2f94df4
         'App\\Http\\Controllers\\Api\\CheckoutController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/CheckoutController.php',
         'App\\Http\\Controllers\\Api\\FavoriteController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/FavoriteController.php',
         'App\\Http\\Controllers\\Api\\MomoCallbackController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/MomoCallbackController.php',
+        'App\\Http\\Controllers\\Api\\NotificationController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/NotificationController.php',
         'App\\Http\\Controllers\\Api\\OrderController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/OrderController.php',
         'App\\Http\\Controllers\\Api\\ProductController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/ProductController.php',
         'App\\Http\\Controllers\\Api\\PromotionController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/PromotionController.php',
@@ -625,6 +627,7 @@ class ComposerStaticInitfa5739a68a391a79456428bed2f94df4
         'App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
         'App\\Models\\Voucher' => __DIR__ . '/../..' . '/app/Models/Voucher.php',
         'App\\Models\\Wishlist' => __DIR__ . '/../..' . '/app/Models/Wishlist.php',
+        'App\\Observers\\ProductObserver' => __DIR__ . '/../..' . '/app/Observers/ProductObserver.php',
         'App\\Policies\\CartItemPolicy' => __DIR__ . '/../..' . '/app/Policies/CartItemPolicy.php',
         'App\\Policies\\CategoryPolicy' => __DIR__ . '/../..' . '/app/Policies/CategoryPolicy.php',
         'App\\Policies\\DashboardPolicy' => __DIR__ . '/../..' . '/app/Policies/DashboardPolicy.php',

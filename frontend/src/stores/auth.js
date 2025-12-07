@@ -15,11 +15,14 @@ export const useAuthStore = defineStore('auth', {
         initializeStore() {
             const token = localStorage.getItem('auth_token');
             const userJson = localStorage.getItem('user_info');
-            
+        
             if (token && userJson) {
                 this.token = token;
                 this.user = JSON.parse(userJson);
                 this.isLoggedIn = true;
+        
+                // 🔥 QUAN TRỌNG: Gắn token lại cho axios sau F5
+                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             } else {
                 this.token = null;
                 this.user = null;
@@ -39,16 +42,23 @@ export const useAuthStore = defineStore('auth', {
         },
 
         // 3. Hàm ĐĂNG XUẤT (Xóa khỏi Store và LocalStorage)
-        logout() {
+        async logout() {
+            try {
+                // Gọi API logout (không cần truyền token vì axios đã có sẵn bearer)
+                await axios.post('/api/logout');
+            } catch (error) {
+                console.warn("Logout API error:", error);
+            }
+        
+            // XÓA TRONG PINIA
             this.token = null;
             this.user = null;
             this.isLoggedIn = false;
-
+        
+            // XÓA LOCALSTORAGE
             localStorage.removeItem('auth_token');
             localStorage.removeItem('user_info');
-            
-            // Chuyển hướng về trang đăng nhập
-            router.push({ name: 'login' });
+        
         },
         async fetchUserProfile() {
             this.loadingProfile = true;

@@ -83,16 +83,43 @@ class ReviewController extends Controller
         }
     }
 
-   public function update(UpdateReviewRequest $request, Review $review): JsonResponse
+    public function update(UpdateReviewRequest $request, Review $review): JsonResponse
     {
-        // Gọi Policy để kiểm tra quyền (Admin hoặc Chính chủ)
         $this->authorize('update', $review); 
-
+    
+        // Lấy giá trị updated_at (TIMESTAMP) cũ từ Frontend
+        $oldUpdatedAt = $request->input('updated_at');
+    
+        // 1. Kiểm tra tính hợp lệ của updated_at từ request
+        if (!$oldUpdatedAt) {
+            return response()->json(['success' => false, 'message' => 'Thiếu trường updated_at.'], 400);
+        }
+        
+        // 2. Bắt đầu giao dịch (Tùy chọn, nhưng tốt cho consistency)
+        DB::beginTransaction();
         try {
-            // ... (Logic update giữ nguyên) ...
+            // Lấy giá trị updated_at hiện tại trong database (sẽ tự động là chuỗi ISO)
+            $currentUpdatedAt = $review->updated_at->toISOString(); 
+    
+            // 3. SO SÁNH GIÁ TRỊ CŨ (từ Request) VỚI GIÁ TRỊ HIỆN TẠI (trong DB)
+            if ($oldUpdatedAt !== $currentUpdatedAt) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Dữ liệu đã bị thay đổi bởi người dùng khác, vui lòng tải lại.'
+                ], 409); // 409 Conflict
+            }
+            
+            // 4. Nếu không có xung đột, thực hiện cập nhật
             $review->update($request->validated());
+            
+            DB::commit();
+    
             return response()->json(['success' => true, 'message' => 'Cập nhật thành công.', 'data' => new ReviewResource($review)]);
+            
         } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi cập nhật đánh giá: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Lỗi cập nhật.'], 500);
         }
     }

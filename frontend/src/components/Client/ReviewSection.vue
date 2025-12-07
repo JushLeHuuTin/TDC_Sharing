@@ -211,7 +211,8 @@ async function handleUpdateReview() {
     const result = await reviewStore.updateReview(editingReview.value.id, {
         product_id: props.productId,
         rating: editingReview.value.rating,
-        comment: editingReview.value.comment
+        comment: editingReview.value.comment,
+        updated_at: editingReview.value.updated_at
     });
     
     if (result.success) {

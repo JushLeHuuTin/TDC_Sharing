@@ -34,7 +34,7 @@ class ProductSeeder extends Seeder
             for ($j = 0; $j < $batchSize && ($i + $j) <= $total; $j++) {
                 $num = $i + $j;
                 $products[] = [
-                    'user_id' => 1,
+                    'user_id' => rand(1, 3),
                     'category_id' => rand(5, 8),
                     'title' => "Sản phẩm số $num",
                     'description' => "Mô tả sản phẩm $num",

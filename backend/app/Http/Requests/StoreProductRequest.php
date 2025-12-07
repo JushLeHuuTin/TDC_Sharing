@@ -214,6 +214,22 @@ class StoreProductRequest extends FormRequest
                 'description' => trim(strip_tags($this->description))
             ]);
         }
+        $attributes = $this->input('attributes');
+
+        if ($attributes && is_array($attributes)) {
+            $cleanedAttributes = collect($attributes)->map(function ($attribute) {
+                
+                // Chỉ làm sạch nếu giá trị tồn tại và là chuỗi
+                if (isset($attribute['value']) && is_string($attribute['value'])) {
+                    $attribute['value'] = trim(strip_tags($attribute['value']));
+                }
+                return $attribute;
+            })->all();
+            
+            $this->merge([
+                'attributes' => $cleanedAttributes
+            ]);
+        }
     }
 
     public function withValidator($validator)

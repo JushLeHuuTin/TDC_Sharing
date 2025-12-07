@@ -185,7 +185,7 @@ export const useProductStore = defineStore('product', {
                 this.myProducts = response.data.data;
 
             } catch (error) {
-                // ...
+                alert(error);
             } finally {
                 this.isLoadingMyProducts = false;
             }
@@ -202,17 +202,6 @@ export const useProductStore = defineStore('product', {
                 console.error('Không thể tải status counts.');
             }
         },
-        async deleteProduct(id) {
-            try {
-              const res = await axios.delete(`http://127.0.0.1:8000/api/products/${id}`);
-              // Cập nhật store, loại bỏ sản phẩm khỏi danh sách
-              this.myProducts = this.myProducts.filter(p => p.id !== id);
-              return res.data; // { success: true, message: '...' }
-            } catch (error) {
-              // Ném error ra component để xử lý toast
-              throw error;
-            }
-          },
         async deleteProduct(id) {
             try {
               const res = await axios.delete(`http://127.0.0.1:8000/api/products/${id}`);

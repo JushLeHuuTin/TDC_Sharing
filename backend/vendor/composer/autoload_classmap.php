@@ -6,6 +6,7 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'App\\Console\\Commands\\RecalculateCategoryCounts' => $baseDir . '/app/Console/Commands/RecalculateCategoryCounts.php',
     'App\\Exceptions\\ConflictException' => $baseDir . '/app/Exceptions/ConflictException.php',
     'App\\Exceptions\\Handler' => $baseDir . '/app/Exceptions/Handler.php',
     'App\\Http\\Controllers\\AdminController' => $baseDir . '/app/Http/Controllers/AdminController.php',
@@ -18,6 +19,7 @@ return array(
     'App\\Http\\Controllers\\Api\\CheckoutController' => $baseDir . '/app/Http/Controllers/Api/CheckoutController.php',
     'App\\Http\\Controllers\\Api\\FavoriteController' => $baseDir . '/app/Http/Controllers/Api/FavoriteController.php',
     'App\\Http\\Controllers\\Api\\MomoCallbackController' => $baseDir . '/app/Http/Controllers/Api/MomoCallbackController.php',
+    'App\\Http\\Controllers\\Api\\NotificationController' => $baseDir . '/app/Http/Controllers/Api/NotificationController.php',
     'App\\Http\\Controllers\\Api\\OrderController' => $baseDir . '/app/Http/Controllers/Api/OrderController.php',
     'App\\Http\\Controllers\\Api\\ProductController' => $baseDir . '/app/Http/Controllers/Api/ProductController.php',
     'App\\Http\\Controllers\\Api\\PromotionController' => $baseDir . '/app/Http/Controllers/Api/PromotionController.php',
@@ -87,6 +89,7 @@ return array(
     'App\\Models\\User' => $baseDir . '/app/Models/User.php',
     'App\\Models\\Voucher' => $baseDir . '/app/Models/Voucher.php',
     'App\\Models\\Wishlist' => $baseDir . '/app/Models/Wishlist.php',
+    'App\\Observers\\ProductObserver' => $baseDir . '/app/Observers/ProductObserver.php',
     'App\\Policies\\CartItemPolicy' => $baseDir . '/app/Policies/CartItemPolicy.php',
     'App\\Policies\\CategoryPolicy' => $baseDir . '/app/Policies/CategoryPolicy.php',
     'App\\Policies\\DashboardPolicy' => $baseDir . '/app/Policies/DashboardPolicy.php',

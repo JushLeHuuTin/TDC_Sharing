@@ -30,7 +30,7 @@ class ReviewResource extends JsonResource
 
             // SỬA LỖI DATE: Trả về nguyên gốc để Frontend tự format, tránh lỗi "Invalid Date"
             'created_at'    => $review->created_at, 
-            
+            'updated_at' => $review->updated_at,
             // Nếu thích hiển thị kiểu "2 giờ trước", bạn có thể dùng thêm trường này
             'time_ago'      => $review->created_at ? $review->created_at->diffForHumans() : '--',
         ];

@@ -1,6 +1,11 @@
 <script setup>
+import { useAuthStore } from '@/stores/auth';
 import { RouterLink, useRoute } from 'vue-router'; // ⬅️ Chỉ cần 2 cái này
-
+const authStore = useAuthStore();
+function handleAdminLogout() {
+  authStore.logout();      // Xóa token, clear state
+  router.push({ name: "admin-login" });
+}
 const menuItems = [
     { name: 'Dashboard', route: '/admin/dashboard', page: 'dashboard', icon: ['fas', 'tachometer-alt'] },
     { name: 'Quản lý người dùng', route: '/admin/users', page: 'users', icon: ['fas', 'users'] },
@@ -15,14 +20,14 @@ const menuItems = [
     { name: 'Cài đặt hệ thống', route: '/admin/settings', page: 'settings', icon: ['fas', 'cog'] },
     { name: 'Hỗ trợ khách hàng', route: '/admin/support', page: 'support', icon: ['fas', 'headset'] },
     { name: 'Hồ sơ admin', route: '/admin/profile', page: 'profile', icon: ['fas', 'user-circle'], class: 'text-warning' },
-    { name: 'Đăng xuất', route: '/logout', page: 'logout', icon: ['fas', 'sign-out-alt'], class: 'text-danger' },
+    { name: 'Đăng xuất', page: 'logout', icon: ['fas', 'sign-out-alt'], class: 'text-danger', action: 'logout' }
 ];
 
 // Đã xóa hàm handleClick và emit bị comment
 </script>
 
 <template>
-    <nav class="sidebar me-2"> 
+    <nav class="sidebar me-2">
         <div class="p-4 d-flex flex-column h-100">
             <div class="d-flex align-items-center mb-4">
                 <div class="bg-white rounded p-2 me-3">
@@ -33,18 +38,21 @@ const menuItems = [
                     <small class="text-white-50">Admin Panel</small>
                 </div>
             </div>
-            
+
             <ul class="nav flex-column flex-grow-1">
                 <li v-for="item in menuItems" :key="item.page" class="nav-item">
-                    
-                    <RouterLink 
-                        :to="item.route" 
-                        :class="['nav-link', item.class]" 
-                    >
-                        <fa :icon="item.icon" />{{ item.name }}
+
+                    <!-- Nếu có action = logout → gọi hàm -->
+                    <button v-if="item.action === 'logout'" class="nav-link text-danger" @click="handleAdminLogout">
+                        <fa :icon="item.icon" /> {{ item.name }}
+                    </button>
+
+                    <RouterLink v-else :to="item.route" :class="['nav-link', item.class]">
+                        <fa :icon="item.icon" /> {{ item.name }}
                     </RouterLink>
-                    
+
                 </li>
+
             </ul>
         </div>
     </nav>
@@ -84,7 +92,7 @@ const menuItems = [
     font-weight: 600;
 }
 
-.sidebar .nav-link > svg {
+.sidebar .nav-link>svg {
     width: 20px;
     text-align: center;
     margin-right: 10px;
@@ -92,8 +100,9 @@ const menuItems = [
 
 @media (max-width: 768px) {
     .sidebar {
-        left: -280px; 
+        left: -280px;
     }
+
     .sidebar.show {
         left: 0;
     }

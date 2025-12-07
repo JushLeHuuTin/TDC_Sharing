@@ -36,6 +36,7 @@ onMounted(() => {
 // --- ACTION ---
 function handleLogout() {
   authStore.logout();
+  router.push({ name: 'login' });
 }
 
 // Xử lý khi click vào thông báo
@@ -253,7 +254,7 @@ const navigateToHome = (event) => {
                   :alt="user?.name || 'User'"
                   class="w-8 h-8 rounded-full border border-gray-200"
                 />
-                <span class="hidden md:block font-medium">{{ user?.name || "Thành viên" }}</span>
+                <span class="hidden md:block font-medium">{{ user?.full_name || "Thành viên" }}</span>
                 <fa :icon="['fas', 'chevron-down']" class="text-xs" />
               </button>
 

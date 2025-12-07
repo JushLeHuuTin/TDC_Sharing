@@ -18,21 +18,25 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\MomoCallbackController;
 use App\Http\Controllers\Api\NotificationController; // Import controller mới
+use App\Http\Controllers\AuthController;
+use Illuminate\Http\Request;
+
+Route::post('/login', [AuthController::class, 'login']);
+Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
+
 
 Route::get('/products/create', [ProductController::class, function () {
     return view('page.products.create');
 }])->name('product.create');
 // 1.4.TIN display products list
 Route::get('/products', [ProductController::class, 'index']);
-Route::get('/products/my', [ProductController::class, 'getMyProduct']);
 // 1.5.TIN display feature products list
 Route::get('/featured-products', [ProductController::class, 'featured']);
 // 1.6.TIN search product with keywords
 Route::get('/products/search', [ProductController::class, 'search']);
 // 1.7.TIN display product list by category
 Route::get('/categories/{category:slug}/products', [CategoryController::class, 'showProducts']);
-// 1.8.TIN display detail product
-Route::get('/products/{product:slug}', [ProductController::class, 'show']);
+
 // 1.14.TIN display category for home page
 Route::get('/categories/top-five', [CategoryController::class, 'topFive']);
 // 3.5 Checkout online
@@ -40,7 +44,9 @@ Route::post('/payment/momo-callback', [OrderController::class, 'handleMomoCallba
 Route::post('/payment/momo', [CheckoutController::class, 'momoPay']);
 Route::post('/momo/ipn', [MomoCallbackController::class, 'handleIpn'])->name('checkout.momo_ipn');
 // Các route yêu cầu phải đăng nhập thì cho vào group này
+
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/products/my', [ProductController::class, 'getMyProduct']);
     Route::get('/user/profile', [UserController::class, 'getProfile'])->name('user.profile');
     // 3.1 Dong add product to cart
     Route::post('/cart/add', [CartController::class, 'addItem'])->name('cart.add');
@@ -152,3 +158,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard/stats', [AdminDashboardController::class, 'stats'])->name('dashboard.stats');
     });
 });
+// Route::get('/categories', [CategoryController::class, 'index']);
+
+// 1.8.TIN display detail product
+Route::get('/products/{product:slug}', [ProductController::class, 'show']);
+// Route::get('/products/my', [ProductController::class, 'getMyProduct']);

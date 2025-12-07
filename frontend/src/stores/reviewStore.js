@@ -32,6 +32,7 @@ export const useReviewStore = defineStore('reviewStore', {
           rating: r.rating,
           comment: r.comment,
           date: r.created_at,
+          updated_at: r.updated_at,
           images: r.images ?? [],
           user_avatar: r.avatar || `https://ui-avatars.io/api/?name=${r.reviewer_name}&background=random&color=fff`,
           seller_reply: r.seller_reply ?? null,

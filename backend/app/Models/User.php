@@ -10,7 +10,6 @@ use Illuminate\Notifications\Notifiable; // Thêm nếu dùng Notifications
 use Laravel\Sanctum\HasApiTokens;       // Thêm để dùng Sanctum
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, HasApiTokens; // Bỏ SoftDeletes nếu không dùng
@@ -33,7 +32,7 @@ class User extends Authenticatable
     {
         return $this->hasMany(Address::class);
     }
-
+    
     public function products()
     {
         return $this->hasMany(Product::class);

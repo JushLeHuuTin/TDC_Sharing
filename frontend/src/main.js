@@ -1,27 +1,53 @@
-import { createApp } from 'vue';
-import App from './App.vue';
-import router from './router'; 
-import VueToast from 'vue-toast-notification';
-import 'vue-toast-notification/dist/theme-bootstrap.css'; // Dùng theme Bootstrap để phù hợp giao diện
+// main.js
+import { createApp } from "vue";
+import { createPinia } from "pinia";
+import App from "./App.vue";
+import router from "./router";
+import axios from "./plugins/axios";
 
-import { createPinia } from 'pinia';
-const pinia = createPinia(); // Tạo Pinia instance
+// Toast
+import VueToast from "vue-toast-notification";
+import "vue-toast-notification/dist/theme-bootstrap.css";
 
-import './assets/main.css'; 
-// 1. Import các thư viện chínhimport { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-import { fas } from '@fortawesome/free-solid-svg-icons'; 
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-import { library } from '@fortawesome/fontawesome-svg-core'; // <-- Import byPrefixAndName
+// FontAwesome
+import { library } from "@fortawesome/fontawesome-svg-core";
+import { fas } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 library.add(fas);
 
-// Đăng ký component Font Awesome
-// app.component('FontAwesomeIcon', FontAwesomeIcon);
+import "./assets/main.css";
+
+// --------------------------------
+//     KHỞI TẠO APP
+// --------------------------------
 const app = createApp(App);
-app.component('fa', FontAwesomeIcon);
+const pinia = createPinia();
+app.use(pinia);
+
+// Sau khi gắn pinia → mới dùng authStore
+import { useAuthStore } from "./stores/auth";
+const authStore = useAuthStore();
+
+// Khôi phục token từ localStorage
+authStore.initializeStore();
+
+// Setup token cho axios (nếu có)
+if (authStore.token) {
+    axios.defaults.headers.common["Authorization"] = `Bearer ${authStore.token}`;
+}
+
+// Toast
 app.use(VueToast, {
-    position: 'top-right', // Vị trí hiển thị
-    duration: 5000,        // Thời gian hiển thị (5 giây)
+    position: "top-right",
+    duration: 5000,
     dismissible: true,
-    type: 'default'
 });
-app.use(router).use(pinia).mount('#app'); 
+
+// FontAwesome
+app.component("fa", FontAwesomeIcon);
+
+// Router
+app.use(router);
+
+// Start App
+app.mount("#app");

@@ -26,21 +26,21 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Product::observe(ProductObserver::class);
-        try{
-            if (app()->isLocal()) {
-                // Tìm một user để đăng nhập, ví dụ user có id = 1
-                if (Schema::hasTable('users')) {
-                    $user = User::find(1);
-                }
-                // Hoặc $user = User::where('email', 'admin@example.com')->first();
+        // try{
+        //     if (app()->isLocal()) {
+        //         // Tìm một user để đăng nhập, ví dụ user có id = 1
+        //         if (Schema::hasTable('users')) {
+        //             $user = User::find(1);
+        //         }
+        //         // Hoặc $user = User::where('email', 'admin@example.com')->first();
     
-                // Nếu user tồn tại, thực hiện đăng nhập
-                if ($user) {
-                    Auth::login($user);
-                }
-            }
-        }catch(Exception $e){
+        //         // Nếu user tồn tại, thực hiện đăng nhập
+        //         if ($user) {
+        //             Auth::login($user);
+        //         }
+        //     }
+        // }catch(Exception $e){
 
-        }
+        // }
     }
 }
