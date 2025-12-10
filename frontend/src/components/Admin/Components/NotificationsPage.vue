@@ -85,7 +85,7 @@ async function handleSave() {
         ...form, 
         user_id: form.user_id === '' ? null : form.user_id 
     };
-
+    
     const result = isEditMode.value 
         ? await notificationStore.updateNotification(form.id, payload)
         : await notificationStore.createNotification(payload);

@@ -89,7 +89,7 @@ const resetSearch = () => {
                     v-for="item in suggestions"
                     :key="item.id"
                     href="#" 
-                    class="block px-4 py-2 hover:bg-gray-50 flex items-center space-x-3"
+                    class=" px-4 py-2 hover:bg-gray-50 flex items-center space-x-3"
                 >
                     <img :src="item.image_url" :alt="item.title" class="w-10 h-10 object-cover rounded">
                     <div>

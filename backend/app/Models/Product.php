@@ -143,30 +143,51 @@ class Product extends Model
     {
         return $query->where('status', 'published');
     }
+    // public function scopeSearch(Builder $query, ?string $keyword): Builder
+    // {
+    //     if (!$keyword) {
+    //         return $query->where('status', 'active')
+    //             ->with(['seller', 'featuredImage'])
+    //             ->latest();
+    //     }
+
+    //     // Keyword dùng cho BOOLEAN MODE
+    //     $booleanKeyword = $keyword . '*';
+
+    //     return $query
+    //         ->selectRaw("
+    //             products.*,
+    //             MATCH(title, description) AGAINST(? IN BOOLEAN MODE) AS score
+    //         ", [$booleanKeyword])
+    //         ->where('status', 'active')
+    //         ->whereRaw("MATCH(title, description) AGAINST(? IN BOOLEAN MODE)", [$booleanKeyword])
+    //         // ->with(['seller', 'featuredImage'])
+    //         ->orderByDesc('score');
+    //     // ->latest('products.id');
+    // }
     public function scopeSearch(Builder $query, ?string $keyword): Builder
     {
+        // Không có từ khóa → trả về danh sách active giống như bản gốc
         if (!$keyword) {
             return $query->where('status', 'active')
                 ->with(['seller', 'featuredImage'])
                 ->latest();
         }
-    
-        // Keyword dùng cho BOOLEAN MODE
-        $booleanKeyword = $keyword . '*';
-    
+
+        // Chuẩn hóa keyword
+        $keyword = trim($keyword);
+
         return $query
-            ->selectRaw("
-                products.*,
-                MATCH(title, description) AGAINST(? IN BOOLEAN MODE) AS score
-            ", [$booleanKeyword])
             ->where('status', 'active')
-            ->whereRaw("MATCH(title, description) AGAINST(? IN BOOLEAN MODE)", [$booleanKeyword])
-            // ->with(['seller', 'featuredImage'])
-            ->orderByDesc('score');
-            // ->latest('products.id');
+            ->where(function ($q) use ($keyword) {
+                $q->where('title', 'LIKE', "%{$keyword}%")
+                    ->orWhere('description', 'LIKE', "%{$keyword}%");
+            })
+            ->with(['seller', 'featuredImage'])
+            ->latest('products.id');
     }
-    
-    
+
+
     public function scopeActiveAndReady(Builder $query): Builder
     {
         return $query->where('is_visible', '1')->where('status', 'active')

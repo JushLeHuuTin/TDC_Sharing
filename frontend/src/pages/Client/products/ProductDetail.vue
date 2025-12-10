@@ -56,7 +56,7 @@ watch(
       <CartNotification />
       <div class="max-w-7xl mx-auto">
         <!-- Breadcrumb -->
-        <nav class="flex mb-6 sm:mb-0 mb-2" aria-label="Breadcrumb">
+        <nav class="flex sm:mb-0 mb-2" aria-label="Breadcrumb">
           <ol class="inline-flex items-center space-x-1 md:space-x-3">
             <li class="inline-flex items-center">
               <a href="/" class="text-gray-700 hover:text-blue-600"

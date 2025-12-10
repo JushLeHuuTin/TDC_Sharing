@@ -50,7 +50,7 @@ class NotificationController extends Controller
     }
 
     // 2. Thêm mới
-    public function store(StoreNotificationRequest $request): JsonResponse
+    public function store(request $request): JsonResponse
     {
         $validated = $request->validate([
             'user_id' => 'nullable|integer|exists:users,id', // Cho phép null (Gửi tất cả) hoặc phải là ID tồn tại

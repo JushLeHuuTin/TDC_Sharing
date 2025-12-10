@@ -27,14 +27,14 @@ return new class extends Migration
             $table->timestamps();
             // $table->softDeletes();
             
-            $table->index('user_id');
-            $table->index('category_id');
-            $table->index('slug');
-            $table->index('status');
-            $table->index('is_featured');
-            $table->index(['category_id', 'status', 'is_visible', 'created_at'], 'products_filter_sort_time_idx');
-            $table->index(['category_id', 'status', 'is_visible', 'price'], 'products_price_sort_idx');
-            $table->fullText(['title', 'description']);
+            // $table->index('user_id');
+            // $table->index('category_id');
+            // $table->index('slug');
+            // $table->index('status');
+            // $table->index('is_featured');
+            // $table->index(['category_id', 'status', 'is_visible', 'created_at'], 'products_filter_sort_time_idx');
+            // $table->index(['category_id', 'status', 'is_visible', 'price'], 'products_price_sort_idx');
+            // $table->fullText(['title', 'description']);
         });
     }
 
